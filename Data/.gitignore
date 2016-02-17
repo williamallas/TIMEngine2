@@ -2,3 +2,4 @@
 /skybox/
 *.dll
 *.obj
+/Log.txt
