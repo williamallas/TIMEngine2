@@ -1,0 +1,11 @@
+#ifndef INTERSECTION_H_INCLUDED
+#define INTERSECTION_H_INCLUDED
+
+enum Intersection
+{
+    OUTSIDE=0,
+    INSIDE,
+    INTERSECT,
+};
+
+#endif // INTERSECTION_H_INCLUDED
