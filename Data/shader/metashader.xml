@@ -1,0 +1,52 @@
+<DataGroup name="">
+
+<ShaderData name="basic" option="" />
+<ShaderData name="texture" option="USE_TEXTURE" />
+
+<ShaderData name="drawQuad" option="NO_MATRIX USE_TEXTURE" />
+<ShaderData name="GaussianH" option="H_PASS" src="shader/gaussian.vert shader/gaussian.frag" />
+<ShaderData name="GaussianV" option="V_PASS" src="shader/gaussian.vert shader/gaussian.frag" />
+
+<ShaderData name="toneMapping" option="" src="shader/tone_mapping.vert shader/tone_mapping.frag" />
+
+<ShaderData name="fullScreenReflexion" option="" src="shader/fs_reflexion.vert shader/fs_reflexion.frag" />
+
+<ShaderData name="hdrReduction1" option="STEP_1" src="shader/hdrReduction.vert shader/hdrReduction.frag" />
+<ShaderData name="hdrReduction2" option="" src="shader/hdrReduction.vert shader/hdrReduction.frag" />
+<ShaderData name="hdrReduction3" option="LAST_STEP" src="shader/hdrReduction.vert shader/hdrReduction.frag" />
+
+<!--<ShaderData name="finalDraw" option="" src="shader/final_draw.vert shader/final_draw.frag" />-->
+
+<ShaderData name="basicDeferred" option="DEFERRED ACCURATE_NORMAL" />
+<ShaderData name="textureDeferred" option="DEFERRED USE_TEXTURE ACCURATE_NORMAL" />
+<ShaderData name="normalDeferred" option="DEFERRED NORMAL_MAPPING ACCURATE_NORMAL" />
+<ShaderData name="textureNormalDeferred" option="DEFERRED NORMAL_MAPPING USE_TEXTURE ACCURATE_NORMAL" />
+<ShaderData name="boneDeferred" option="DEFERRED BONES_MATRIX" />
+<ShaderData name="skybox" option="DEFERRED" src="shader/skybox.vert shader/skybox.frag" />
+<ShaderData name="water" option="DEFERRED" src="shader/water.vert shader/water.frag" />
+
+<ShaderData name="light" src="shader/light.vert shader/light.frag" />
+<ShaderData name="directionalLight" src="shader/directionalLight.vert shader/directionalLight.frag" />
+<ShaderData name="ambientPass" src="shader/directionalLight.vert shader/ambientPass.frag" />
+
+<!--
+<ShaderData name="terrain" src="shader/terrain.vert shader/terrain.frag" option="COLOR_MAP DEFERRED" />
+<ShaderData name="terrain_2theme" src="shader/terrain.vert shader/terrain.frag" option="COLOR_MAP DEFERRED THEME_2" />
+<ShaderData name="terrain_3theme" src="shader/terrain.vert shader/terrain.frag" option="COLOR_MAP DEFERRED THEME_2 THEME_3" />
+<ShaderData name="terrain_normal" src="shader/terrain.vert shader/terrain.frag" option="COLOR_MAP DEFERRED NORMAL_MAPPING" />
+<ShaderData name="terrain_normal_2theme" src="shader/terrain.vert shader/terrain.frag" option="COLOR_MAP DEFERRED THEME_2 NORMAL_MAPPING" />
+<ShaderData name="terrain_normal_3theme" src="shader/terrain.vert shader/terrain.frag" option="COLOR_MAP DEFERRED THEME_2 THEME_3 NORMAL_MAPPING" />
+
+<ShaderData name="detail+" src="shader/herbe.vert shader/herbe.frag shader/herbe.geom" option="DEFERRED USE_TEXTURE CROSS_PATTERN" />
+<ShaderData name="detail-" src="shader/herbe.vert shader/herbe.frag shader/herbe.geom" option="DEFERRED USE_TEXTURE CAMERA_ALIGNED" />
+<ShaderData name="detail|" src="shader/herbe.vert shader/herbe.frag shader/herbe.geom" option="DEFERRED USE_TEXTURE" />
+
+<ShaderData name="densityDetail+" src="shader/herbe.vert shader/herbe.frag shader/herbe.geom" option="DEFERRED USE_TEXTURE USE_DENSITY_MAP CROSS_PATTERN" />
+<ShaderData name="densityDetail-" src="shader/herbe.vert shader/herbe.frag shader/herbe.geom" option="DEFERRED USE_TEXTURE USE_DENSITY_MAP CAMERA_ALIGNED" />
+<ShaderData name="densityDetail|" src="shader/herbe.vert shader/herbe.frag shader/herbe.geom" option="DEFERRED USE_TEXTURE USE_DENSITY_MAP" />
+
+<ShaderData name="densityDetail2+" src="shader/herbe.vert shader/herbe.frag shader/herbe.geom" option="DEFERRED USE_TEXTURE USE_DENSITY_MAP NORMAL_ALIGNED CROSS_PATTERN" />
+<ShaderData name="densityDetail2-" src="shader/herbe.vert shader/herbe.frag shader/herbe.geom" option="DEFERRED USE_TEXTURE USE_DENSITY_MAP NORMAL_ALIGNED CAMERA_ALIGNED" />
+<ShaderData name="densityDetail2|" src="shader/herbe.vert shader/herbe.frag shader/herbe.geom" option="DEFERRED USE_TEXTURE USE_DENSITY_MAP NORMAL_ALIGNED" />
+-->
+</DataGroup>
