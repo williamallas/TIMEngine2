@@ -1,0 +1,82 @@
+Initializing on NVIDIA Corporation GeForce GTX 970M/PCIe/SSE2 using OpenGL 4.5.0 NVIDIA 361.43
+
+
+Support of bindless_texture: 1
+Support of sparse_texture: 1
+MaxTexture2dSize:16384
+MaxTexture3dSize:2048
+MaxFragTextureUnits:32
+MaxVertexTextureUnits:32
+MaxGeometryTextureUnits:32
+MaxCombinedTextureUnits:192
+MaxVertexArraySize:1048576
+MaxElementArraySize:1048576
+MaxVertexAttribs:16
+MaxVertexOutput:128
+MaxVertexVecUniforms:1024
+MaxGeometryInput:128
+MaxGeometryOutput:128
+MaxGeometryOutputVertices:1024
+MaxGeometryUniform:2048
+MaxFragmentInput:128
+MaxFragmentOutput:8
+MaxFragmentUniform:1024
+MajorVersion:4
+MinorVersion:5
+Anisotropy:1
+AnisotropySamples:16
+MaxShaderStorageSize:2147483647
+MaxUniformBufferSize:65536
+MaxComputeWorkGroupCount(XYZ):2147483647
+MaxComputeWorkGroupSize(XYZ):1536
+MaxComputeWorkGroupInvocation:1536
+
+
+Leaks detected:
+
+Leak of size 260 in ..\Source\TIMEngine2/core/Singleton.h : 36 (0x19674e8)
+
+Leak of size 8 in ..\Source\TIMEngine2\resource\MeshLoader.cpp : 57 (0x1969228)
+
+Leak of size 8 in ..\Source\TIMEngine2\resource\MeshLoader.cpp : 57 (0x19692f8)
+
+Leak of size 8 in ..\Source\TIMEngine2\resource\MeshLoader.cpp : 57 (0x1969368)
+
+Leak of size 8 in ..\Source\TIMEngine2\resource\MeshLoader.cpp : 57 (0x19693b8)
+
+Leak of size 28 in ..\Source\TIMEngine2\renderer\Texture.cpp : 99 (0x196d688)
+
+Leak of size 28 in ..\Source\TIMEngine2\renderer\Texture.cpp : 99 (0x196d700)
+
+Leak of size 28 in ..\Source\TIMEngine2\renderer\Texture.cpp : 65 (0x196d750)
+
+Leak of size 28 in ..\Source\TIMEngine2\renderer\Texture.cpp : 99 (0x196d7a0)
+
+Leak of size 28 in ..\Source\TIMEngine2\renderer\Texture.cpp : 99 (0x196d7c8)
+
+Leak of size 28 in ..\Source\TIMEngine2\renderer\Texture.cpp : 99 (0x196d930)
+
+Leak of size 28 in ..\Source\TIMEngine2\renderer\Texture.cpp : 99 (0x196d980)
+
+Leak of size 256 in ..\Source\TIMEngine2\renderer\Shader.cpp : 72 (0x196dc80)
+
+Leak of size 16 in ..\Source\TIMEngine2\renderer\BufferPool.h : 82 (0x196dec8)
+
+Leak of size 16 in ..\Source\TIMEngine2\renderer\BufferPool.h : 82 (0x196dee0)
+
+Leak of size 16 in ..\Source\TIMEngine2\renderer\BufferPool.h : 82 (0x196def8)
+
+Leak of size 16 in ..\Source\TIMEngine2\renderer\BufferPool.h : 82 (0x196df10)
+
+Leak of size 16 in ..\Source\TIMEngine2\renderer\BufferPool.h : 82 (0x196df28)
+
+Leak of size 16 in ..\Source\TIMEngine2\renderer\BufferPool.h : 82 (0x196df40)
+
+Leak of size 16 in ..\Source\TIMEngine2\renderer\BufferPool.h : 82 (0x196df58)
+
+Leak of size 16 in ..\Source\TIMEngine2\renderer\BufferPool.h : 82 (0x196df88)
+
+Leak of size 256 in ..\Source\TIMEngine2\renderer\Shader.cpp : 72 (0xfead1f8)
+
+Quit
+
