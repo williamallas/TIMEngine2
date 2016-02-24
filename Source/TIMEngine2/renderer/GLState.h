@@ -22,7 +22,7 @@ namespace renderer
     static const size_t MAX_IMAGE_UNIT=16;
     static const size_t MAX_BUFFER_ATTACHEMENT = 8;
 
-    class GLState : public Singleton<GLState>
+    class GLState : public Singleton<GLState>, boost::noncopyable
     {
         friend class Singleton<GLState>;
 
@@ -49,7 +49,7 @@ namespace renderer
         bool bindTexture(uint, GLenum, uint);
         bool bindTextureSampler(uint, uint);
 
-        void bindImageTexture(uint, uint, GLenum, GLenum);
+        void bindImageTexture(uint id, uint index, GLenum, GLenum);
 
         void unbindVertexBuffer(uint);
         void unbindPixelBufferUnpack(uint);
@@ -137,10 +137,6 @@ namespace renderer
         virtual ~GLState() = default;
 
     private:
-        #include "MemoryLoggerOff.h"
-        GLState(const GLState&) = delete;
-        GLState& operator=(const GLState&) = delete;
-        #include "MemoryLoggerOn.h"
 
         /* Hardware propertys */
         int _hardwardProperties[LAST] = {0};
@@ -248,9 +244,9 @@ namespace renderer
         return _hardwardProperties[hp];
     }
 
-    inline void GLState::bindImageTexture(uint unit, uint texid, GLenum access, GLenum format)
+    inline void GLState::bindImageTexture(uint id, uint index, GLenum access, GLenum format)
     {
-        glBindImageTexture(unit, texid, 0, GL_FALSE, 0, access, format);
+        glBindImageTexture(index, id, 0, GL_FALSE, 0, access, format);
     }
 
     inline bool GLState::bindVertexBuffer(uint id)

@@ -59,7 +59,7 @@ void main()
 	
 	if(depth == 1)
 		return;
-	
+
 	vec4 normal_frag = texture(textures[1], coord);
 	vec4 material = texture(textures[2], coord); // roughness, metal like, specular 
 	vec3 color = texture(textures[0], coord).xyz;

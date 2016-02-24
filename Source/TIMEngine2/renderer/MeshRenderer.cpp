@@ -7,12 +7,8 @@ namespace tim
 namespace renderer
 {
 
-MeshRenderer::MeshRenderer() : _maxUboMa4(openGL.hardward(GLState::Hardward::MAX_UNIFORM_BLOCK_SIZE) / (16*4))
+MeshRenderer::MeshRenderer(const FrameParameter& param) : _maxUboMa4(openGL.hardward(GLState::Hardward::MAX_UNIFORM_BLOCK_SIZE) / (16*4)), _parameter(param)
 {
-    _parameter.proj = mat4::Projection(70,1,1,100);
-    _uboParameter.create(1, &_parameter, DrawMode::STREAM);
-    _hasChanged = false;
-
 #ifdef USE_SSBO_MODELS
     int *tmp = new int[1<<25];
     for(int i=0 ; i<(1<<25) ; ++i) tmp[i] = i;
@@ -20,7 +16,7 @@ MeshRenderer::MeshRenderer() : _maxUboMa4(openGL.hardward(GLState::Hardward::MAX
     delete[] tmp;
 #else
     int tmp[_maxUboMa4];
-    for(int i=0 ; i<_maxUboMa4 ; ++i) tmp[i] = i;
+    for(uint i=0 ; i<_maxUboMa4 ; ++i) tmp[i] = static_cast<int>(i);
    _drawIdBuffer.create(_maxUboMa4, tmp, VertexFormat::VEC1, DrawMode::STATIC, true);
 #endif
    _vao = new VAO(vertexBufferPool->buffer(), _drawIdBuffer);
@@ -45,73 +41,10 @@ void MeshRenderer::setDrawState(const DrawState& s)
     _states = s;
 }
 
-void MeshRenderer::setCamera(const Camera& camera)
-{
-    _parameter.proj = mat4::Projection(camera.fov, camera.ratio, camera.clipDist.x(), camera.clipDist.y());
-    _parameter.view = mat4::View(camera.pos, camera.dir, camera.up);
-    _parameter.cameraPos = vec4(camera.pos,0);
-    _parameter.cameraDir = vec4(camera.dir,0);
-    _parameter.cameraUp = vec4(camera.up,0);
-    _hasChanged = true;
-}
-
-void MeshRenderer::setViewMatrix(const mat4& view, const vec3& camPos)
-{
-    _parameter.view = view;
-    _parameter.cameraPos = vec4(camPos,0);
-    _hasChanged = true;
-}
-
-void MeshRenderer::setWordlOrigin(const vec3& wo)
-{
-    _parameter.worldOrigin = vec4(wo,0);
-    _hasChanged = true;
-}
-
-void MeshRenderer::setProjectionMatrix(const mat4& proj)
-{
-    _parameter.proj = proj;
-    _hasChanged = true;
-}
-
-void MeshRenderer::setTime(float time, float frameTime)
-{
-    _parameter.time = {time, frameTime,0,0 };
-    _hasChanged = true;
-}
-
-void MeshRenderer::updateParameter()
-{
-    _parameter.invProj = _parameter.proj.inverted();
-    _parameter.invView = _parameter.view.inverted();
-    _parameter.projView = _parameter.proj * _parameter.view;
-    _parameter.invViewProj = _parameter.invView * _parameter.invProj;
-
-    _parameter.worldOriginInvViewProj = _parameter.view;
-    _parameter.worldOriginInvViewProj[0].w()=0;
-    _parameter.worldOriginInvViewProj[1].w()=0;
-    _parameter.worldOriginInvViewProj[2].w()=0;
-    _parameter.worldOriginInvViewProj *= mat4::Translation(-_parameter.cameraPos.to<3>()+_parameter.worldOrigin.to<3>());
-    _parameter.worldOriginInvViewProj = (_parameter.proj*_parameter.worldOriginInvViewProj).inverted();
-    _hasChanged = false;
-
-    Parameter tmp = _parameter;
-    tmp.invProj.transpose();
-    tmp.invView.transpose();
-    tmp.invViewProj.transpose();
-    tmp.projView.transpose();
-    tmp.proj.transpose();
-    tmp.view.transpose();
-    tmp.worldOriginInvViewProj.transpose();
-    _uboParameter.flush(&tmp, 0,1);
-}
-
 int MeshRenderer::draw(const vector<MeshBuffers*>& meshs, const vector<mat4>& models, const vector<Material>& materials)
 {
     if(meshs.empty() || models.size() != meshs.size() || (!materials.empty() && materials.size() < meshs.empty()))
         return 0;
-
-    if(_hasChanged) updateParameter();
 
 #ifdef USE_SSBO_MODELS
     if(_modelBuffer.size() < models.size())
@@ -123,8 +56,7 @@ int MeshRenderer::draw(const vector<MeshBuffers*>& meshs, const vector<mat4>& mo
 #endif
 
     _states.bind();
-    _vao->bind();
-    indexBufferPool->buffer().bind();
+    bind();
 
 #ifndef USE_SSBO_MODELS
     uint nbLoop = models.size() / _maxUboMa4;
@@ -148,7 +80,7 @@ int MeshRenderer::draw(const vector<MeshBuffers*>& meshs, const vector<mat4>& mo
             drawParam[j].firstIndex = meshs[_maxUboMa4*i+j]->ib()->offset();
         }
 
-        openGL.bindUniformBuffer(_uboParameter.id(), 0);
+        _parameter.bind(0);
         openGL.bindUniformBuffer(_modelBuffer.id(), 1);
 
         if(!materials.empty())

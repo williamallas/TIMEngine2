@@ -7,7 +7,7 @@ namespace tim
 namespace renderer
 {
 
-DeferredRenderer::DeferredRenderer(const uivec2& res) : AbstractRenderer(res)
+DeferredRenderer::DeferredRenderer(const uivec2& res, const FrameParameter& param) : AbstractRenderer(res, param)
 {
     FrameBuffer::setupDefferedFBO(_fbo, _buffers);
 //    for(int i=0 ; i<4 ; ++i)

@@ -36,10 +36,14 @@ namespace renderer
         uint _id=0;
         uivec2 _resolution;
         bool _isTexAttached[MAX_COLOR_ATTACHMENT];
+
+        void updateRes(const uivec2&);
     };
 
     inline void FrameBuffer::setResolution(const uivec2& v) { _resolution = v; }
     inline const uivec2& FrameBuffer::resolution() const { return _resolution; }
+
+    inline void FrameBuffer::updateRes(const uivec2& v) { if(_resolution == uivec2(0,0)) _resolution = v;  }
 
 }
 }

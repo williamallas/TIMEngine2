@@ -9,7 +9,7 @@ namespace renderer
 {
 
 
-LightContextRenderer::LightContextRenderer(const DeferredRenderer& gbuffers, bool hdr) : AbstractRenderer(gbuffers.resolution()), _deferred(gbuffers)
+LightContextRenderer::LightContextRenderer(const DeferredRenderer& gbuffers, bool hdr) : AbstractRenderer(gbuffers.resolution(), gbuffers.frameState()), _deferred(gbuffers)
 {
     Texture::GenTexParam param;
     param.size = uivec3(gbuffers.resolution(),0);
@@ -19,6 +19,7 @@ LightContextRenderer::LightContextRenderer(const DeferredRenderer& gbuffers, boo
     _buffer = Texture::genTexture2D(param);
 
     _fbo.attachTexture(0, _buffer);
+    _fbo.unbind();
 }
 
 LightContextRenderer::~LightContextRenderer()

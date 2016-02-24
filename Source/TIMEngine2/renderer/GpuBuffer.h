@@ -117,8 +117,19 @@ namespace renderer
         };
     }
 
+    template <class T, class Policy>
+    class BindableGpuBuffer : public GpuBuffer<T, Policy>
+    {
+    public:
+        BindableGpuBuffer() = default;
+        ~BindableGpuBuffer() = default;
+
+        using GpuBuffer<T, Policy>::id;
+        const BindableGpuBuffer& bind(uint index) const { openGL.bindShaderStorageBuffer(id(), index); return *this; }
+    };
+
     template <class T>
-    using ShaderStorageBuffer = GpuBuffer<T, GpuBufferPolicy::ShaderStorageBuffer >;
+    using ShaderStorageBuffer = BindableGpuBuffer<T, GpuBufferPolicy::ShaderStorageBuffer >;
 
     template <class T>
     using UniformBuffer = GpuBuffer<T, GpuBufferPolicy::UniformBuffer >;

@@ -28,7 +28,9 @@ FrameBuffer::FrameBuffer(const uivec2& v) : FrameBuffer()
 FrameBuffer::FrameBuffer(const std::vector<Texture*>& colors, Texture* depth) : FrameBuffer()
 {
     for(size_t i=0 ; i<colors.size() ; ++i)
+    {
         attachTexture(i, colors[i]);
+    }
 
     attachDepthTexture(depth);
 }
@@ -39,6 +41,7 @@ void FrameBuffer::attachTexture(uint attachment, Texture* tex, uint level, uint 
 
     if(!tex)  return;
 
+    updateRes(tex->resolution());
     openGL.bindFrameBuffer(_id);
 
     switch(tex->type())
@@ -70,6 +73,7 @@ void FrameBuffer::attachDepthTexture(Texture* tex, uint layer)
 {
     if(!tex) return;
 
+    updateRes(tex->resolution());
     openGL.bindFrameBuffer(_id);
 
     switch(tex->type())

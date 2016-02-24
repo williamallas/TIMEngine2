@@ -51,6 +51,7 @@ DirectionalLightRenderer::~DirectionalLightRenderer()
 
 void DirectionalLightRenderer::draw(const vector<Light>& lights) const
 {
+    _context.frameBuffer().bind();
     _state.bind();
 
     int nbLight = static_cast<int>(lights.size());
@@ -76,6 +77,7 @@ void DirectionalLightRenderer::draw(const vector<Light>& lights) const
         _context.deferred().buffer(i)->bind(i);
     }
 
+    _context.frameState().bind(0);
     quadMeshBuffers->draw(6, VertexMode::TRIANGLES, 1);
 }
 

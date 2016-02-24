@@ -102,6 +102,7 @@ void IndirectLightRenderer::draw() const
         openGL.bindTextureSampler(textureSampler[TextureMode::FilteredNoRepeat], 6);
     }
 
+    _context.frameState().bind(0);
     quadMeshBuffers->draw(6, VertexMode::TRIANGLES, 1);
 }
 

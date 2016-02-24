@@ -1,10 +1,9 @@
 #version 430
-#extension GL_ARB_gpu_shader_int64 : enable
 
 struct Material
 {
-	u64vec2 id_texture1;
-	u64vec2 texures23;
+	vec4 id_texture1;
+	vec4 texures23;
 	vec4 parameter;
 	vec4 color;
 };

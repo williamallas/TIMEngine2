@@ -3,3 +3,4 @@
 *.dll
 *.obj
 /Log.txt
+/err.txt

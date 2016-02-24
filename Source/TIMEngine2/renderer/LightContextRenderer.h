@@ -2,6 +2,7 @@
 #define LIGHTCONTEXTRENDERER_H_INCLUDED
 
 #include "DeferredRenderer.h"
+#include "FrameParameter.h"
 
 #include "MemoryLoggerOn.h"
 namespace tim

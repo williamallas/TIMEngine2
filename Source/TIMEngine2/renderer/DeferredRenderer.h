@@ -13,7 +13,7 @@ namespace renderer
     class DeferredRenderer : public AbstractRenderer
     {
     public:
-        DeferredRenderer(const uivec2& res);
+        DeferredRenderer(const uivec2&, const FrameParameter&);
         virtual ~DeferredRenderer();
 
         Texture* buffer(uint) const;
