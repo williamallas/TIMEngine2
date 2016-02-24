@@ -6,19 +6,23 @@
 
 layout(local_size_x=LS_X, local_size_y=LS_Y, local_size_z=1) in;
 
+layout(std140, binding = 0) uniform DrawParameter
+{
+	mat4 view, proj;
+	mat4 projView, invView, invProj, invProjView, worldOriginInvProjView;
+	vec4 cameraPos, cameraUp, cameraDir, worldOrigin;
+	vec4 time;
+}; 
 
 struct Light
 {
-	vec4 head; // (type, radius, x, x)
+	vec4 head; // (type, radius, power, x)
 	vec4 position;
-    vec4 diffuse;
-    vec4 specular;
-    vec4 attenuation;
-    vec4 spotData;
+    vec4 color;
 };
 layout(std140, binding = 0) buffer lightsBuffer { Light lights[]; };
 
-uniform coherent writeonly image2D image0;
+uniform writeonly image2D image0;
 
 uniform sampler2D texture0; // color
 uniform sampler2D texture1; // normal
@@ -26,56 +30,48 @@ uniform sampler2D texture2; // material
 uniform sampler2D texture3; // depth
 uniform sampler2D texture4; // depthTile
 
-uniform vec3 cameraWorld;
-uniform vec3 cameraDir; 
 uniform int nbLight;
 
-uniform vec3 worldOrigin;
-uniform mat4 worldOriginInvProjView;
+// #define MAX_LIGHT_TILE 200
+// shared uint lightsTile[MAX_LIGHT_TILE];
+// shared uint lightsTileSize = 0;
 
-uniform mat4 invProjView;
-uniform mat4 projView;
+// vec3 computeFragPosWorldOrigin(float depth, vec2 texCoord)
+// {
+	// vec4 position = worldOriginInvProjView * vec4((texCoord.st-vec2(0.5))*2.0, (depth-0.5)*2.0, 1);
+	// return position.xyz / position.w;
+// }
 
-#define MAX_LIGHT_TILE 200
-shared uint lightsTile[MAX_LIGHT_TILE];
-shared uint lightsTileSize = 0;
-
-vec3 computeFragPosWorldOrigin(float depth, vec2 texCoord)
-{
-	vec4 position = worldOriginInvProjView * vec4((texCoord.st-vec2(0.5))*2.0, (depth-0.5)*2.0, 1);
-	return position.xyz / position.w;
-}
-
-vec3 computeFragPos(float depth, vec2 texCoord)
-{
-	vec4 position = invProjView * vec4((texCoord.st-vec2(0.5))*2.0, (depth-0.5)*2.0, 1);
-	return position.xyz / position.w;
-}
+// vec3 computeFragPos(float depth, vec2 texCoord)
+// {
+	// vec4 position = invProjView * vec4((texCoord.st-vec2(0.5))*2.0, (depth-0.5)*2.0, 1);
+	// return position.xyz / position.w;
+// }
 
 
-vec4 computePlan(vec3 p1, vec3 p2, vec3 p3)
-{
-	vec3 n=normalize(cross(p1 - p2, p3 - p2));
-	return vec4(n, -dot(n,p2));
-}
+// vec4 computePlan(vec3 p1, vec3 p2, vec3 p3)
+// {
+	// vec3 n=normalize(cross(p1 - p2, p3 - p2));
+	// return vec4(n, -dot(n,p2));
+// }
 
-vec4 computePlan(vec3 p, vec3 n)
-{
-	n = normalize(n);
-	return vec4(n, -dot(n,p));
-}
+// vec4 computePlan(vec3 p, vec3 n)
+// {
+	// n = normalize(n);
+	// return vec4(n, -dot(n,p));
+// }
 
-vec4 plans[6]; // left right top down near far
+// vec4 plans[6]; // left right top down near far
 
-int collide(uint light)
-{
-	for(uint i=0 ; i<6 ; ++i)
-	{
-		if(dot(plans[i].xyz, lights[light].position.xyz - worldOrigin) + plans[i].w < -lights[light].head.y)
-			return 0;
-	}
-	return 1;
-}
+// int collide(uint light)
+// {
+	// for(uint i=0 ; i<6 ; ++i)
+	// {
+		// if(dot(plans[i].xyz, lights[light].position.xyz - worldOrigin) + plans[i].w < -lights[light].head.y)
+			// return 0;
+	// }
+	// return 1;
+// }
 
 float distPlan(vec4 plan, vec3 p)
 {
@@ -88,20 +84,20 @@ void main()
 	if(gl_GlobalInvocationID.x >= texSize.x || gl_GlobalInvocationID.y >= texSize.y)
 		return;*/
 	
-	vec4 color = texelFetch(texture0, ivec2(gl_GlobalInvocationID.xy),0);
+/* 	vec4 color = texelFetch(texture0, ivec2(gl_GlobalInvocationID.xy),0);
 	vec2 minMaxDepth = texelFetch(texture4, ivec2(gl_WorkGroupID.x, gl_WorkGroupID.y), 0).xy;
 	if(minMaxDepth.x == 1)
 	{
 		imageStore(image0, ivec2(gl_GlobalInvocationID.xy), color);
 		return;
-	}
+	} */
 	
 	/*******************/
 	/**BUILD TILE STEP**/
 	/*******************/
 	
 	/** Compute frutum plan **/
-	#define DEPTH_F -1
+	/* #define DEPTH_F -1
 	vec3 tl = vec3(worldOriginInvProjView*vec4(-1,1,DEPTH_F,1));
     vec3 bl = vec3(worldOriginInvProjView*vec4(-1,-1,DEPTH_F,1));
     vec3 br = vec3(worldOriginInvProjView*vec4(1,-1,DEPTH_F,1));
@@ -139,12 +135,12 @@ void main()
 			lightsTile[safe_l] = i;
 		}
 	}
-
+ */
 	/*******************/
 	/** LIGHTING STEP **/
 	/*******************/
 	
-	vec2 sCoord =  vec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y)/vec2(gl_NumWorkGroups.x*LS_X, gl_NumWorkGroups.y*LS_Y);
+	/* vec2 sCoord =  vec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y)/vec2(gl_NumWorkGroups.x*LS_X, gl_NumWorkGroups.y*LS_Y);
 	float depth = texelFetch(texture3, ivec2(gl_GlobalInvocationID.xy),0).r;
 	
 	if(depth == 1)
@@ -194,7 +190,8 @@ void main()
 	
 		lightCoef = pow(max(dot(R, vertexDir),0), shininess);
 		finalColor += ( lightCoef * color * material.z * lights[lightsTile[i]].specular * att);
-	}
+	} */
 
-	imageStore(image0, ivec2(gl_GlobalInvocationID.xy), finalColor);
+	imageStore(image0, ivec2(gl_GlobalInvocationID.xy), vec4(gl_GlobalInvocationID.x/1900.f, gl_GlobalInvocationID.y/1100.f, 0, 1));
+	
 }
