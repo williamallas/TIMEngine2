@@ -18,7 +18,7 @@ namespace renderer
         TiledLightRenderer(DeferredRenderer&, bool hdr=false);
         virtual ~TiledLightRenderer();
 
-        //void draw(const vector<LightInstance>&);
+        void draw(const vector<Light>&);
 
     private:
         const uivec2 TILE_SIZE = {32,30};
@@ -35,7 +35,7 @@ namespace renderer
         renderer::ShaderStorageBuffer<Std140LightData> _lightBuffer;
         int _nbLightUniformId = -1;
 
-
+        void createLigthBuffer(const vector<Light>&);
     };
 
 }

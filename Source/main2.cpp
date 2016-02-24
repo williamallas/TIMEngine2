@@ -29,8 +29,8 @@ SDL_Window *pWindow;
 SDL_GLContext contexteOpenGL;
 void initContextSDL();
 void delContextSDL();
-#define RES_X 1600.f
-#define RES_Y 900.f
+#define RES_X 1920.f
+#define RES_Y 1080.f
 
 
 template <int I, int N=50>
@@ -111,7 +111,8 @@ int main(int, char**)
     DrawState drawState;
     drawState.setShader(shader);
 
-    MeshRenderer meshRenderer;
+    FrameParameter frameState;
+    MeshRenderer meshRenderer(frameState);
     meshRenderer.setDrawState(drawState);
     meshRenderer.bind();
 
@@ -128,6 +129,11 @@ int main(int, char**)
         materials[i*10+j].parameter = vec4(i*0.11,j*0.11,0.3,1);
     }
 
+    vector<LightContextRenderer::Light> lights(1);
+    lights[0].position = {2,0,0};
+    lights[0].radius = 5;
+    lights[0].power = 2;
+
 //    {
 //        float* dat = IndirectLightRenderer::computeBrdf(256);
 //        std::ofstream outDat("shader/brdf_256.dat", std::ofstream::binary);
@@ -135,9 +141,9 @@ int main(int, char**)
 //        delete[] dat;
 //    }
 
-    DeferredRenderer deferred({uint(RES_X),uint(RES_Y)});
+    DeferredRenderer deferred({uint(RES_X),uint(RES_Y)}, frameState);
     LightContextRenderer lightContext(deferred, true);
-    TiledLightRenderer lightRenderer(deferred, true);
+    TiledLightRenderer lightRenderer(deferred, false);
     DirectionalLightRenderer dirLightRenderer(lightContext);
     IndirectLightRenderer indirectLight(lightContext);
 
@@ -196,29 +202,30 @@ int main(int, char**)
         input.getEvent();
 
         freeFly.update(timeElapsed, camera);
-        meshRenderer.setCamera(camera);
-        meshRenderer.setTime(totalTime, timeElapsed);
+        frameState.setCamera(camera);
+        frameState.setTime(totalTime, timeElapsed);
 
         deferred.frameBuffer().bind();
 
         openGL.clearDepth();
-        openGL.clearColor({0,0,0,1});
+        openGL.clearColor(vec4(0));
         meshRenderer.draw(drawList,models,materials);
 
         lightContext.frameBuffer().bind();
         openGL.clearColor({0,0,0,1});
 
-        vector<DirectionalLightRenderer::Light> dirLight(2);
+        vector<DirectionalLightRenderer::Light> dirLight(1);
         dirLight[0].color = vec3::construct(1);
         dirLight[0].direction = mat4::RotationZ(totalTime)*vec3(0.5,0.5,-1);
 
-        dirLight[1].color = vec3::construct(0.5);
-        dirLight[1].direction = vec3(0.1,0.1,-1);
-
+        //meshRenderer.bind();
         dirLightRenderer.draw(dirLight);
         indirectLight.draw();
 
+        lightRenderer.draw(lights);
+
         openGL.bindFrameBuffer(0);
+
         stateDrawQuad.bind();
         openGL.bindTextureSampler(textureSampler[TextureMode::NoFilter], 0);
         if(input.keyState(SDLK_1).pressed)
@@ -227,12 +234,14 @@ int main(int, char**)
             deferred.buffer(1)->bind(0);
         else if(input.keyState(SDLK_3).pressed)
             deferred.buffer(2)->bind(0);
+        else if(input.keyState(SDLK_4).pressed)
+            lightRenderer.buffer()->bind(0);
        else
             lightContext.buffer()->bind(0);
 
         quadMeshBuffers->draw(6, VertexMode::TRIANGLES, 1);
 
-        glFinish();
+        openGL.finish();
         SDL_GL_SwapWindow(pWindow);
         GL_ASSERT();
 
@@ -282,7 +291,7 @@ void initContextSDL()
     pWindow = SDL_CreateWindow("SDL2",SDL_WINDOWPOS_UNDEFINED,
                                       SDL_WINDOWPOS_UNDEFINED,
                                       x,y,
-                                      SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL  /*| SDL_WINDOW_FULLSCREEN*/);
+                                      SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL  | SDL_WINDOW_FULLSCREEN);
     contexteOpenGL = SDL_GL_CreateContext(pWindow);
 
     //SDL_ShowCursor(SDL_DISABLE);

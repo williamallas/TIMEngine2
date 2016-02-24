@@ -29,14 +29,47 @@ TiledLightRenderer::TiledLightRenderer(DeferredRenderer& deferred, bool hdr) : L
     else
         _computeShader = optShader.value();
 
-//    _shader = shader;
-//    _shader->bind();
-//    _nbLightUniformId = _shader->uniformLocation("nbLight");
+    _computeShader->bind();
+    _nbLightUniformId = _computeShader->uniformLocation("nbLight");
 }
 
 TiledLightRenderer::~TiledLightRenderer()
 {
     delete _computeShader;
+}
+
+void TiledLightRenderer::draw(const vector<Light>& lights)
+{
+    createLigthBuffer(lights);
+    _lightBuffer.bind(0);
+
+    _computeShader->bind();
+    _computeShader->setUniform(static_cast<int>(lights.size()), _nbLightUniformId);
+
+    openGL.bindImageTexture(_buffer->id(), 0, GL_WRITE_ONLY, Texture::toGLFormat(_buffer->format()));
+    glDispatchCompute(_tileCount.x(),_tileCount.y(),1);
+
+    glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+}
+
+void TiledLightRenderer::createLigthBuffer(const vector<Light>& lights)
+{
+    if(lights.empty())
+        return;
+
+    if(lights.size() > _lightBuffer.size())
+        _lightBuffer.create(lights.size(), nullptr, DYNAMIC);
+
+
+    vector<Std140LightData> data(lights.size());
+    for(uint i=0 ; i<lights.size() ; ++i)
+    {
+        data[i].head = vec4(static_cast<float>(lights[i].type), lights[i].radius, lights[i].power, 0);
+        data[i].position = vec4(lights[i].position);
+        data[i].color = lights[i].color;
+    }
+
+     _lightBuffer.flush(&data[0], 0, lights.size());
 }
 
 //void TiledLightRenderer::draw(const vector<LightInstance>& lights)
