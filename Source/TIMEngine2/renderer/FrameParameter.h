@@ -72,7 +72,7 @@ namespace renderer
             _parameter.invProj = _parameter.proj.inverted();
             _parameter.invView = _parameter.view.inverted();
             _parameter.projView = _parameter.proj * _parameter.view;
-            _parameter.invViewProj = _parameter.invView * _parameter.invProj;
+            _parameter.invViewProj = _parameter.projView.inverted();//_parameter.invView * _parameter.invProj;
 
             _parameter.worldOriginInvViewProj = _parameter.view;
             _parameter.worldOriginInvViewProj[0].w()=0;

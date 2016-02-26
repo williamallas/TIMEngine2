@@ -32,7 +32,6 @@ void delContextSDL();
 #define RES_X 1920.f
 #define RES_Y 1080.f
 
-
 template <int I, int N=50>
 float countTime(float time)
 {
@@ -130,9 +129,10 @@ int main(int, char**)
     }
 
     vector<LightContextRenderer::Light> lights(1);
-    lights[0].position = {2,0,0};
-    lights[0].radius = 5;
+    lights[0].position = {15,15,2};
+    lights[0].radius = 40;
     lights[0].power = 2;
+    lights[0].color = vec4(0.5,1,1,1);
 
 //    {
 //        float* dat = IndirectLightRenderer::computeBrdf(256);
@@ -142,10 +142,10 @@ int main(int, char**)
 //    }
 
     DeferredRenderer deferred({uint(RES_X),uint(RES_Y)}, frameState);
-    LightContextRenderer lightContext(deferred, true);
+    //LightContextRenderer lightContext(deferred, true);
     TiledLightRenderer lightRenderer(deferred, false);
-    DirectionalLightRenderer dirLightRenderer(lightContext);
-    IndirectLightRenderer indirectLight(lightContext);
+    DirectionalLightRenderer dirLightRenderer(lightRenderer);
+    IndirectLightRenderer indirectLight(lightRenderer);
 
     TextureLoader::ImageFormat formatTex;
     vector<Texture*> skyboxes(4);
@@ -204,6 +204,7 @@ int main(int, char**)
         freeFly.update(timeElapsed, camera);
         frameState.setCamera(camera);
         frameState.setTime(totalTime, timeElapsed);
+        lights[0].position = camera.pos;
 
         deferred.frameBuffer().bind();
 
@@ -211,18 +212,14 @@ int main(int, char**)
         openGL.clearColor(vec4(0));
         meshRenderer.draw(drawList,models,materials);
 
-        lightContext.frameBuffer().bind();
-        openGL.clearColor({0,0,0,1});
+        lightRenderer.draw(lights);
 
         vector<DirectionalLightRenderer::Light> dirLight(1);
         dirLight[0].color = vec3::construct(1);
         dirLight[0].direction = mat4::RotationZ(totalTime)*vec3(0.5,0.5,-1);
 
-        //meshRenderer.bind();
         dirLightRenderer.draw(dirLight);
         indirectLight.draw();
-
-        lightRenderer.draw(lights);
 
         openGL.bindFrameBuffer(0);
 
@@ -234,10 +231,8 @@ int main(int, char**)
             deferred.buffer(1)->bind(0);
         else if(input.keyState(SDLK_3).pressed)
             deferred.buffer(2)->bind(0);
-        else if(input.keyState(SDLK_4).pressed)
-            lightRenderer.buffer()->bind(0);
        else
-            lightContext.buffer()->bind(0);
+            lightRenderer.buffer()->bind(0);
 
         quadMeshBuffers->draw(6, VertexMode::TRIANGLES, 1);
 

@@ -67,21 +67,25 @@ void main()
 	vec3 frag_pos = computeFragPos(depth, coord);
 	
 	vec3 V = normalize(vec3(cameraPos) - frag_pos);
-	float dotNV = max(dot(normal, V),0.0001);
+	float dotNV = clamp(dot(normal, V), 0.001, 0.999);
 	
 	float metalic = material.y;
-	float roughness = material.x + 0.02;
+	float roughness = material.x;
 	
 	for(int i=0 ; i<nbLights ; ++i)
 	{
 		vec3 L = -normalize(lightDirection[i].xyz);
 		vec3 H = normalize(L + V);
 		
-		float dotNL = max(dot(normal, L),0);
-		float dotNH = max(dot(normal, H),0);
-		float dotVH = max(dot(V,H), 0);
+		float dotNL = dot(normal, L);
+		float dotNH = dot(normal, H);
+		float dotVH = dot(V,H);
 		
 		if(dotNL <= 0 || dotNV <= 0) continue;
+		
+		dotNL = clamp(dotNL, 0.001,0.999);
+		dotNH = clamp(dotNH, 0.001,0.999);
+		dotVH = clamp(dotVH, 0.001,0.999);
 		
 		float G_CT = G_smith(dotNV, dotNL, roughness);
 		float F_CT = F_shlick(mix(0.04, 0.9, metalic), dotVH);

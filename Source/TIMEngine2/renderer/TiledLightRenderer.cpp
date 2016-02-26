@@ -1,5 +1,6 @@
 #include "TiledLightRenderer.h"
 #include "ShaderCompiler.h"
+#include "renderer.h"
 
 #include "MemoryLoggerOn.h"
 namespace tim
@@ -47,6 +48,14 @@ void TiledLightRenderer::draw(const vector<Light>& lights)
     _computeShader->setUniform(static_cast<int>(lights.size()), _nbLightUniformId);
 
     openGL.bindImageTexture(_buffer->id(), 0, GL_WRITE_ONLY, Texture::toGLFormat(_buffer->format()));
+
+    for(int i=0 ; i<4 ; ++i)
+    {
+        openGL.bindTextureSampler(textureSampler[TextureMode::NoFilter], i);
+        _deferred.buffer(i)->bind(i);
+    }
+
+    _frameState.bind(0);
     glDispatchCompute(_tileCount.x(),_tileCount.y(),1);
 
     glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);

@@ -30,7 +30,7 @@ vec3 computeFragPos(float depth, vec2 texCoord)
 vec3 approximateSpecular(vec3 specColor, float roughness, vec3 r, float dotNV)
 {
 	const float rough[NB_MIPMAP] = {0, 0.05, 0.13, 0.25, 0.45, 0.66, 1};
-	int index=0;
+	int index=NB_MIPMAP-2;
 	for(int i=0 ; i<NB_MIPMAP-1 ; ++i)
 	{
 		if(rough[i] >= roughness)
@@ -49,7 +49,6 @@ vec3 approximateSpecular(vec3 specColor, float roughness, vec3 r, float dotNV)
 
 void main()
 {  
-	
 	outColor = vec4(0,0,0,0);
 	
 	float depth = texture(textures[3], coord).r;
@@ -75,7 +74,7 @@ void main()
 		vec4 diffuseTerm = color * (1-material.y) * textureLod(texture5, normal,NB_MIPMAP-1);
 		
 		vec3 specularColor = mix(vec3(material.z), vec3(color), metallic);
-		vec3 specTerm = approximateSpecular(specularColor ,roughness, reflect(viewDir, normal), dot(normal, -viewDir));
+		vec3 specTerm = approximateSpecular(specularColor ,roughness, reflect(viewDir, normal), max(dot(normal, -viewDir), 0.01));
 		
 		outColor.rgb = specTerm + vec3(diffuseTerm);
 	}
