@@ -27,6 +27,9 @@ namespace renderer
        Shader* globalIndirectPassShader() const { return _fullScreenPass; }
        void setSkybox(Texture*, Texture*);
 
+       void setEnableGI(bool b) { _enableGI = b; }
+       void setGlobalAmbient(const vec4& col) { _globalAmbient = col; }
+
    private:
        static const uint NB_MIPMAP = 7;
        static const uint MAX_RESOLUTION = 512;
@@ -34,6 +37,12 @@ namespace renderer
        LightContextRenderer& _context;
 
        Shader* _fullScreenPass = nullptr;
+       int _uniformEnableGI = -1;
+       int _uniformGlobalAmbient = -1;
+
+       bool _enableGI = true;
+       vec4 _globalAmbient; // if enableGI = false
+
        DrawState _stateFullScreenPass;
 
        Shader* _processCubeMap = nullptr;

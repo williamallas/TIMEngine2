@@ -29,7 +29,12 @@ IndirectLightRenderer::IndirectLightRenderer(LightContextRenderer& context) : _c
             LOG("Link erorr:", Shader::lastLinkError());
         }
         else
+        {
             _fullScreenPass = optShader.value();
+            _fullScreenPass->bind();
+            _uniformEnableGI = _fullScreenPass->uniformLocation("enableGI");
+            _uniformGlobalAmbient = _fullScreenPass->uniformLocation("globalAmbient");
+        }
     }
 
     if(!_processCubeMap)
@@ -101,6 +106,9 @@ void IndirectLightRenderer::draw() const
         _processedBrdf->bind(6);
         openGL.bindTextureSampler(textureSampler[TextureMode::FilteredNoRepeat], 6);
     }
+
+    _fullScreenPass->setUniform((_enableGI && _processedSkybox)?1:0, _uniformEnableGI);
+    _fullScreenPass->setUniform(_globalAmbient, _uniformGlobalAmbient);
 
     _context.frameState().bind(0);
     quadMeshBuffers->draw(6, VertexMode::TRIANGLES, 1);

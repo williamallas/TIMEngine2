@@ -15,7 +15,7 @@ namespace core
     public:
         ThreadPool() { _pool = new boost::threadpool::pool(boost::thread::hardware_concurrency()); }
         ThreadPool(size_t poolSize) { _pool = new boost::threadpool::pool(poolSize); }
-        virtual ~ThreadPool() { delete _pool; }
+        ~ThreadPool() { delete _pool; }
 
         template <class T>
         ThreadPool& schedule(const T& task)

@@ -45,11 +45,11 @@ QMAKE_CXXFLAGS_RELEASE += -flto
 QMAKE_LFLAGS += -O3
 QMAKE_LFLAGS += -flto
 
-DEFINES += GLEW_STATIC GLEW_NO_GLU TIXML_USE_STL
+DEFINES += GLEW_STATIC GLEW_NO_GLU TIXML_USE_STL USE_SDL
 debug: DEFINES += TIM_DEBUG
 
 # Input
-HEADERS += TIM_SDL/*.h TIMEngine2/core/*.h TIMEngine2/renderer/*.h TIMEngine2/resource/*.h \
+HEADERS += TIM_SDL/*.h TIMEngine2/core/*.h TIMEngine2/renderer/*.h TIMEngine2/resource/*.h TIMEngine2/interface/*.h TIMEngine2/interface/pipeline/*.h TIMEngine2/scene/*.h \
     DebugCamera.h \
 
 SOURCES += main2.cpp \
@@ -73,12 +73,21 @@ SOURCES += main2.cpp \
     TIMEngine2/renderer/DirectionalLightRenderer.cpp \
     TIMEngine2/renderer/IndirectLightRenderer.cpp \
     TIMEngine2/renderer/TiledLightRenderer.cpp \
+    TIMEngine2/renderer/PostReflexionRenderer.cpp \
     TIMEngine2/core/Box.cpp \
     TIMEngine2/core/core.cpp \
     TIMEngine2/core/MemoryLogger.cpp \
     TIMEngine2/core/OrientedBox.cpp \
     TIMEngine2/core/Rand.cpp \
     TIMEngine2/core/Sphere.cpp \
+    TIMEngine2/core/Frustum.cpp \
     TIMEngine2/resource/MeshLoader.cpp \
     TIMEngine2/resource/TextureLoader.cpp \
     TIMEngine2/resource/Image.cpp \
+    TIMEngine2/interface/Mesh.cpp \
+    TIMEngine2/interface/MeshInstance.cpp \
+    TIMEngine2/interface/Pipeline.cpp \
+    TIMEngine2/interface/pipeline/DeferredRendererNode.cpp \
+    TIMEngine2/interface/pipeline/OnScreenRenderer.cpp \
+    TIMEngine2/interface/pipeline/BloomNode.cpp \
+    TIMEngine2/interface/pipeline/DirLightShadowNode.cpp \

@@ -18,7 +18,7 @@ namespace core
         Option() { _hasValue=false; }
         Option(const T& value) { _val=value; _hasValue = true; }
         Option(const Option& option) { *this = option; }
-        virtual ~Option()
+        ~Option()
         {
             if(_hasValue)
                 _val.~T();

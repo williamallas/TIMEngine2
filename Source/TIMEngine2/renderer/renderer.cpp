@@ -15,6 +15,14 @@ namespace renderer
 
 uint textureSampler[static_cast<uint>(TextureMode::Last)];
 
+__stdcall void debugOut(GLenum , GLenum , GLuint , GLenum severity , GLsizei , const GLchar* msg, GLvoid*)
+{
+    if(severity == GL_DEBUG_SEVERITY_HIGH)
+    {
+        LOG("OpenGL debug: ", msg);
+    }
+}
+
 bool init()
 {
     GLenum glewerr;
@@ -27,6 +35,9 @@ bool init()
 
     std::cout << "Initializing on "<<glGetString(GL_VENDOR)<<" "<<glGetString(GL_RENDERER)<<" using OpenGL "<<glGetString(GL_VERSION)<<"\n";
     LOG("Initializing on ",glGetString(GL_VENDOR)," ",glGetString(GL_RENDERER)," using OpenGL ",glGetString(GL_VERSION),"\n");
+
+    glEnable(GL_DEBUG_OUTPUT);
+    glDebugMessageCallback( debugOut, NULL );
 
     glClearDepth(1);
     openGL.clearDepth();
@@ -43,7 +54,7 @@ bool init()
     textureSampler[TextureMode::NoFilter] = Texture::genTextureSampler(false,false,false,false);
     textureSampler[TextureMode::Filtered] = Texture::genTextureSampler(true,true,true,false);
     textureSampler[TextureMode::FilteredNoRepeat] = Texture::genTextureSampler(false,true,true,false);
-    textureSampler[TextureMode::DepthMap] = Texture::genTextureSampler(true,true,true,false);
+    textureSampler[TextureMode::DepthMap] = Texture::genTextureSampler(false,true,false,true);
 
     ShaderCompiler vDrawQuad(ShaderCompiler::VERTEX_SHADER);
     vDrawQuad.setSource(drawQuad_vertex);
@@ -59,6 +70,18 @@ bool init()
     }
     else
         drawQuadShader = optShader.value();
+
+    ShaderCompiler vDepthPass(ShaderCompiler::VERTEX_SHADER);
+    vDepthPass.setSource(depthPass_vertex);
+    LOG("No gs for DepthPass shader, expect a warning");
+    optShader = Shader::linkVertexShader(vDepthPass.compile({}));
+    if(!optShader.hasValue())
+    {
+        LOG_EXT("DepthPass Vertex shader error:\n", vDepthPass.error());
+        LOG_EXT("DepthPass Link erorr:", Shader::lastLinkError());
+    }
+    else
+        depthPassShader = optShader.value();
 
     VNCT_Vertex vData[4] = {{vec3(-1,-1,0),vec3(),vec2(0,0),vec3()},
                             {vec3(-1, 1,0),vec3(),vec2(0,1),vec3()},
@@ -121,6 +144,25 @@ const char* drawQuad_pixel =
 
 Shader* drawQuadShader = nullptr;
 MeshBuffers* quadMeshBuffers = nullptr;
+
+const char* depthPass_vertex = R"(
+    #version 430
+
+    in vec3 vertex;
+    in int drawId;
+
+    uniform mat4 projView;
+
+    layout(std140, binding = 1) uniform ModelMatrix
+    {
+        mat4 models[MAX_UBO_VEC4 / 4];
+    };
+
+    void main() {
+        gl_Position = projView * models[drawId] * vec4(vertex,1);
+    })";
+
+Shader* depthPassShader = nullptr;
 
 }
 }

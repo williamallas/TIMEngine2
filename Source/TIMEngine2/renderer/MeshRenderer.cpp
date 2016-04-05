@@ -7,7 +7,7 @@ namespace tim
 namespace renderer
 {
 
-MeshRenderer::MeshRenderer(const FrameParameter& param) : _maxUboMa4(openGL.hardward(GLState::Hardward::MAX_UNIFORM_BLOCK_SIZE) / (16*4)), _parameter(param)
+MeshRenderer::MeshRenderer() : _maxUboMa4(openGL.hardward(GLState::Hardward::MAX_UNIFORM_BLOCK_SIZE) / (16*4))
 {
 #ifdef USE_SSBO_MODELS
     int *tmp = new int[1<<25];
@@ -41,7 +41,8 @@ void MeshRenderer::setDrawState(const DrawState& s)
     _states = s;
 }
 
-int MeshRenderer::draw(const vector<MeshBuffers*>& meshs, const vector<mat4>& models, const vector<Material>& materials)
+int MeshRenderer::draw(const vector<MeshBuffers*>& meshs, const vector<mat4>& models,
+                       const vector<Material>& materials, bool useCameraUbo)
 {
     if(meshs.empty() || models.size() != meshs.size() || (!materials.empty() && materials.size() < meshs.empty()))
         return 0;
@@ -69,7 +70,9 @@ int MeshRenderer::draw(const vector<MeshBuffers*>& meshs, const vector<mat4>& mo
         _modelBuffer.flush(&models[_maxUboMa4*i], 0, innerLoop);
 
         if(!materials.empty())
+        {
             _materialBuffer.flush(&materials[_maxUboMa4*i], 0, innerLoop);
+        }
 
         for(uint j=0 ; j<innerLoop ; ++j)
         {
@@ -80,7 +83,9 @@ int MeshRenderer::draw(const vector<MeshBuffers*>& meshs, const vector<mat4>& mo
             drawParam[j].firstIndex = meshs[_maxUboMa4*i+j]->ib()->offset();
         }
 
-        _parameter.bind(0);
+        if(useCameraUbo)
+            _parameter.bind(0);
+
         openGL.bindUniformBuffer(_modelBuffer.id(), 1);
 
         if(!materials.empty())

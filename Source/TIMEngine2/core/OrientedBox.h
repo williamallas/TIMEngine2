@@ -22,7 +22,7 @@ namespace core
 
             OrientedBox();
             OrientedBox(const Box&, const mat4&);
-            virtual ~OrientedBox();
+            ~OrientedBox();
 
             const Box& box() const;
             const mat4& matrix() const;

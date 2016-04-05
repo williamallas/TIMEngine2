@@ -16,10 +16,11 @@ namespace renderer
     {
     public:
         static Option<Shader*> combine(const Option<uint>&, const Option<uint>&, const Option<uint>& gs=Option<uint>());
+        static Option<Shader*> linkVertexShader(const Option<uint>&);
         static Option<Shader*> linkComputeShader(const Option<uint>&);
         static const std::string& lastLinkError();
 
-        virtual ~Shader();
+        ~Shader();
         uint id() const;
 
         enum EngineUniform
@@ -33,7 +34,7 @@ namespace renderer
         int engineUniformId(EngineUniform) const;
         int engineTextureScaleId(size_t) const;
 
-        void bind();
+        void bind() const;
 
         int uniformLocation(const std::string&) const;
         void setUniform(const mat4&, int) const;
@@ -69,7 +70,7 @@ namespace renderer
 
     /* inline implementation */
     inline uint Shader::id() const { return _id; }
-    inline void Shader::bind() { openGL.bindShader(_id); }
+    inline void Shader::bind() const { openGL.bindShader(_id); }
     inline int Shader::engineUniformId(EngineUniform id) const { return _engineUniform[id]; }
 
     inline void Shader::setUniform(const mat4& x, int id) const { if(id>=0) glUniformMatrix4fv(id, 1, GL_TRUE, x.data()); }

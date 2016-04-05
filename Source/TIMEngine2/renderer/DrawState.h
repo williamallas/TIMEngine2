@@ -148,9 +148,18 @@ namespace renderer
             else return _shader < state._shader;
         }
 
+        bool operator==(const DrawState& state) const
+        {
+            return _states==state._states && _shader == state._shader;
+        }
+
+        bool operator!=(const DrawState& state) const { return !(*this==state); }
+
         void bind() const
         {
-            _shader->bind();
+            if(_shader != nullptr)
+                _shader->bind();
+
             openGL.depthTest(depthTest());
             openGL.depthMask(writeDepth());
             openGL.depthFunc(toGLComparFunc(depthFunc()));

@@ -20,7 +20,20 @@ namespace core
     typedef unsigned int uint; // 4 byte (unsigned)
     typedef float real; // 4 byte ( IEEE 754 )
 
-    template<class T> using vector = boost::container::vector<T>;
+    template<class T> using vector = std::vector<T>;
+
+    template <class VectorType>
+    struct VectorInserter
+    {
+    public:
+        VectorInserter(VectorType& v) : _vec(v) {}
+
+        template <class E>
+        void operator()(E& e) { _vec.push_back(e); }
+
+    private:
+        VectorType& _vec;
+    };
 }
 }
 

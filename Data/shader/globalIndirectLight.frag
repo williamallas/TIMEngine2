@@ -4,12 +4,21 @@
 precision highp float;
 const float PI = 3.14159265359;
 
-uniform sampler2D textures[4];
+//uniform sampler2D textures[7];
+uniform sampler2D texture0;
+uniform sampler2D texture1;
+uniform sampler2D texture2;
+uniform sampler2D texture3;
+
 uniform samplerCube texture4; // skybox
 uniform samplerCube texture5; // blurred skybox
 uniform sampler2D texture6; // brdf
 
+uniform int enableGI;
+uniform vec4 globalAmbient;
+
 in vec2 coord;
+
  
 layout(location=0) out vec4 outColor; 
 
@@ -51,10 +60,10 @@ void main()
 {  
 	outColor = vec4(0,0,0,0);
 	
-	float depth = texture(textures[3], coord).r;
-	vec4 normal_frag = texture(textures[1], coord);
-	vec4 material = texture(textures[2], coord); // roughness, metal like, specular 
-	vec4 color = texture(textures[0], coord);
+	float depth = texture(texture3, coord).r;
+	vec4 normal_frag = texture(texture1, coord);
+	vec4 material = texture(texture2, coord); // roughness, metal like, specular 
+	vec4 color = texture(texture0, coord);
 	vec3 normal = normalize(normal_frag.xyz*2-1);
 	vec3 frag_pos = computeFragPos(depth, coord);
 	
@@ -69,12 +78,22 @@ void main()
 		//outColor = textureLod(texture5, viewDir, NB_MIPMAP-2);
 		outColor.a=0;
 	}
-	else
-	{
+	else if(enableGI == 1)
+	{	
 		vec4 diffuseTerm = color * (1-material.y) * textureLod(texture5, normal,NB_MIPMAP-1);
 		
 		vec3 specularColor = mix(vec3(material.z), vec3(color), metallic);
 		vec3 specTerm = approximateSpecular(specularColor ,roughness, reflect(viewDir, normal), max(dot(normal, -viewDir), 0.01));
+		
+		outColor.rgb = specTerm + vec3(diffuseTerm);
+	}
+	else
+	{
+		vec4 diffuseTerm = color * (1-material.y) * globalAmbient;
+		vec2 a_b = texture(texture6, vec2(max(dot(normal, -viewDir), 0.01), roughness)).xy;
+		
+		vec3 specularColor = mix(vec3(material.z), vec3(color), metallic);
+		vec3 specTerm = globalAmbient.rgb * (specularColor*a_b.x + vec3(a_b.y));
 		
 		outColor.rgb = specTerm + vec3(diffuseTerm);
 	}

@@ -16,7 +16,7 @@ namespace renderer
     {
     public:
         TiledLightRenderer(DeferredRenderer&, bool hdr=false);
-        virtual ~TiledLightRenderer();
+        ~TiledLightRenderer();
 
         void draw(const vector<Light>&);
 

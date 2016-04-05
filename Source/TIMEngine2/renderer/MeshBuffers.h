@@ -3,6 +3,7 @@
 
 #include "renderer.h"
 #include "VAO.h"
+#include "Sphere.h"
 
 #include "MemoryLoggerOn.h"
 namespace tim
@@ -13,7 +14,7 @@ namespace renderer
     class MeshBuffers : boost::noncopyable
     {
     public:
-        MeshBuffers(VBuffer* vb, IBuffer* ib) : _vb(vb), _ib(ib) {}
+        MeshBuffers(VBuffer* vb, IBuffer* ib, const Sphere& s = Sphere()) : _vb(vb), _ib(ib), _volume(s) {}
 
         ~MeshBuffers()
         {
@@ -38,9 +39,14 @@ namespace renderer
         VBuffer* vb() const { return _vb; }
         IBuffer* ib() const { return _ib; }
 
+        const Sphere& volume() const { return _volume; }
+        void setVolume(const Sphere& s) { _volume = s; }
+
     private:
         VBuffer* _vb;
         IBuffer* _ib;
+
+        Sphere _volume;
     };
 }
 }

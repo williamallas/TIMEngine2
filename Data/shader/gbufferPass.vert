@@ -21,12 +21,18 @@ layout(std140, binding = 1) uniform ModelMatrix
 	mat4 models[MAX_UBO_VEC4 / 4];
 };
 
+smooth out vec2 tCoord;
 flat out int v_drawId;
 smooth out vec3 v_normal;
+smooth out vec3 v_tangent;
   
 void main()  
 {  
+	tCoord = texCoord;
 	v_drawId = drawId;
 	gl_Position = projView * models[drawId] * vec4(vertex,1);
-	v_normal = mat3(models[drawId])*normal;
+	
+	mat3 nMat = mat3(models[drawId]);
+	v_normal = nMat*normal;
+	v_tangent = nMat*tangent;
 }

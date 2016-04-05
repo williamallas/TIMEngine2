@@ -76,7 +76,7 @@ void MemoryLogger::dealloc(void* ptr, bool isArray) throw(BadDealloc)
     }
     else if(ptr != this)
     {
-        /** Critical zone, never do another things that free(ptr) */
+        /** Critical zone, never do another things than free(ptr) */
         free(ptr);
     }
 }

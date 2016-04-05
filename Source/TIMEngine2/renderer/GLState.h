@@ -8,6 +8,8 @@
 #include "core/core.h"
 #include "core/Singleton.h"
 
+#include "DeviceFunctionnality.h"
+
 #define BUFFER_OFFSET(a) ((char*)NULL + (a))
 
 #define GL_ASSERT() tim::renderer::GLState::assertGLError(__FILE__,__LINE__)
@@ -27,6 +29,8 @@ namespace renderer
         friend class Singleton<GLState>;
 
     public:
+        ThreadID getContextId() const;
+
         void resetStates();
         void applyAll();
 
@@ -134,9 +138,10 @@ namespace renderer
 
     protected:
         GLState();
-        virtual ~GLState() = default;
+        ~GLState() = default;
 
     private:
+        ThreadID _contextId;
 
         /* Hardware propertys */
         int _hardwardProperties[LAST] = {0};
@@ -193,6 +198,11 @@ namespace renderer
     };
 
     extern GLState& openGL;
+
+    inline ThreadID GLState::getContextId() const
+    {
+        return _contextId;
+    }
 
     inline void GLState::pushGLTask(const std::function<void()> & f)
     {

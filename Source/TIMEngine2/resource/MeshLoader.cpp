@@ -1,5 +1,6 @@
 #include "MeshLoader.h"
 #include "core/core.h"
+#include "Sphere.h"
 
 #include "MemoryLoggerOn.h"
 namespace tim
@@ -54,7 +55,8 @@ renderer::MeshBuffers* MeshLoader::createMeshBuffers(LoadedMeshData& data, rende
         renderer::IBuffer* ib = ipool->alloc(data.nbIndex);
         vb->flush(reinterpret_cast<float*>(data.vData), 0, data.nbVertex);
         ib->flush(data.indexData, 0, data.nbIndex);
-        return new renderer::MeshBuffers(vb, ib);
+        return new renderer::MeshBuffers(vb, ib, Sphere::computeSphere(reinterpret_cast<real*>(data.vData), data.nbVertex,
+                                                                       sizeof(renderer::VNC_Vertex)/sizeof(float)));
     }
     else return nullptr;
 

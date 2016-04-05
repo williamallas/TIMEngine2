@@ -21,7 +21,7 @@ namespace core
         Box(const Vector<vec2, 3>&);
         Box(const vec3&, const vec3&);
         Box(const Box&);
-        virtual ~Box();
+        ~Box();
 
         /* Getter and Setter */
         const Vector<vec2, 3>& box() const;

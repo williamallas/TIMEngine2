@@ -11,6 +11,7 @@ namespace renderer
 
     GLState::GLState()
     {
+        _contextId = getThreadId();
         resetStates();
     }
 

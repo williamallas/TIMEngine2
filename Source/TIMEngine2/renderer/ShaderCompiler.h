@@ -25,7 +25,7 @@ namespace renderer
         static GLenum GLShaderType(ShaderType);
 
         ShaderCompiler(ShaderType);
-        virtual ~ShaderCompiler();
+        ~ShaderCompiler();
 
         ShaderType type() const;
 

@@ -6,6 +6,7 @@
 #include "IndexBuffer.h"
 #include "GenericVertexBuffer.h"
 #include "Shader.h"
+#include "Camera.h"
 
 namespace tim
 {
@@ -24,6 +25,8 @@ namespace renderer
     using VBuffer = VertexBufferPoolType::Instance;
     using IBuffer = IndexBufferPoolType::Instance;
 
+    using VertexType = VNCT_Vertex;
+
     struct TextureMode { enum : int { NoFilter=0, Filtered, FilteredNoRepeat, DepthMap, Last }; };
     extern uint textureSampler[TextureMode::Last];
 
@@ -38,16 +41,21 @@ namespace renderer
 
     struct Material
     {
-        uint64_t id;
+        uivec2 header;
         uint64_t texures[3];
         vec4 parameter;
         vec4 color;
     };
     static_assert(sizeof(Material) <= sizeof(mat4), "Material struct is too big.");
 
+    static const uint MAX_SHADOW_MAP_LVL = DirLightView::MAX_LVL_DIRLIGHT;
+
     extern const char* drawQuad_vertex;
     extern const char* drawQuad_pixel;
     extern Shader* drawQuadShader;
+
+    extern const char* depthPass_vertex;
+    extern Shader* depthPassShader;
 
     class MeshBuffers;
     extern MeshBuffers* quadMeshBuffers;

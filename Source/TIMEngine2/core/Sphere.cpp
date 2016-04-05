@@ -62,5 +62,30 @@ std::string Sphere::str() const
     return str;
 }
 
+Sphere Sphere::computeSphere(const real* ptr, uint size, uint stride)
+{
+    vec3 minV = vec3::construct(std::numeric_limits<float>::max()), maxV = vec3::construct(std::numeric_limits<float>::min());
+
+    for(uint i=0 ; i<size ; ++i)
+    {
+        for(int j=0 ; j<3 ; ++j)
+        {
+            minV[j] = std::min(minV[j], ptr[j+i*stride]);
+            maxV[j] = std::max(maxV[j], ptr[j+i*stride]);
+        }
+    }
+
+    vec3 center = (minV+maxV) / 2;
+
+    float minD = 0;
+    for(uint i=0 ; i<size ; ++i)
+    {
+        vec3 v = {ptr[i*stride], ptr[i*stride+1], ptr[i*stride+2]};
+        minD = std::max(minD, (v-center).length());
+    }
+
+    return Sphere(center, minD);
+}
+
 }
 }

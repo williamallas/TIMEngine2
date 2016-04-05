@@ -25,12 +25,10 @@ Option<Shader*> Shader::combine(const Option<uint>& vs, const Option<uint>& fs, 
     if(!vs.hasValue() || !fs.hasValue())
     {
         _lastLinkError.clear();
-
         if(!vs.hasValue())
-            _lastLinkError = "Vertex shader missing.\n";
+            _lastLinkError += "Vertex shader missing.\n";
         if(!fs.hasValue())
             _lastLinkError += "Fragment shader missing.\n";
-
         return Option<Shader*>();
     }
 
@@ -38,17 +36,58 @@ Option<Shader*> Shader::combine(const Option<uint>& vs, const Option<uint>& fs, 
     glAttachShader(id, vs.value());
     glAttachShader(id, fs.value());
 
+    if(gs.hasValue() && fs.value() != 0)
+        glAttachShader(id, gs.value());
+
     glBindAttribLocation(id, 0, "vertex");
     glBindAttribLocation(id, 1, "normal");
     glBindAttribLocation(id, 2, "texCoord");
     glBindAttribLocation(id, 3, "tangent");
     glBindAttribLocation(id, 4, "drawId");
 
-    if(gs.hasValue())
+    glLinkProgram(id);
+
+    int linkStatus = GL_TRUE;
+    glGetProgramiv(id, GL_LINK_STATUS, &linkStatus);
+
+    if(linkStatus != GL_TRUE)
     {
-        if(gs.value() != 0)
-            glAttachShader(id, gs.value());
+        int logSize;
+        glGetProgramiv(id, GL_INFO_LOG_LENGTH, &logSize);
+
+        char* log = new char[logSize];
+        glGetProgramInfoLog(id, logSize, &logSize, log);
+
+        _lastLinkError = std::string(log);
+        delete[] log;
+        glDeleteProgram(id);
+        return Option<Shader*>();
     }
+
+    Shader* prog = new Shader;
+    prog->_id = id;
+    prog->loadEngineUniform();
+    return Option<Shader*>(prog);
+}
+
+Option<Shader*> Shader::linkVertexShader(const Option<uint>& vs)
+{
+    if(!vs.hasValue())
+    {
+        _lastLinkError.clear();
+        if(!vs.hasValue())
+            _lastLinkError += "Vertex shader missing.\n";
+        return Option<Shader*>();
+    }
+
+    uint id = glCreateProgram();
+    glAttachShader(id, vs.value());
+
+    glBindAttribLocation(id, 0, "vertex");
+    glBindAttribLocation(id, 1, "normal");
+    glBindAttribLocation(id, 2, "texCoord");
+    glBindAttribLocation(id, 3, "tangent");
+    glBindAttribLocation(id, 4, "drawId");
 
     glLinkProgram(id);
 
@@ -135,22 +174,26 @@ void Shader::loadEngineUniform()
 
     openGL.bindShader(_id);
 
-    for(uint i=0 ; i<MAX_TEXTURE_UNIT ; ++i)
-    {
-        _uniformTextureId[i] = glGetUniformLocation(_id, (std::string("textures[")+StringUtils(i).str()+"]").c_str());
-        if(_uniformTextureId[i] >= 0)
-            glUniform1i(_uniformTextureId[i], (int)i);
-    }
-
+    uint nbSimple=0;
     for(uint i=0 ; i<MAX_TEXTURE_UNIT ; ++i)
     {
         int tmp = glGetUniformLocation(_id, (std::string("texture")+StringUtils(i).str()).c_str());
         if(tmp >= 0)
         {
+            nbSimple = i+1;
             _uniformTextureId[i] = tmp;
             glUniform1i(_uniformTextureId[i], (int)i);
         }
     }
+
+    for(uint i=0 ; i<MAX_TEXTURE_UNIT-nbSimple ; ++i)
+    {
+        _uniformTextureId[nbSimple+i] = glGetUniformLocation(_id, (std::string("textures[")+StringUtils(i).str()+"]").c_str());
+        if(_uniformTextureId[nbSimple+i] >= 0)
+            glUniform1i(_uniformTextureId[nbSimple+i], (int)(nbSimple+i));
+    }
+
+
 
     bool findOne=false;
     for(uint i=0 ; i<MAX_IMAGE_UNIT ; ++i)

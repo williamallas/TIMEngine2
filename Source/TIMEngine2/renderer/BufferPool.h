@@ -31,7 +31,7 @@ namespace renderer
                 _pool._buffer.bind();
             }
 
-            void flush(InternBufferType* data, size_t begin, size_t size) const
+            void flush(const InternBufferType* data, size_t begin, size_t size) const
             {
                 size = std::min(size, _size);
                 _pool._buffer.flush(data, begin+_begin, size);

@@ -1,22 +1,22 @@
-#version 330
+#version 430
 
-uniform sampler2D texture0;
-uniform sampler2D texture1;
-uniform sampler2D texture2;
-
-uniform samplerCube texture3;
+uniform sampler2D texture0; // color
+uniform sampler2D texture1; // normal
+uniform sampler2D texture2; // material
+uniform sampler2D texture3; // depth
 
 smooth in vec2 texc;
 
-uniform mat4 projection;
-uniform mat4 view;
-uniform mat4 invView;
-uniform mat4 invViewProj;
-uniform mat4 projView;
-uniform mat4 invProj;
-uniform vec3 cameraWorld;
+layout(std140, binding = 0) uniform DrawParameter
+{
+	mat4 view, proj;
+	mat4 projView, invView, invProj, invProjView, worldOriginInvProjView;
+	vec4 cameraPos, cameraUp, cameraDir, worldOrigin;
+	vec4 time;
+}; 
 
 layout(location=0) out vec4 outColor0;
+
 
 vec3 unproj(vec2 texCoord, float depth)
 {
@@ -26,13 +26,13 @@ vec3 unproj(vec2 texCoord, float depth)
 
 vec3 unprojWorld(vec2 texCoord, float depth)
 {
-	vec4 position = invViewProj	* vec4((texCoord.st-vec2(0.5))*2.0f, (depth-0.5)*2.0f, 1);
+	vec4 position = invProjView	* vec4((texCoord.st-vec2(0.5))*2.0f, (depth-0.5)*2.0f, 1);
 	return position.xyz / position.w;
 }
 
 vec3 project(vec3 pos)
 {
-	vec4 position = projection * vec4(pos, 1);
+	vec4 position = proj * vec4(pos, 1);
 	return position.xyz / position.w;
 }
 
@@ -48,7 +48,7 @@ bool traceScreenSpaceRay(vec3 csOrig, vec3 csDir, sampler2D csZBuffer, vec2 csZB
 	 hitPixel = vec2(-1, -1);
 
 	 // Project into screen space
-	 vec4 H0 = projection * vec4(csOrig, 1.0), H1 = projection * vec4(csEndPoint, 1.0);
+	 vec4 H0 = proj * vec4(csOrig, 1.0), H1 = proj * vec4(csEndPoint, 1.0);
 	 float k0 = 1.0 / H0.w, k1 = 1.0 / H1.w;
 	 vec3 Q0 = csOrig * k0, Q1 = csEndPoint * k1;
 
@@ -127,7 +127,7 @@ bool raytraceDepth(vec3 rayPos, vec3 rayDir, sampler2D ZBuffer, out vec2 interse
 	
 	vec3 P0 = rayPos, P1 = rayPos + rayDir * maxDist;
 	
-	vec4 hoP0 = projection * vec4(P0,1), hoP1 = projection * vec4(P1,1);
+	vec4 hoP0 = proj * vec4(P0,1), hoP1 = proj * vec4(P1,1);
 
 	float z0 = 1.f / hoP0.w, z1 = 1.f / hoP0.w;
 	float dz = z1-z0;
@@ -183,18 +183,6 @@ bool raytraceDepth(vec3 rayPos, vec3 rayDir, sampler2D ZBuffer, out vec2 interse
 
 vec4 binarySearch(vec3 noP, vec3 yesP, sampler2D ZBuffer, out vec3 hitP)
 {
-	/*vec3 proj_min = project(minP)*0.5+0.5;
-	vec3 proj_max = project(maxP)*0.5+0.5;
-	float dmin = texture(ZBuffer, proj_min.xy).r;
-	float dmax = texture(ZBuffer, proj_max.xy).r;
-	dmin = unproj(proj_min.xy, dmin).z;
-	dmax = unproj(proj_max.xy, dmax).z;
-	
-	if(minP.z < dmin && maxP.z > dmax)
-		return vec2(1,1);
-	else return vec2(0,0);*/
-	
-	//vec2 result;
 	vec3 m, result=yesP;
 	
 	for(int i=0 ; i<10 ; ++i)
@@ -207,7 +195,6 @@ vec4 binarySearch(vec3 noP, vec3 yesP, sampler2D ZBuffer, out vec3 hitP)
 		else noP = m;
 		
 		result = yesP;
-	
 	}
 
 	result = project(yesP)*0.5+0.5;
@@ -230,10 +217,9 @@ float dist(vec4 plan, vec3 p)
 
 vec4 raytraceCamSpace(vec3 rayPos, vec3 rayDir, sampler2D ZBuffer, vec3 n)
 {
-	vec4 backColor=texture(texture3, mat3(invView)*rayDir);
+	vec4 backColor=vec4(0,0,0,0);//texture(texture3, mat3(invView)*rayDir);
 	const float maxDist = 5;
-	const float maxStep = 30.0;
-	
+	const float maxStep = 50.0;
 	
 	//float d_e = dist(computePlan(rayPos, n), rayPos+rayDir);
 	
@@ -256,24 +242,19 @@ vec4 raytraceCamSpace(vec3 rayPos, vec3 rayDir, sampler2D ZBuffer, vec3 n)
 		
 		if(proj_P.z > d) // LE NEAR = 0 le FAR = -inf
 		{
-			
-			//return texture(texture0, proj_P.xy);
 			vec3 hitP;
 			vec4 res = binarySearch(prevP, curP, ZBuffer, hitP);
 			
 			vec3 hitVec = normalize(hitP - rayPos);
-			if(dot(rayDir, hitVec) > 1.f-0.003)
+			if(dot(rayDir, hitVec) > 1.f-0.001)
 			{
 				float c = 1.f-clamp((dist(computePlan(rayPos, n), hitP)-(maxDist*0.4)) / (maxDist*0.4),0,1);
 				return res*c + backColor*(1.f-c);
 			}
-				
-			
 		}
 		else prevP = curP;
 		
 		rayStep *= 1;
-		
 	}
 	
 	return backColor;
@@ -283,19 +264,22 @@ vec4 raytraceCamSpace(vec3 rayPos, vec3 rayDir, sampler2D ZBuffer, vec3 n)
 
 void main()
 {
-	float depth = texelFetch(texture2, ivec2(gl_FragCoord.xy),0).r;
-	outColor0 = texelFetch(texture0, ivec2(gl_FragCoord.xy),0);
+	float depth = texelFetch(texture3, ivec2(gl_FragCoord.xy),0).r;
 	
-	if(depth == 1)
+	if(depth == 1){
+		//outColor0 += vec4(0.5,0,0,0); 
 		return;
+	}
 
-	vec4 norm = texture(texture1, texc);
-	int packed_exp_ref = int(norm.w*256*256);
-	float reflexion = float(packed_exp_ref & 0xff00) / (256*256);
+	vec4 material = texelFetch(texture2, ivec2(gl_FragCoord.xy),0);
 	//reflexion = 0.3;
-	if(reflexion <= 1e-2)
-		return;
+	if(material.x >= 0.2){
 		
+		//outColor0 += vec4(0,0.5,0,0);
+		return;
+	}
+	
+	vec4 norm = texture(texture1, texc);
 	vec3 n =  mat3(view) * normalize(norm.xyz*2-1);
 	vec3 world = unproj(texc, depth);
 	vec3 I = normalize(world);
@@ -306,5 +290,9 @@ void main()
 	//return;
 
 	//bool hit = traceScreenSpaceRay(world, reflected, texture2, vec2(1600,900), 1, false, vec3(0), 0.02, 1, 0, 32, 5, hitCoord, hitPoint);
-	outColor0 += reflexion*raytraceCamSpace(world, reflected, texture2, n);
+	
+	vec4 color = texelFetch(texture0, ivec2(gl_FragCoord.xy),0);
+	
+	vec4 specColor = mix(vec4(material.z), color, material.y);
+	outColor0 += specColor*raytraceCamSpace(world, reflected, texture3, n);
 }

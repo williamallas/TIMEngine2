@@ -16,7 +16,7 @@ namespace core
         MultiPromise(MultiPromise&& p) : _promises(std::move(p._promises)), _isComplete(p._isComplete)
         {}
 
-        virtual ~MultiPromise()
+        ~MultiPromise()
         {
             complete(T());
         }

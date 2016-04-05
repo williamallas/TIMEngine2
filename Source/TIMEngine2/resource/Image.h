@@ -17,7 +17,7 @@ namespace resource
     public:
         Image() = default;
         Image(const uivec2&);
-        virtual ~Image();
+        ~Image();
 
         Image(const Image&);
         Image& operator=(const Image&);

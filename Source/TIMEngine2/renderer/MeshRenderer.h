@@ -17,18 +17,21 @@ namespace renderer
     class MeshRenderer
     {
     public:
-        MeshRenderer(const FrameParameter&);
-        virtual ~MeshRenderer();
+        MeshRenderer();
+        ~MeshRenderer();
 
         void bind() const;
-        int draw(const vector<MeshBuffers*>&, const vector<mat4>&, const vector<Material>& mat = {});
+        int draw(const vector<MeshBuffers*>&, const vector<mat4>&, const vector<Material>& mat = {}, bool useCameraUbo = true);
 
         void setDrawState(const DrawState&);
+
+        FrameParameter& frameState();
+        const FrameParameter& frameState() const;
 
     private:
         const uint _maxUboMa4;
         DrawState _states;
-        const FrameParameter& _parameter;
+        FrameParameter _parameter;
 
         GenericVertexBuffer<int> _drawIdBuffer;
         VAO* _vao = nullptr;
@@ -41,7 +44,8 @@ namespace renderer
 #endif
     };
 
-
+    inline FrameParameter& MeshRenderer::frameState() { return _parameter; }
+    inline const FrameParameter& MeshRenderer::frameState() const  { return _parameter; }
 
 }
 }

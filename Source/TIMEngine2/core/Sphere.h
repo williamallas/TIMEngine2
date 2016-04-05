@@ -15,12 +15,14 @@ namespace core
     class Sphere
     {
     public:
+        static Sphere computeSphere(const real* ptr, uint size, uint stride=1);
+
         Sphere();
         Sphere(const vec3&, float);
         Sphere(const vec4&);
         Sphere(const Sphere&);
 
-        virtual ~Sphere();
+        ~Sphere();
 
         /* Getter and Setter */
         vec4 sphere() const;

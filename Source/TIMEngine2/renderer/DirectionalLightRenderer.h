@@ -19,6 +19,8 @@ namespace renderer
         {
             vec3 direction;
             vec3 color;
+            renderer::Texture* depthMap = nullptr;
+            vector<mat4> matrix;
         };
 
         DirectionalLightRenderer(LightContextRenderer&, Shader* shader=nullptr);
@@ -32,7 +34,7 @@ namespace renderer
         Shader* _shader;
         DrawState _state;
 
-        int _uniformNbLight, _uniformLightDir, _uniformLightColor;
+        int _uniformNbLight, _uniformLightDir, _uniformLightColor, _uniformLightMatrix;
     };
 
 }

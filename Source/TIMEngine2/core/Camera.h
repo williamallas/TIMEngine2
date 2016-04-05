@@ -19,6 +19,14 @@ namespace core
             return pos+(dir-pos).normalized()*(clipDist.y()-clipDist.x())*0.5;
         }
     };
+
+    struct DirLightView
+    {
+        static const uint MAX_LVL_DIRLIGHT = 4;
+
+        vec3 camPos, lightDir={0.5,0.5,-0.5}, up = {0,0,1};
+        vec3 realPos[MAX_LVL_DIRLIGHT];
+    };
 }
 }
 #include "MemoryLoggerOff.h"

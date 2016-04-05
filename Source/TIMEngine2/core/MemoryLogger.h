@@ -36,7 +36,7 @@ namespace core
 
     protected:
         MemoryLogger();
-        virtual ~MemoryLogger();
+        ~MemoryLogger();
 
     private:
         std::map<void*, MemoryAlloc> _allocatedMemorys;

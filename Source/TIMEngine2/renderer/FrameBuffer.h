@@ -19,7 +19,7 @@ namespace renderer
         FrameBuffer();
         FrameBuffer(const uivec2&);
         FrameBuffer(const std::vector<Texture*>&, Texture* depth = nullptr);
-        virtual ~FrameBuffer();
+        ~FrameBuffer();
 
         void setResolution(const uivec2&);
         const uivec2& resolution() const;

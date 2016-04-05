@@ -1,28 +1,21 @@
-#include "SDL.h"
-#include "SDL_image.h"
-#include "SDLInputManager.h"
-#include "SDLTextureLoader.h"
-#include "SDLTimer.h"
 
-#include "renderer/renderer.h"
-#include "core.h"
+#include "SDLInputManager.h"
+#include "DebugCamera.h"
+#include "SDLTimer.h"
+#include <SDL_image.h>
+#include "SDLTextureLoader.h"
+
 #include "Rand.h"
-#include "RangeAllocator.h"
-#include "renderer/BufferPool.h"
-#include "renderer/MeshBuffers.h"
-#include "renderer/Shader.h"
 #include "renderer/ShaderCompiler.h"
 #include "resource/MeshLoader.h"
-#include "renderer/VAO.h"
-#include "renderer/MeshRenderer.h"
-#include "renderer/TiledLightRenderer.h"
-#include "renderer/DirectionalLightRenderer.h"
-#include "renderer/IndirectLightRenderer.h"
-#include "DebugCamera.h"
+
+#include "interface/pipeline/pipeline.h"
+#include "interface/Pipeline.h"
 
 using namespace tim::core;
 using namespace tim::renderer;
 using namespace tim::resource;
+using namespace tim::interface;
 using namespace tim;
 
 SDL_Window *pWindow;
@@ -52,23 +45,12 @@ float countTime(float time)
     return -fps;
 }
 
-__stdcall void debugOut(GLenum , GLenum , GLuint , GLenum severity , GLsizei , const GLchar* msg, GLvoid*)
-{
-    if(severity == GL_DEBUG_SEVERITY_HIGH)
-    {
-        LOG("OpenGL debug: ", msg);
-    }
-}
-
 int main(int, char**)
 {
     tim::core::init();
 {
     initContextSDL();
     tim::renderer::init();
-
-    glEnable(GL_DEBUG_OUTPUT);
-    glDebugMessageCallback( debugOut, NULL );
 
     LOG(openGL.strHardward());
 {
@@ -87,11 +69,37 @@ int main(int, char**)
     MeshBuffers* sphereMesh = MeshLoader::createMeshBuffers(sphereData, vertexBufferPool, indexBufferPool);
     MeshBuffers* cubeMesh = MeshLoader::createMeshBuffers(cubeData, vertexBufferPool, indexBufferPool);
     MeshBuffers* monkMesh = MeshLoader::createMeshBuffers(monkData, vertexBufferPool, indexBufferPool);
-    MeshBuffers* meshs[4] = {torMesh, sphereMesh,cubeMesh,monkMesh};
     torData.clear();
     sphereData.clear();
     cubeData.clear();
     monkData.clear();
+
+    Geometry geometry[3];
+    geometry[0] = Geometry(torMesh);
+    geometry[1] = Geometry(sphereMesh);
+    geometry[2] = Geometry(cubeMesh);
+
+    TextureLoader::ImageFormat imgLoaded;
+    SDLTextureLoader textureLoader;
+    ubyte* texData = textureLoader.loadImage("grass_pure.png", imgLoaded);
+    std::cout << "sol.png loaded : " << imgLoaded.size << std::endl;
+    renderer::Texture::GenTexParam texParam;
+    texParam.size = uivec3(imgLoaded.size,0);
+    texParam.format = renderer::Texture::Format::RGBA8;
+    texParam.nbLevels = -1;
+    texParam.repeat=true; texParam.linear=true; texParam.trilinear=true;
+    renderer::Texture* texTest = renderer::Texture::genTexture2D(texParam, texData, imgLoaded.nbComponent);
+    texTest->makeBindless();
+    interface::Texture solTex(texTest);
+
+    texData = textureLoader.loadImage("grass_pure_NRM.png", imgLoaded);
+    std::cout << "sol_NRM.png loaded : " << imgLoaded.size << std::endl;
+    texParam.size = uivec3(imgLoaded.size,0);
+    texParam.format = renderer::Texture::Format::RGBA8;
+    texParam.nbLevels = -1;
+    texTest = renderer::Texture::genTexture2D(texParam, texData, imgLoaded.nbComponent);
+    texTest->makeBindless();
+    interface::Texture solNrmTex(texTest);
 
     ShaderCompiler vShader(ShaderCompiler::VERTEX_SHADER), pShader(ShaderCompiler::PIXEL_SHADER);
     vShader.setSource(StringUtils::readFile("shader/gBufferPass.vert"));
@@ -106,144 +114,148 @@ int main(int, char**)
         LOG("Link erorr:", Shader::lastLinkError());
         return 0;
     }
-    Shader* shader = optShader.value();
-    DrawState drawState;
-    drawState.setShader(shader);
 
-    FrameParameter frameState;
-    MeshRenderer meshRenderer(frameState);
-    meshRenderer.setDrawState(drawState);
-    meshRenderer.bind();
-
-    vector<MeshBuffers*> drawList(100);
-    vector<mat4> models(100);
-    vector<Material> materials(100);
-    for(size_t i=0 ; i<drawList.size()/10 ;++i)
-        for(size_t j=0 ; j<drawList.size()/10 ;++j)
+    Mesh mesh[3];
+    for(int i=0 ; i<3 ; ++i)
     {
-        drawList[i*10+j] = meshs[Rand::rand()%4];
-        models[i*10+j] = mat4::Translation({j*3,i*3,0});
-        models[i*10+j].transpose();
-        materials[i*10+j].color = vec4(vec3(Rand::frand(), Rand::frand(), Rand::frand()).saturate(),1);
-        materials[i*10+j].parameter = vec4(i*0.11,j*0.11,0.3,1);
+        Mesh::Element elem;
+        elem.drawState().setShader(optShader.value());
+        elem.setGeometry(geometry[i]);
+        elem.setRougness(0.5);
+        elem.setMetallic(1);
+        elem.setSpecular(0.1);
+        elem.setColor(vec4(vec3(Rand::frand(), Rand::frand(), Rand::frand()).saturated(),1));
+
+        mesh[i].addElement(elem);
     }
 
-    vector<LightContextRenderer::Light> lights(1);
-    lights[0].position = {15,15,2};
-    lights[0].radius = 40;
-    lights[0].power = 2;
-    lights[0].color = vec4(0.5,1,1,1);
-
-//    {
-//        float* dat = IndirectLightRenderer::computeBrdf(256);
-//        std::ofstream outDat("shader/brdf_256.dat", std::ofstream::binary);
-//        outDat.write((char*)dat, sizeof(float)*256*256*3);
-//        delete[] dat;
-//    }
-
-    DeferredRenderer deferred({uint(RES_X),uint(RES_Y)}, frameState);
-    //LightContextRenderer lightContext(deferred, true);
-    TiledLightRenderer lightRenderer(deferred, false);
-    DirectionalLightRenderer dirLightRenderer(lightRenderer);
-    IndirectLightRenderer indirectLight(lightRenderer);
-
-    TextureLoader::ImageFormat formatTex;
-    vector<Texture*> skyboxes(4);
-    vector<Texture*> processedSky(skyboxes.size());
-    for(size_t i=0 ; i<skyboxes.size() ; ++i)
-    {
-        vector<std::string> imgSkybox(6);
-        std::string pre = "skybox/simple" + StringUtils(i+1).str() + "/";
-        imgSkybox[0] = pre+"x.png";
-        imgSkybox[1] = pre+"nx.png";
-        imgSkybox[2] = pre+"y.png";
-        imgSkybox[3] = pre+"ny.png";
-        imgSkybox[4] = pre+"z.png";
-        imgSkybox[5] = pre+"nz.png";
-        vector<ubyte*> dataSkybox = SDLTextureLoader().loadImageCube(imgSkybox, formatTex);
-
-        Texture::GenTexParam skyboxParam;
-        skyboxParam.format = Texture::RGBA8;
-        skyboxParam.nbLevels = 1;
-        skyboxParam.size = uivec3(formatTex.size,0);
-        skyboxes[i] = Texture::genTextureCube(skyboxParam, dataSkybox, 4);
-        processedSky[i] = IndirectLightRenderer::processSkybox(skyboxes[i], indirectLight.processSkyboxShader());
-        for(uint j=0 ; j<dataSkybox.size() ; ++j)
-            delete[] dataSkybox[j];
-    }
-    indirectLight.setSkybox(skyboxes[0], processedSky[0]);
-
-//    {
-//        SDLTimer timer;
-//        indirectLight.setSkybox(skybox, IndirectLightRenderer::processSkybox(skybox, indirectLight.processSkyboxShader()));
-//        std::cout << "Time to process skybox: " << timer.elapsed() << "ms\n";
-//    }
-
-    DrawState stateDrawQuad;
-    stateDrawQuad.setCullFace(false);
-    stateDrawQuad.setDepthTest(false);
-    stateDrawQuad.setWriteDepth(false);
-    stateDrawQuad.setShader(drawQuadShader);
 
     SDLInputManager input;
     float timeElapsed=0, totalTime=0;
-    int indexSkybox=0;
-
-    Camera camera;
-    camera.clipDist = {0.3, 1000};
-    camera.fov = 70;
-    camera.ratio = 16/9.f;
+    //int indexSkybox=0;
 
     DebugCamera freeFly(&input);
 
+    /* Example of main */
+
+    Pipeline pipeline;
+
+    /* Pipeline entity */
+    Pipeline::SceneEntity<SimpleScene> sceneEntity;
+    sceneEntity.globalLight.dirLights.push_back({vec3(0,0,-1), vec4(1,1,1,1), true});
+
+    Pipeline::SceneView sceneView;
+    sceneView.camera.ratio = RES_X/RES_Y;
+    sceneView.camera.clipDist = {.1,1000};
+
+    mat4 mat = mat4::Scale(vec3(100,100,1));
+    mat.setTranslation({0,0,-1});
+    MeshInstance& inst = sceneEntity.scene.add<MeshInstance>(mesh[2], mat);
+
+    Mesh tmp = inst.mesh();
+    tmp.element(0).setColor({0.5,0.5,0.5,1});
+    tmp.element(0).setRougness(0.7);
+    tmp.element(0).setMetallic(0);
+    tmp.element(0).setSpecular(0.08);
+    tmp.element(0).setTexture(solTex, 0);
+    tmp.element(0).setTexture(solNrmTex, 1);
+    inst.setMesh(tmp);
+
+    for(int i=0 ; i<100 ; ++i)
+        sceneEntity.scene.add<MeshInstance>(mesh[i%3], mat4::Translation({Rand::frand()*100-50,Rand::frand()*100-50,Rand::frand()*10}));
+
+    Pipeline::DeferredRendererEntity& rendererEntity = pipeline.genDeferredRendererEntity({uint(RES_X),uint(RES_Y)});
+    rendererEntity.envLightRenderer().setEnableGI(true);
+    rendererEntity.envLightRenderer().setGlobalAmbient(vec4::construct(0));
+    //rendererEntity.
+
+    /* Load skybox */
+    vector<renderer::Texture*> skyboxes(4);
+    vector<renderer::Texture*> processedSky(skyboxes.size());
+    {
+        TextureLoader::ImageFormat formatTex;
+
+        for(size_t i=0 ; i<skyboxes.size() ; ++i)
+        {
+            vector<std::string> imgSkybox(6);
+            std::string pre = "skybox/simple" + StringUtils(i+1).str() + "/";
+            imgSkybox[0] = pre+"x.png";
+            imgSkybox[1] = pre+"nx.png";
+            imgSkybox[2] = pre+"y.png";
+            imgSkybox[3] = pre+"ny.png";
+            imgSkybox[4] = pre+"z.png";
+            imgSkybox[5] = pre+"nz.png";
+            vector<ubyte*> dataSkybox = SDLTextureLoader().loadImageCube(imgSkybox, formatTex);
+
+            renderer::Texture::GenTexParam skyboxParam;
+            skyboxParam.format = renderer::Texture::RGBA8;
+            skyboxParam.nbLevels = 1;
+            skyboxParam.size = uivec3(formatTex.size,0);
+            skyboxes[i] = renderer::Texture::genTextureCube(skyboxParam, dataSkybox, 4);
+            processedSky[i] = IndirectLightRenderer::processSkybox(skyboxes[i],
+                                                                   rendererEntity.envLightRenderer().processSkyboxShader());
+            for(uint j=0 ; j<dataSkybox.size() ; ++j)
+                delete[] dataSkybox[j];
+        }
+    }
+
+    sceneEntity.globalLight.skybox = {skyboxes[3], processedSky[3]};
+
+    /* build the graph */
+
+    pipeline::OnScreenRenderer& onScreenRender = pipeline.createNode<pipeline::OnScreenRenderer>();
+    pipeline.setOutputNode(onScreenRender);
+
+    pipeline::SimpleSceneMeshCullingNode& meshCullingNode = pipeline.createNode<pipeline::SimpleSceneMeshCullingNode>();
+    pipeline::DeferredRendererNode& rendererNode = pipeline.createNode<pipeline::DeferredRendererNode>();
+
+    meshCullingNode.setScene(sceneEntity);
+    meshCullingNode.setSceneView(sceneView);
+    rendererNode.setSceneView(sceneView);
+    rendererNode.setRendererEntity(rendererEntity);
+    rendererNode.setGlobalLight(sceneEntity.globalLight);
+
+    Pipeline::SceneView dirLightView;
+    dirLightView.dirLightView.lightDir = vec3(0,0.7,-1);
+
+    pipeline::DirLightCullingNode<SimpleScene>& dirLightCullingNode =
+            pipeline.createNode<pipeline::DirLightCullingNode<SimpleScene>>();
+
+    dirLightCullingNode.setScene(sceneEntity);
+    dirLightCullingNode.setSceneView(dirLightView);
+    dirLightCullingNode.setDepthMapResolution(2048);
+    dirLightCullingNode.setShadowLightRange({50,100,400});
+
+    pipeline::DirLightShadowNode& sunShadowNode = pipeline.createNode<pipeline::DirLightShadowNode>();
+    sunShadowNode.setSceneView(dirLightView);
+    sunShadowNode.addMeshInstanceCollector(dirLightCullingNode);
+    sunShadowNode.setDepthMapResolution(2048);
+    sunShadowNode.setShadowLightRange({50,100,400});
+
+    rendererNode.setDirLightShadow(sunShadowNode, 0);
+    rendererNode.addMeshInstanceCollector(meshCullingNode);
+
+    onScreenRender.setBufferOutputNode(rendererNode.outputNode(0),0);
+
+    int indexSkybox = 0;
     while(!input.keyState(SDLK_ESCAPE).pressed)
     {
         SDLTimer timer;
         input.getEvent();
 
-        freeFly.update(timeElapsed, camera);
-        frameState.setCamera(camera);
-        frameState.setTime(totalTime, timeElapsed);
-        lights[0].position = camera.pos;
+        freeFly.update(timeElapsed, sceneView.camera);
+        dirLightView.dirLightView.camPos = sceneView.camera.pos;
 
-        deferred.frameBuffer().bind();
+        pipeline.prepare();
+        pipeline.render();
 
-        openGL.clearDepth();
-        openGL.clearColor(vec4(0));
-        meshRenderer.draw(drawList,models,materials);
-
-        lightRenderer.draw(lights);
-
-        vector<DirectionalLightRenderer::Light> dirLight(1);
-        dirLight[0].color = vec3::construct(1);
-        dirLight[0].direction = mat4::RotationZ(totalTime)*vec3(0.5,0.5,-1);
-
-        dirLightRenderer.draw(dirLight);
-        indirectLight.draw();
-
-        openGL.bindFrameBuffer(0);
-
-        stateDrawQuad.bind();
-        openGL.bindTextureSampler(textureSampler[TextureMode::NoFilter], 0);
-        if(input.keyState(SDLK_1).pressed)
-            deferred.buffer(0)->bind(0);
-        else if(input.keyState(SDLK_2).pressed)
-            deferred.buffer(1)->bind(0);
-        else if(input.keyState(SDLK_3).pressed)
-            deferred.buffer(2)->bind(0);
-       else
-            lightRenderer.buffer()->bind(0);
-
-        quadMeshBuffers->draw(6, VertexMode::TRIANGLES, 1);
-
-        openGL.finish();
         SDL_GL_SwapWindow(pWindow);
         GL_ASSERT();
 
         if(input.keyState(SDLK_RIGHT).firstPress)
         {
             indexSkybox = (indexSkybox+1)%skyboxes.size();
-            indirectLight.setSkybox(skyboxes[indexSkybox], processedSky[indexSkybox]);
+            sceneEntity.globalLight.skybox = {skyboxes[indexSkybox], processedSky[indexSkybox]};
         }
 
         timeElapsed = timer.elapsed()*0.001;
@@ -286,7 +298,7 @@ void initContextSDL()
     pWindow = SDL_CreateWindow("SDL2",SDL_WINDOWPOS_UNDEFINED,
                                       SDL_WINDOWPOS_UNDEFINED,
                                       x,y,
-                                      SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL  | SDL_WINDOW_FULLSCREEN);
+                                      SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL  /*| SDL_WINDOW_FULLSCREEN*/);
     contexteOpenGL = SDL_GL_CreateContext(pWindow);
 
     //SDL_ShowCursor(SDL_DISABLE);
