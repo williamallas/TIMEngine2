@@ -20,6 +20,7 @@ INCLUDEPATH += ../Lib/glew-1.10.0/include/
 INCLUDEPATH += ../Lib/SDL2-2.0.3/include/
 INCLUDEPATH += ../Lib/bullet/include/
 
+LIBS += -L./../Lib/lib/
 LIBS += -lboost_thread-mgw47-mt-1_55.dll
 LIBS += -lboost_atomic-mgw47-mt-1_55.dll
 LIBS += -lboost_system-mgw47-mt-1_55.dll
@@ -76,6 +77,7 @@ SOURCES += main2.cpp \
     TIMEngine2/renderer/IndirectLightRenderer.cpp \
     TIMEngine2/renderer/TiledLightRenderer.cpp \
     TIMEngine2/renderer/PostReflexionRenderer.cpp \
+    TIMEngine2/core/StringUtils.cpp \
     TIMEngine2/core/Box.cpp \
     TIMEngine2/core/core.cpp \
     TIMEngine2/core/MemoryLogger.cpp \
