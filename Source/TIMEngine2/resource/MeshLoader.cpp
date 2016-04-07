@@ -351,7 +351,7 @@ MeshLoader::LoadedMeshData MeshLoader::importTim(const std::string& file)
     MeshLoader::LoadedMeshData data;
 
     std::ifstream fs(file, std::ios_base::binary);
-    if(!fs || !data.nbVertex || !data.nbIndex)
+    if(!fs)
         return data;
 
     char header[4] = {0,0,0,0};
@@ -362,6 +362,9 @@ MeshLoader::LoadedMeshData MeshLoader::importTim(const std::string& file)
     read(fs, data.format);
     read(fs, data.nbVertex);
     read(fs, data.nbIndex);
+
+    data.vData = new renderer::VNCT_Vertex[data.nbVertex];
+    data.indexData = new uint[data.nbIndex];
 
     fs.read(reinterpret_cast<char*>(data.vData), sizeof(renderer::VNCT_Vertex)*data.nbVertex);
     fs.read(reinterpret_cast<char*>(data.indexData), sizeof(uint)*data.nbIndex);
