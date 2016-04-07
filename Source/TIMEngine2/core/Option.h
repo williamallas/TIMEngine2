@@ -15,8 +15,8 @@ namespace core
     {
     public:
 
-        Option() { _hasValue=false; }
-        Option(const T& value) { _val=value; _hasValue = true; }
+        Option() : _val(), _hasValue(false) {}
+        Option(const T& value) : _val(value), _hasValue(true) {}
         Option(const Option& option) { *this = option; }
         ~Option()
         {
@@ -24,15 +24,19 @@ namespace core
                 _val.~T();
         }
 
+#include "MemoryLoggerOff.h"
         Option& operator=(const Option& option)
         {
             _hasValue = option.hasValue();
             if(_hasValue)
-                _val = option.value();
+                new (&_val) T(option.value());
             return *this;
         }
+#include "MemoryLoggerOn.h"
 
         bool hasValue() const { return _hasValue; }
+
+        operator bool() const { return hasValue(); }
 
         const T& value() const
         {
@@ -45,7 +49,6 @@ namespace core
     private:
         union { T _val; };
         bool _hasValue;
-
     };
 
 }

@@ -15,6 +15,8 @@ namespace renderer
 
 uint textureSampler[static_cast<uint>(TextureMode::Last)];
 
+ThreadPool globalThreadPool(4);
+
 __stdcall void debugOut(GLenum , GLenum , GLuint , GLenum severity , GLsizei , const GLchar* msg, GLvoid*)
 {
     if(severity == GL_DEBUG_SEVERITY_HIGH)
@@ -114,6 +116,7 @@ bool close()
 
     delete drawQuadShader;
     delete quadMeshBuffers;
+    delete depthPassShader;
     delete vertexBufferPool;
     delete indexBufferPool;
     GLState::freeInstance();

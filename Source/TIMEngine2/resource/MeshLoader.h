@@ -43,8 +43,8 @@ namespace resource
 
         static renderer::MeshBuffers* createMeshBuffers(LoadedMeshData&, renderer::VertexBufferPoolType*, renderer::IndexBufferPoolType*);
 
-//        static MeshBuffers* importMeshTim(const std::string&);
-//        static void exportTim(MeshBuffers*, const std::string&);
+        static LoadedMeshData importTim(const std::string&);
+        static void exportTim(const LoadedMeshData&, const std::string&);
 
 ////        static void exportSkeleton(Skeleton*, const vector<SkeletonAnimation*>&, const std::string&);
 ////        static Skeleton* importSkeleton(const std::string&, vector<SkeletonAnimation*>&);

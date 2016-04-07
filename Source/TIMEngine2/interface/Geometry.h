@@ -32,16 +32,16 @@ namespace interface
         using resource::Asset<renderer::MeshBuffers>::Asset;
 
         Geometry() = default;
-        Geometry(renderer::MeshBuffers* ptr) : resource::Asset<renderer::MeshBuffers>(ptr) { _volume = ptr->volume(); }
+        Geometry(renderer::MeshBuffers* ptr) : resource::Asset<renderer::MeshBuffers>(ptr) {}
 
-        size_t nbVertex() const { return _ptr->vb()->size(); }
-        size_t nbIndex() const { return _ptr->ib()->size(); }
+        size_t nbVertex() const { if(!buffers()) return 0; return _ptr->vb()->size(); }
+        size_t nbIndex() const { if(!buffers()) return 0; return _ptr->ib()->size(); }
 
-        const Sphere& volume() const { return _volume; }
+        Sphere volume() const { if(!buffers()) return Sphere(); return _ptr->volume(); }
+
+        bool isEmpty() const { if(!buffers()) return true; return _ptr->isNull(); }
 
     protected:
-        Sphere _volume;
-
         renderer::MeshBuffers* buffers() const { return _ptr.get(); }
     };
 

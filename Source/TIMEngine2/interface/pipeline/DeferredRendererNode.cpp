@@ -94,7 +94,7 @@ void DeferredRendererNode::render()
                 curDrawState = _toDraw[curIndex].first->drawState();
             }
 
-            if(_toDraw[curIndex].first->geometry().buffers())
+            if(_toDraw[curIndex].first->geometry().buffers() && !_toDraw[curIndex].first->geometry().buffers()->isNull())
             {
                 accMatr.push_back(_toDraw[curIndex].second->transposed());
                 accMesh.push_back(_toDraw[curIndex].first->geometry().buffers());
@@ -108,7 +108,11 @@ void DeferredRendererNode::render()
         }
     }
 
-    _rendererEntity->lightRenderer().draw({});
+    vector<renderer::LightContextRenderer::Light> lights(_culledLight.size());
+    for(uint i=0 ; i<lights.size() ; ++i)
+        lights[i] = _culledLight[i].get().get();
+
+    _rendererEntity->lightRenderer().draw(lights);
 
     if(_globalLightInfo)
     {

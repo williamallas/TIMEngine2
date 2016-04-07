@@ -1,6 +1,7 @@
 #ifndef RENDERER_H_INCLUDED
 #define RENDERER_H_INCLUDED
 
+#include "ThreadPool.h"
 #include "GLState.h"
 #include "BufferPool.h"
 #include "IndexBuffer.h"
@@ -15,6 +16,8 @@ namespace renderer
 {
     bool init();
     bool close();
+
+    extern ThreadPool globalThreadPool;
 
     using VertexBufferPoolType = BufferPool<VertexBuffer, 64>;
     using IndexBufferPoolType = BufferPool<IndexBuffer, 256>;

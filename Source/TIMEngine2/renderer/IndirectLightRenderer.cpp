@@ -76,9 +76,11 @@ IndirectLightRenderer::IndirectLightRenderer(LightContextRenderer& context) : _c
 
 IndirectLightRenderer::~IndirectLightRenderer()
 {
+    delete _processCubeMap;
     delete _fullScreenPass;
     delete _skybox;
     delete _processedSkybox;
+    delete _processedBrdf;
 }
 
 void IndirectLightRenderer::draw() const

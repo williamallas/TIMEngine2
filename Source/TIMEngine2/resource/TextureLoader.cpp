@@ -7,6 +7,8 @@ namespace tim
 namespace resource
 {
 
+TextureLoader* textureLoader = nullptr;
+
 unsigned char* TextureLoader::toGLFormat(unsigned char* ptr, unsigned char* out_ptr, const ImageFormat& format)
 {
     if(!out_ptr)

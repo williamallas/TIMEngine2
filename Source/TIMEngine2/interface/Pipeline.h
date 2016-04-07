@@ -82,7 +82,6 @@ namespace interface
             }
         };
 
-
         /*****************/
         /** Process node */
         /*****************/
@@ -110,7 +109,6 @@ namespace interface
                     return true;
                 }
             }
-
         };
 
         template<class Type>
@@ -157,6 +155,12 @@ namespace interface
                 if(!_innerOutput[index])
                     _innerOutput[index] = new InnerOutBufferNode(const_cast<OutBuffersNode*>(this), index);
                 return _innerOutput[index];
+            }
+
+            ~OutBuffersNode()
+            {
+                for(uint i=0 ; i<_innerOutput.size() ; ++i)
+                    delete _innerOutput[i];
             }
 
             virtual renderer::Texture* buffer(uint) const = 0;

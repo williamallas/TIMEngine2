@@ -40,6 +40,17 @@ namespace renderer
 
             bool repeat=false, linear=false, trilinear=false, depthMode=false;
             int anisotropy = 0;
+
+            bool operator<(const GenTexParam& p) const
+            {
+                if(size < p.size) return true; else if(size > p.size) return false;
+                if(format < p.format) return true; else if(format > p.format) return false;
+                if(nbLevels < p.nbLevels) return true; else if(nbLevels > p.nbLevels) return false;
+                if(anisotropy < p.anisotropy) return true; else if(anisotropy > p.anisotropy) return false;
+                bvec4 my = bvec4(repeat,linear,trilinear,depthMode);
+                bvec4 your = bvec4(p.repeat,p.linear,p.trilinear,p.depthMode);
+                if(my < your) return true; else return false;
+            }
         };
 
         static Texture* genTexture2D(const GenTexParam&, const ubyte* data=nullptr, uint nbC=0);

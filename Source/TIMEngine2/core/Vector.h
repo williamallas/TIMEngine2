@@ -104,6 +104,10 @@ namespace core
             return false;
         }
 
+        bool operator>(const Vector& v) const { return   (v < *this); }
+        bool operator<=(const Vector& v) const { return !(v > *this); }
+        bool operator>=(const Vector& v) const { return !(*this < v); }
+
         T& operator[](size_t i) { return _val[i]; }
         const T& operator[](size_t i) const { return _val[i]; }
         const T* data() const { return _val; }
@@ -265,6 +269,7 @@ namespace core
     typedef Vector4<size_t> uivec4;
     typedef Vector4<double> dvec4;
     typedef Vector4<ubyte> ubvec4;
+    typedef Vector4<bool> bvec4;
 
     typedef Vector3<float> vec3;
     typedef Vector3<int> ivec3;

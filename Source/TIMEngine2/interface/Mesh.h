@@ -91,6 +91,15 @@ namespace interface
             return *this;
         }
 
+        void flushVolume()
+        {
+            vector<Element> tmp;
+            std::swap(tmp, _elements);
+            clear();
+            for(const Element& e : tmp)
+                addElement(e);
+        }
+
         Element& element(uint index) { return _elements[index]; }
         const Element& element(uint index) const { return _elements[index]; }
 

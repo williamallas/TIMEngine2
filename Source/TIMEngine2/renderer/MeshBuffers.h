@@ -24,6 +24,8 @@ namespace renderer
 
         void draw(size_t s, VertexMode primitive, size_t nbInstance, const VAO* vao = nullptr) const
         {
+            if(!_vb || !_ib) return;
+
             if(vao)
                 vao->bind();
 
@@ -39,8 +41,17 @@ namespace renderer
         VBuffer* vb() const { return _vb; }
         IBuffer* ib() const { return _ib; }
 
+        bool isNull() const { return (!_vb || !_ib); }
+
         const Sphere& volume() const { return _volume; }
         void setVolume(const Sphere& s) { _volume = s; }
+
+        void swap(MeshBuffers& buf)
+        {
+            std::swap(_vb, buf._vb);
+            std::swap(_ib, buf._ib);
+            std::swap(_volume, buf._volume);
+        }
 
     private:
         VBuffer* _vb;

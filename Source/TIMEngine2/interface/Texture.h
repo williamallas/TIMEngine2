@@ -23,8 +23,6 @@ namespace interface
     /** Immutable class */
     class Texture : public resource::Asset<renderer::Texture>
     {
-//        friend class interface::pipeline::DeferredRendererNode;
-//        friend class interface::pipeline::DirLightShadowNode;
         friend class Mesh;
 
     public:

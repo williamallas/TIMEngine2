@@ -8,6 +8,8 @@
 #include "Rand.h"
 #include "renderer/ShaderCompiler.h"
 #include "resource/MeshLoader.h"
+#include "resource/AssetManager.h"
+#include "bullet/BulletEngine.h"
 
 #include "interface/pipeline/pipeline.h"
 #include "interface/Pipeline.h"
@@ -51,55 +53,31 @@ int main(int, char**)
 {
     initContextSDL();
     tim::renderer::init();
+    resource::textureLoader = new SDLTextureLoader;
 
     LOG(openGL.strHardward());
 {
-    MeshLoader::LoadedMeshData torData = MeshLoader::importObj("tor.obj");
-    MeshLoader::LoadedMeshData sphereData = MeshLoader::importObj("uv_sphere.obj");
-    MeshLoader::LoadedMeshData cubeData = MeshLoader::importObj("cube_uv.obj");
-    MeshLoader::LoadedMeshData monkData = MeshLoader::importObj("monkey.obj");
+    MeshLoader::LoadedMeshData objSphere = MeshLoader::importObj("uv_sphere.obj");
+    MeshLoader::exportTim(objSphere, "sphere.tim");
 
-    std::cout << "OBJ loaded ok\n";
-    std::cout << "nbVertex tor : " << torData.nbVertex << std::endl;
-    std::cout << "nbVertex sphere : " << sphereData.nbVertex << std::endl;
-    std::cout << "nbVertex cube : " << cubeData.nbVertex << std::endl;
-    std::cout << "nbVertex monk : " << monkData.nbVertex << std::endl;
-
-    MeshBuffers* torMesh = MeshLoader::createMeshBuffers(torData, vertexBufferPool, indexBufferPool);
-    MeshBuffers* sphereMesh = MeshLoader::createMeshBuffers(sphereData, vertexBufferPool, indexBufferPool);
-    MeshBuffers* cubeMesh = MeshLoader::createMeshBuffers(cubeData, vertexBufferPool, indexBufferPool);
-    MeshBuffers* monkMesh = MeshLoader::createMeshBuffers(monkData, vertexBufferPool, indexBufferPool);
-    torData.clear();
-    sphereData.clear();
-    cubeData.clear();
-    monkData.clear();
+    BulletEngine physEngine;
+    btBoxShape boxShape(btVector3(0.5,0.5,0.5));
+    btStaticPlaneShape groundShape(btVector3(0,0,1), 0);
+    BulletObject obj(mat4::IDENTITY(), &groundShape);
+    physEngine.addObject(&obj);
 
     Geometry geometry[3];
-    geometry[0] = Geometry(torMesh);
-    geometry[1] = Geometry(sphereMesh);
-    geometry[2] = Geometry(cubeMesh);
+    geometry[0] = AssetManager<Geometry>::instance().load<false>("tor.obj").value();
+    geometry[1] = AssetManager<Geometry>::instance().load<false>("sphere.tim").value();
+    geometry[2] = AssetManager<Geometry>::instance().load<false>("cube_uv.obj").value();
 
-    TextureLoader::ImageFormat imgLoaded;
-    SDLTextureLoader textureLoader;
-    ubyte* texData = textureLoader.loadImage("grass_pure.png", imgLoaded);
-    std::cout << "sol.png loaded : " << imgLoaded.size << std::endl;
     renderer::Texture::GenTexParam texParam;
-    texParam.size = uivec3(imgLoaded.size,0);
     texParam.format = renderer::Texture::Format::RGBA8;
     texParam.nbLevels = -1;
     texParam.repeat=true; texParam.linear=true; texParam.trilinear=true;
-    renderer::Texture* texTest = renderer::Texture::genTexture2D(texParam, texData, imgLoaded.nbComponent);
-    texTest->makeBindless();
-    interface::Texture solTex(texTest);
 
-    texData = textureLoader.loadImage("grass_pure_NRM.png", imgLoaded);
-    std::cout << "sol_NRM.png loaded : " << imgLoaded.size << std::endl;
-    texParam.size = uivec3(imgLoaded.size,0);
-    texParam.format = renderer::Texture::Format::RGBA8;
-    texParam.nbLevels = -1;
-    texTest = renderer::Texture::genTexture2D(texParam, texData, imgLoaded.nbComponent);
-    texTest->makeBindless();
-    interface::Texture solNrmTex(texTest);
+    interface::Texture solTexture = AssetManager<interface::Texture>::instance().load<false>("grass_pure.png", texParam).value();
+    interface::Texture solNrmTexture = AssetManager<interface::Texture>::instance().load<false>("grass_pure_NRM.png", texParam).value();
 
     ShaderCompiler vShader(ShaderCompiler::VERTEX_SHADER), pShader(ShaderCompiler::PIXEL_SHADER);
     vShader.setSource(StringUtils::readFile("shader/gBufferPass.vert"));
@@ -122,7 +100,7 @@ int main(int, char**)
         elem.drawState().setShader(optShader.value());
         elem.setGeometry(geometry[i]);
         elem.setRougness(0.5);
-        elem.setMetallic(1);
+        elem.setMetallic(0);
         elem.setSpecular(0.1);
         elem.setColor(vec4(vec3(Rand::frand(), Rand::frand(), Rand::frand()).saturated(),1));
 
@@ -142,14 +120,14 @@ int main(int, char**)
 
     /* Pipeline entity */
     Pipeline::SceneEntity<SimpleScene> sceneEntity;
-    sceneEntity.globalLight.dirLights.push_back({vec3(0,0,-1), vec4(1,1,1,1), true});
+    sceneEntity.globalLight.dirLights.push_back({vec3(0,0,-1), vec4::construct(0.5), true});
 
     Pipeline::SceneView sceneView;
     sceneView.camera.ratio = RES_X/RES_Y;
     sceneView.camera.clipDist = {.1,1000};
 
     mat4 mat = mat4::Scale(vec3(100,100,1));
-    mat.setTranslation({0,0,-1});
+    mat.setTranslation({0,0,-0.5});
     MeshInstance& inst = sceneEntity.scene.add<MeshInstance>(mesh[2], mat);
 
     Mesh tmp = inst.mesh();
@@ -157,16 +135,34 @@ int main(int, char**)
     tmp.element(0).setRougness(0.7);
     tmp.element(0).setMetallic(0);
     tmp.element(0).setSpecular(0.08);
-    tmp.element(0).setTexture(solTex, 0);
-    tmp.element(0).setTexture(solNrmTex, 1);
+    tmp.element(0).setTexture(solTexture, 0);
+    tmp.element(0).setTexture(solNrmTexture, 1);
     inst.setMesh(tmp);
 
     for(int i=0 ; i<100 ; ++i)
-        sceneEntity.scene.add<MeshInstance>(mesh[i%3], mat4::Translation({Rand::frand()*100-50,Rand::frand()*100-50,Rand::frand()*10}));
+        sceneEntity.scene.add<MeshInstance>(mesh[i%2], mat4::Translation({Rand::frand()*100-50,Rand::frand()*100-50,Rand::frand()*10}));
+
+    vector<std::shared_ptr<BulletObject>> physObj(400);
+
+    for(int i=0 ; i<400 ; ++i)
+    {
+        MeshInstance& m = sceneEntity.scene.add<MeshInstance>(mesh[2], mat4::Translation({0,Rand::frand()*2-1,Rand::frand()*300+10}));
+        physObj[i] = std::shared_ptr<BulletObject>(new BulletObject(new SceneMotionState<MeshInstance>(m), &boxShape, 1));
+        physEngine.addObject(physObj[i].get());
+    }
+
+    for(int i=0 ; i<50 ; ++i)
+    {
+        LightInstance& light = sceneEntity.scene.add<LightInstance>();
+        light.setPosition({Rand::frand()*100-50,Rand::frand()*100-50,Rand::frand()*10});
+        light.setRadius(30);
+        light.setPower(2);
+        light.setColor({1,1,1,1});
+    }
 
     Pipeline::DeferredRendererEntity& rendererEntity = pipeline.genDeferredRendererEntity({uint(RES_X),uint(RES_Y)});
-    rendererEntity.envLightRenderer().setEnableGI(true);
-    rendererEntity.envLightRenderer().setGlobalAmbient(vec4::construct(0));
+    rendererEntity.envLightRenderer().setEnableGI(false);
+    rendererEntity.envLightRenderer().setGlobalAmbient(vec4::construct(0.1));
     //rendererEntity.
 
     /* Load skybox */
@@ -199,10 +195,9 @@ int main(int, char**)
         }
     }
 
-    sceneEntity.globalLight.skybox = {skyboxes[3], processedSky[3]};
+    //sceneEntity.globalLight.skybox = {skyboxes[3], processedSky[3]};
 
     /* build the graph */
-
     pipeline::OnScreenRenderer& onScreenRender = pipeline.createNode<pipeline::OnScreenRenderer>();
     pipeline.setOutputNode(onScreenRender);
 
@@ -223,17 +218,22 @@ int main(int, char**)
 
     dirLightCullingNode.setScene(sceneEntity);
     dirLightCullingNode.setSceneView(dirLightView);
-    dirLightCullingNode.setDepthMapResolution(2048);
-    dirLightCullingNode.setShadowLightRange({50,100,400});
+    dirLightCullingNode.setDepthMapResolution(4096);
+    dirLightCullingNode.setShadowLightRange({20,100,300,800});
 
     pipeline::DirLightShadowNode& sunShadowNode = pipeline.createNode<pipeline::DirLightShadowNode>();
     sunShadowNode.setSceneView(dirLightView);
     sunShadowNode.addMeshInstanceCollector(dirLightCullingNode);
-    sunShadowNode.setDepthMapResolution(2048);
-    sunShadowNode.setShadowLightRange({50,100,400});
+    sunShadowNode.setDepthMapResolution(4096);
+    sunShadowNode.setShadowLightRange({20,100,300,800});
 
     rendererNode.setDirLightShadow(sunShadowNode, 0);
     rendererNode.addMeshInstanceCollector(meshCullingNode);
+
+    pipeline::SimpleSceneLightCullingNode& lightCullingNode = pipeline.createNode<pipeline::SimpleSceneLightCullingNode>();
+    lightCullingNode.setScene(sceneEntity);
+    lightCullingNode.setSceneView(sceneView);
+    rendererNode.addLightInstanceCollector(lightCullingNode);
 
     onScreenRender.setBufferOutputNode(rendererNode.outputNode(0),0);
 
@@ -242,6 +242,7 @@ int main(int, char**)
     {
         SDLTimer timer;
         input.getEvent();
+        physEngine.dynamicsWorld->stepSimulation(timeElapsed, 10);
 
         freeFly.update(timeElapsed, sceneView.camera);
         dirLightView.dirLightView.camPos = sceneView.camera.pos;
@@ -270,7 +271,19 @@ int main(int, char**)
     }
 
     /** Close context **/
+    delete optShader.value();
+    for(uint i=0 ; i<processedSky.size() ; ++i)
+    {
+        delete processedSky[i];
+        delete skyboxes[i];
+    }
+
+    AssetManager<Geometry>::freeInstance();
+    AssetManager<interface::Texture>::freeInstance();
+    openGL.execAllGLTask();
 }
+
+    delete resource::textureLoader;
     tim::renderer::close();
     delContextSDL();
 }
@@ -298,7 +311,7 @@ void initContextSDL()
     pWindow = SDL_CreateWindow("SDL2",SDL_WINDOWPOS_UNDEFINED,
                                       SDL_WINDOWPOS_UNDEFINED,
                                       x,y,
-                                      SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL  /*| SDL_WINDOW_FULLSCREEN*/);
+                                      SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL  | SDL_WINDOW_FULLSCREEN);
     contexteOpenGL = SDL_GL_CreateContext(pWindow);
 
     //SDL_ShowCursor(SDL_DISABLE);

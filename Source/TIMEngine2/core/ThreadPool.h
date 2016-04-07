@@ -10,7 +10,7 @@ namespace tim
 {
 namespace core
 {
-    class ThreadPool
+    class ThreadPool : boost::noncopyable
     {
     public:
         ThreadPool() { _pool = new boost::threadpool::pool(boost::thread::hardware_concurrency()); }
@@ -44,9 +44,6 @@ namespace core
     private:
         boost::threadpool::pool* _pool;
         mutable boost::mutex _mutex;
-
-        ThreadPool(const ThreadPool&) = delete;
-        ThreadPool& operator=(const ThreadPool&) = delete;
     };
 
     inline bool ThreadPool::empty() const { boost::mutex::scoped_lock(_mutex); return _pool->empty(); }

@@ -30,6 +30,7 @@ namespace core
         float toFloat() const;
         double toDouble() const;
         bool toBool() const;
+        std::string extension() const;
 
         std::string& str();
 
@@ -138,6 +139,22 @@ inline std::string StringUtils::str(const char* str)
 {
     if(str) return std::string(str);
     else return std::string();
+}
+
+inline std::string StringUtils::extension() const
+{
+    if(_str.empty())
+        return "";
+
+    std::string buf;
+    for(size_t i=_str.size() ; i>0 ; ++i)
+    {
+        if(_str[i-1] == '.')
+            return buf;
+
+        buf += tolower(_str[i-1]);
+    }
+    return "";
 }
 
 #include "MemoryLoggerOff.h"

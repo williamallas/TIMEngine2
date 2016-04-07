@@ -28,6 +28,8 @@ namespace resource
         static ubyte* toGLFormat(ubyte*, ubyte*, const ImageFormat&);
         static float* toGLFormat(float*, float*, const ImageFormat&);
     };
+
+    extern TextureLoader* textureLoader;
 }
 }
 #include "MemoryLoggerOff.h"

@@ -18,6 +18,7 @@ INCLUDEPATH += ../Lib/boost
 INCLUDEPATH += ../Lib/glew-1.10.0/include/
 #INCLUDEPATH += ../Lib/assimp-3.1.1/include/
 INCLUDEPATH += ../Lib/SDL2-2.0.3/include/
+INCLUDEPATH += ../Lib/bullet/include/
 
 LIBS += -lboost_thread-mgw47-mt-1_55.dll
 LIBS += -lboost_atomic-mgw47-mt-1_55.dll
@@ -30,8 +31,8 @@ LIBS += -lzlib
 LIBS += -lSDL2main
 LIBS += -lSDL2.dll
 LIBS += -lSDL2_image.dll
-#LIBS += -lBullet3Dynamics -lBulletDynamics
-#LIBS += -lBullet3Geometry -lBullet3Collision -lBulletCollision -lBullet3Common -lLinearMath
+LIBS += -lBulletDynamics
+LIBS += -lBulletCollision -lLinearMath
 
 
 QMAKE_CXXFLAGS_RELEASE -= -O
@@ -51,6 +52,7 @@ debug: DEFINES += TIM_DEBUG
 # Input
 HEADERS += TIM_SDL/*.h TIMEngine2/core/*.h TIMEngine2/renderer/*.h TIMEngine2/resource/*.h TIMEngine2/interface/*.h TIMEngine2/interface/pipeline/*.h TIMEngine2/scene/*.h \
     DebugCamera.h \
+    TIMEngine2/bullet/*.h
 
 SOURCES += main2.cpp \
            TIM_SDL/SDLInputManager.cpp \
@@ -91,3 +93,8 @@ SOURCES += main2.cpp \
     TIMEngine2/interface/pipeline/OnScreenRenderer.cpp \
     TIMEngine2/interface/pipeline/BloomNode.cpp \
     TIMEngine2/interface/pipeline/DirLightShadowNode.cpp \
+    TIMEngine2/bullet/BulletEngine.cpp \
+    TIMEngine2/bullet/BulletObject.cpp \
+    TIMEngine2/bullet/GeometryShape.cpp \
+
+

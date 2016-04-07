@@ -137,7 +137,7 @@ void DirLightShadowNode::render()
 
             for(uint index=0 ; index < _toDraw[i].size() ; ++index)
             {
-                if(_toDraw[i][index].first->geometry().buffers())
+                if(_toDraw[i][index].first->geometry().buffers() && !_toDraw[i][index].first->geometry().buffers()->isNull())
                 {
                     accMatr.push_back(_toDraw[i][index].second->transposed());
                     accMesh.push_back(_toDraw[i][index].first->geometry().buffers());
