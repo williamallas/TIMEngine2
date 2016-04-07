@@ -29,7 +29,11 @@ namespace resource
             ubyte* texData = resource::textureLoader->loadImage(file, imgLoaded);
             param.size = uivec3(imgLoaded.size,0);
 
-            if(!texData) return Option<interface::Texture>();
+            if(!texData)
+            {
+                LOG_EXT("Unable to load texture ", file);
+                return Option<interface::Texture>();
+            }
 
             renderer::Texture* tex = renderer::Texture::genTexture2D(param, texData, imgLoaded.nbComponent);
             tex->makeBindless();

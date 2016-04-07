@@ -36,7 +36,7 @@ namespace core
 
         bool hasValue() const { return _hasValue; }
 
-        operator bool() const { return hasValue(); }
+        operator bool() const { return _hasValue; }
 
         const T& value() const
         {

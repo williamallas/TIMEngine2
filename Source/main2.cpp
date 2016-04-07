@@ -65,8 +65,10 @@ int main(int, char**)
     btStaticPlaneShape groundShape(btVector3(0,0,1), 0);
     BulletObject obj(mat4::IDENTITY(), &groundShape);
     physEngine.addObject(&obj);
+    obj.body()->setFriction(1000);
 
     Geometry geometry[3];
+
     geometry[0] = AssetManager<Geometry>::instance().load<false>("tor.obj").value();
     geometry[1] = AssetManager<Geometry>::instance().load<false>("sphere.tim").value();
     geometry[2] = AssetManager<Geometry>::instance().load<false>("cube_uv.obj").value();
@@ -142,13 +144,17 @@ int main(int, char**)
     for(int i=0 ; i<100 ; ++i)
         sceneEntity.scene.add<MeshInstance>(mesh[i%2], mat4::Translation({Rand::frand()*100-50,Rand::frand()*100-50,Rand::frand()*10}));
 
-    vector<std::shared_ptr<BulletObject>> physObj(400);
+    vector<std::shared_ptr<BulletObject>> physObj(10000);
 
-    for(int i=0 ; i<400 ; ++i)
+    int index=0;
+    for(int i=0 ; i<3 ; ++i)
+        for(int j=0 ; j<3 ; ++j)
+            for(int k=0 ; k<100 ; ++k)
     {
-        MeshInstance& m = sceneEntity.scene.add<MeshInstance>(mesh[2], mat4::Translation({0,Rand::frand()*2-1,Rand::frand()*300+10}));
-        physObj[i] = std::shared_ptr<BulletObject>(new BulletObject(new SceneMotionState<MeshInstance>(m), &boxShape, 1));
-        physEngine.addObject(physObj[i].get());
+        MeshInstance& m = sceneEntity.scene.add<MeshInstance>(mesh[2], mat4::Translation({i*1.01,j*1.01,k*1.01+10}));
+        physObj[index] = std::shared_ptr<BulletObject>(new BulletObject(new SceneMotionState<MeshInstance>(m), &boxShape, 1));
+        physObj[index].get()->body()->setFriction(1000);
+        physEngine.addObject(physObj[index++].get());
     }
 
     for(int i=0 ; i<50 ; ++i)
@@ -242,7 +248,8 @@ int main(int, char**)
     {
         SDLTimer timer;
         input.getEvent();
-        physEngine.dynamicsWorld->stepSimulation(timeElapsed, 10);
+        if(input.keyState(SDLK_n).pressed)
+             physEngine.dynamicsWorld->stepSimulation(timeElapsed, 10,0.01);
 
         freeFly.update(timeElapsed, sceneView.camera);
         dirLightView.dirLightView.camPos = sceneView.camera.pos;
@@ -257,6 +264,34 @@ int main(int, char**)
         {
             indexSkybox = (indexSkybox+1)%skyboxes.size();
             sceneEntity.globalLight.skybox = {skyboxes[indexSkybox], processedSky[indexSkybox]};
+        }
+
+        if(input.keyState(SDLK_m).pressed)
+        {
+        int index=0;
+        for(int i=0 ; i<3 ; ++i)
+            for(int j=0 ; j<3 ; ++j)
+                for(int k=0 ; k<100 ; ++k)
+        {
+
+              physObj[index].get()->body()->applyForce(btVector3((Rand::frand()-0.5)*500, (Rand::frand()-0.5)*500, (Rand::frand()-0.5)*500), btVector3(0,0,0));
+              index++;
+
+        }
+        }
+
+        if(input.keyState(SDLK_l).pressed)
+        {
+        int index=0;
+        for(int i=0 ; i<3 ; ++i)
+            for(int j=0 ; j<3 ; ++j)
+                for(int k=0 ; k<100 ; ++k)
+        {
+
+              physObj[index].get()->body()->applyForce(-physObj[index].get()->body()->getWorldTransform().getOrigin().normalized()*100, btVector3(0,0,0));
+              index++;
+
+        }
         }
 
         timeElapsed = timer.elapsed()*0.001;
