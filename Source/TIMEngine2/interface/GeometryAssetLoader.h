@@ -40,6 +40,7 @@ namespace resource
                 }
                 else
                 {
+                    LOG_EXT("Failed to load Geometry: ", file);
                     data.clear();
                     return Option<interface::Geometry>();
                 }
