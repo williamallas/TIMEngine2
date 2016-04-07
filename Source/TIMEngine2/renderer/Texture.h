@@ -35,7 +35,7 @@ namespace renderer
         struct GenTexParam
         {
             uivec3 size;
-            Format format = Format::RGBA;
+            Format format = Format::RGBA8;
             int nbLevels = 1; // 0 or less means maximum levels of mipmap
 
             bool repeat=false, linear=false, trilinear=false, depthMode=false;
