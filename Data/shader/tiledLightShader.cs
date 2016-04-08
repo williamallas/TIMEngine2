@@ -100,7 +100,7 @@ float F_shlick(float F0, float dotVH)
 
 void main()
 {
-	ivec2 texSize = imageSize(image0);
+	ivec2 texSize = textureSize(texture0,0);
 	if(gl_GlobalInvocationID.x >= texSize.x || gl_GlobalInvocationID.y >= texSize.y)
 		return;
 	
