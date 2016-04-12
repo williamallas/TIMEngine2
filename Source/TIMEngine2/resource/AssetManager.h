@@ -37,9 +37,9 @@ namespace resource
             else
             {
                 auto opt_dat = in_loader.template operator()<async>(args...);
+
                 if(opt_dat)
                     in_loader.add(args..., opt_dat.value());
-
                 return opt_dat;
             }
         }
