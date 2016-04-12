@@ -15,9 +15,9 @@ namespace core
     {
     public:
 
-        Option() : _val(), _hasValue(false) {}
+        Option() : _hasValue(false) {}
         Option(const T& value) : _val(value), _hasValue(true) {}
-        Option(const Option& option) { *this = option; }
+        Option(const Option& option) : _hasValue(false) { *this = option; }
         ~Option()
         {
             if(_hasValue)
@@ -27,6 +27,9 @@ namespace core
 #include "MemoryLoggerOff.h"
         Option& operator=(const Option& option)
         {
+            if(_hasValue)
+                _val.~T();
+
             _hasValue = option.hasValue();
             if(_hasValue)
                 new (&_val) T(option.value());
