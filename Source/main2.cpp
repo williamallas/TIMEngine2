@@ -6,13 +6,15 @@
 #include "SDLTextureLoader.h"
 
 #include "Rand.h"
-#include "renderer/ShaderCompiler.h"
+#include "interface/ShaderPool.h"
 #include "resource/MeshLoader.h"
 #include "resource/AssetManager.h"
 #include "bullet/BulletEngine.h"
 
 #include "interface/pipeline/pipeline.h"
 #include "interface/Pipeline.h"
+
+#include "RTSEngine/Graphic/TerrainRenderer.h"
 
 using namespace tim::core;
 using namespace tim::renderer;
@@ -81,25 +83,14 @@ int main(int, char**)
     interface::Texture solTexture = AssetManager<interface::Texture>::instance().load<false>("grass_pure.png", texParam).value();
     interface::Texture solNrmTexture = AssetManager<interface::Texture>::instance().load<false>("grass_pure_NRM.png", texParam).value();
 
-    ShaderCompiler vShader(ShaderCompiler::VERTEX_SHADER), pShader(ShaderCompiler::PIXEL_SHADER);
-    vShader.setSource(StringUtils::readFile("shader/gBufferPass.vert"));
-    pShader.setSource(StringUtils::readFile("shader/gBufferPass.frag"));
-
-    auto optShader = Shader::combine(vShader.compile({}), pShader.compile({}));
-
-    if(!optShader.hasValue())
-    {
-        LOG("Vertex shader error:\n", vShader.error());
-        LOG("Pixel shader error:\n", pShader.error());
-        LOG("Link erorr:", Shader::lastLinkError());
-        return 0;
-    }
+    Shader* gPass = ShaderPool::instance().add("gPass", "shader/gBufferPass.vert", "shader/gBufferPass.frag").value();
+    ShaderPool::instance().add("terrain", "shader/terrain.vert", "shader/terrain.frag");
 
     Mesh mesh[3];
     for(int i=0 ; i<3 ; ++i)
     {
         Mesh::Element elem;
-        elem.drawState().setShader(optShader.value());
+        elem.drawState().setShader(gPass);
         elem.setGeometry(geometry[i]);
         elem.setRougness(0.5);
         elem.setMetallic(0);
@@ -122,7 +113,7 @@ int main(int, char**)
 
     /* Pipeline entity */
     Pipeline::SceneEntity<SimpleScene> sceneEntity;
-    sceneEntity.globalLight.dirLights.push_back({vec3(0,0,-1), vec4::construct(0.5), true});
+    sceneEntity.globalLight.dirLights.push_back({vec3(1,1,-1), vec4::construct(1), true});
 
     Pipeline::SceneView sceneView;
     sceneView.camera.ratio = RES_X/RES_Y;
@@ -131,6 +122,8 @@ int main(int, char**)
     mat4 mat = mat4::Scale(vec3(100,100,1));
     mat.setTranslation({0,0,-0.5});
     MeshInstance& inst = sceneEntity.scene.add<MeshInstance>(mesh[2], mat);
+
+    TerrainRenderer terrain(512, 60, sceneEntity.scene);
 
     Mesh tmp = inst.mesh();
     tmp.element(0).setColor({0.5,0.5,0.5,1});
@@ -157,18 +150,18 @@ int main(int, char**)
         physEngine.addObject(physObj[index++].get());
     }
 
-    for(int i=0 ; i<50 ; ++i)
-    {
-        LightInstance& light = sceneEntity.scene.add<LightInstance>();
-        light.setPosition({Rand::frand()*100-50,Rand::frand()*100-50,Rand::frand()*10});
-        light.setRadius(30);
-        light.setPower(2);
-        light.setColor({1,1,1,1});
-    }
+//    for(int i=0 ; i<50 ; ++i)
+//    {
+//        LightInstance& light = sceneEntity.scene.add<LightInstance>();
+//        light.setPosition({Rand::frand()*100-50,Rand::frand()*100-50,Rand::frand()*10});
+//        light.setRadius(30);
+//        light.setPower(2);
+//        light.setColor({1,1,1,1});
+//    }
 
     Pipeline::DeferredRendererEntity& rendererEntity = pipeline.genDeferredRendererEntity({uint(RES_X),uint(RES_Y)});
-    rendererEntity.envLightRenderer().setEnableGI(false);
-    rendererEntity.envLightRenderer().setGlobalAmbient(vec4::construct(0.1));
+    rendererEntity.envLightRenderer().setEnableGI(true);
+    rendererEntity.envLightRenderer().setGlobalAmbient(vec4::construct(0));
     //rendererEntity.
 
     /* Load skybox */
@@ -201,7 +194,7 @@ int main(int, char**)
         }
     }
 
-    //sceneEntity.globalLight.skybox = {skyboxes[3], processedSky[3]};
+    sceneEntity.globalLight.skybox = {skyboxes[3], processedSky[3]};
 
     /* build the graph */
     pipeline::OnScreenRenderer& onScreenRender = pipeline.createNode<pipeline::OnScreenRenderer>();
@@ -217,7 +210,7 @@ int main(int, char**)
     rendererNode.setGlobalLight(sceneEntity.globalLight);
 
     Pipeline::SceneView dirLightView;
-    dirLightView.dirLightView.lightDir = vec3(0,0.7,-1);
+    dirLightView.dirLightView.lightDir = vec3(1,1,-1);
 
     pipeline::DirLightCullingNode<SimpleScene>& dirLightCullingNode =
             pipeline.createNode<pipeline::DirLightCullingNode<SimpleScene>>();
@@ -249,7 +242,7 @@ int main(int, char**)
         SDLTimer timer;
         input.getEvent();
         if(input.keyState(SDLK_n).pressed)
-             physEngine.dynamicsWorld->stepSimulation(timeElapsed, 10,0.01);
+             physEngine.dynamicsWorld->stepSimulation(timeElapsed, 10);
 
         freeFly.update(timeElapsed, sceneView.camera);
         dirLightView.dirLightView.camPos = sceneView.camera.pos;
@@ -294,6 +287,15 @@ int main(int, char**)
         }
         }
 
+        if(input.keyState(SDLK_1).pressed)
+            onScreenRender.setBufferOutputNode(rendererNode.outputNode(1),0);
+        if(input.keyState(SDLK_2).pressed)
+            onScreenRender.setBufferOutputNode(rendererNode.outputNode(2),0);
+        if(input.keyState(SDLK_3).pressed)
+            onScreenRender.setBufferOutputNode(rendererNode.outputNode(3),0);
+        if(input.keyState(SDLK_4).pressed)
+            onScreenRender.setBufferOutputNode(rendererNode.outputNode(0),0);
+
         timeElapsed = timer.elapsed()*0.001;
         totalTime += timeElapsed;
         {
@@ -306,7 +308,6 @@ int main(int, char**)
     }
 
     /** Close context **/
-    delete optShader.value();
     for(uint i=0 ; i<processedSky.size() ; ++i)
     {
         delete processedSky[i];
@@ -315,6 +316,7 @@ int main(int, char**)
 
     AssetManager<Geometry>::freeInstance();
     AssetManager<interface::Texture>::freeInstance();
+    ShaderPool::freeInstance();
     openGL.execAllGLTask();
 }
 
