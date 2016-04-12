@@ -42,6 +42,11 @@ namespace renderer
         uint  baseInstance;
     };
 
+    struct DummyMaterial
+    {
+        uint data[16];
+    };
+
     struct Material
     {
         uivec2 header;
@@ -49,7 +54,8 @@ namespace renderer
         vec4 parameter;
         vec4 color;
     };
-    static_assert(sizeof(Material) <= sizeof(mat4), "Material struct is too big.");
+    static_assert(sizeof(DummyMaterial) == sizeof(mat4), "DummyMaterial struct is too big or to small.");
+    static_assert(sizeof(Material) == sizeof(DummyMaterial), "Material struct is too big or to small.");
 
     static const uint MAX_SHADOW_MAP_LVL = DirLightView::MAX_LVL_DIRLIGHT;
 

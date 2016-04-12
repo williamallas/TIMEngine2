@@ -78,7 +78,7 @@ void DeferredRendererNode::render()
     {
         vector<mat4> accMatr;
         vector<renderer::MeshBuffers*> accMesh;
-        vector<renderer::Material> accMate;
+        vector<renderer::DummyMaterial> accMate;
         renderer::DrawState curDrawState = _toDraw[0].first->drawState();
         uint curIndex=0;
 
@@ -98,7 +98,7 @@ void DeferredRendererNode::render()
             {
                 accMatr.push_back(_toDraw[curIndex].second->transposed());
                 accMesh.push_back(_toDraw[curIndex].first->geometry().buffers());
-                accMate.push_back(_toDraw[curIndex].first->internalMaterial());
+                accMate.push_back(_toDraw[curIndex].first->dummyMaterial());
             }
         }
         if(!accMesh.empty())

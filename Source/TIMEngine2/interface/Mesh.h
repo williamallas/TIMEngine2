@@ -37,6 +37,11 @@ namespace interface
             float specular() const { return _mat.parameter[2]; }
             vec4 color() const { return _mat.color; }
 
+            template <class T>
+            void copyUserDefinedMaterial(const T&);
+
+            void resetMaterial();
+
             void setGeometry(const Geometry& g) { _geometry = g; }
             const Geometry& geometry() const { return _geometry; }
 
@@ -46,13 +51,19 @@ namespace interface
             renderer::DrawState& drawState() { return _state; }
             const renderer::DrawState& drawState() const { return _state; }
 
-            const renderer::Material& internalMaterial() const { return _mat; }
-            renderer::Material& internalMaterial() { return _mat; }
+            const renderer::DummyMaterial& dummyMaterial() const { return _userDefinedMaterial; }
 
         private:
             Geometry _geometry;
             Texture _textures[3];
-            renderer::Material _mat;
+
+            union
+            {
+                renderer::DummyMaterial _userDefinedMaterial;
+                renderer::Material _mat;
+            };
+
+
             renderer::DrawState _state;
 
             void setDefault();
@@ -106,12 +117,24 @@ namespace interface
         bool empty() const { return _elements.empty(); }
         uint nbElements() const { return _elements.size(); }
 
+        void setInitialVolume(const Sphere& s) { _initialVolume = s; }
         const Sphere& initialVolume() const { return _initialVolume; }
 
     private: 
         vector<Element> _elements;
         Sphere _initialVolume;
     };
+
+    template <class T>
+    void Mesh::Element::copyUserDefinedMaterial(const T& dat)
+    {
+        memcpy(&_userDefinedMaterial, &dat, sizeof(renderer::DummyMaterial));
+    }
+
+    inline void Mesh::Element::resetMaterial()
+    {
+        setDefault();
+    }
 }
 }
 #include "MemoryLoggerOff.h"

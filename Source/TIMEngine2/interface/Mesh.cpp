@@ -33,10 +33,7 @@ Mesh::Element& Mesh::Element::operator=(const Element& e)
     for(int i=0 ; i<3 ; ++i)
         setTexture(e.texture(i), i);
 
-    setRougness(e.roughness());
-    setMetallic(e.metallic());
-    setSpecular(e.specular());
-    setColor(e.color());
+    std::memcpy(&_userDefinedMaterial, &(e._userDefinedMaterial), sizeof(renderer::DummyMaterial));
     return *this;
 }
 

@@ -42,7 +42,7 @@ void MeshRenderer::setDrawState(const DrawState& s)
 }
 
 int MeshRenderer::draw(const vector<MeshBuffers*>& meshs, const vector<mat4>& models,
-                       const vector<Material>& materials, bool useCameraUbo)
+                       const vector<DummyMaterial>& materials, bool useCameraUbo)
 {
     if(meshs.empty() || models.size() != meshs.size() || (!materials.empty() && materials.size() < meshs.empty()))
         return 0;

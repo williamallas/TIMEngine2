@@ -21,7 +21,7 @@ namespace renderer
         ~MeshRenderer();
 
         void bind() const;
-        int draw(const vector<MeshBuffers*>&, const vector<mat4>&, const vector<Material>& mat = {}, bool useCameraUbo = true);
+        int draw(const vector<MeshBuffers*>&, const vector<mat4>&, const vector<DummyMaterial>& mat = {}, bool useCameraUbo = true);
 
         void setDrawState(const DrawState&);
 
@@ -40,7 +40,8 @@ namespace renderer
         ShaderStorageBuffer<mat4> _modelBuffer;
 #else
         UniformBuffer<mat4> _modelBuffer;
-        UniformBuffer<Material> _materialBuffer;
+
+        UniformBuffer<DummyMaterial> _materialBuffer;
 #endif
     };
 

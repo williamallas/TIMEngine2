@@ -13,7 +13,7 @@ namespace interface
 {
     class MeshInstance : public scene::Transformable
     {
-        friend class scene::SceneContainer<scene::Transformable>;
+        friend class scene::BasicScene<scene::Transformable>;
 
     public:
         void setMesh(const Mesh&);
