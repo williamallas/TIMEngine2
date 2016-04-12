@@ -13,7 +13,7 @@ namespace interface
 {
     class LightInstance : public scene::Transformable
     {
-        friend class scene::SceneContainer<scene::Transformable>;
+        friend class scene::BasicScene<scene::Transformable>;
 
     public:
         void set(const renderer::LightContextRenderer::Light& l) { _light=l; setVolume(Sphere(_light.position, _light.radius)); }
