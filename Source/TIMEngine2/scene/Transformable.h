@@ -2,7 +2,8 @@
 #define TRANSFORMABLE_H_INCLUDED
 
 #include "core.h"
-#include "SceneContainer.h"
+#include "Sphere.h"
+#include "BasicScene.h"
 
 #include "MemoryLoggerOn.h"
 namespace tim
@@ -12,7 +13,7 @@ namespace scene
 {
     class Transformable : boost::noncopyable
     {
-        friend class SceneContainer<Transformable>;
+        friend class BasicScene<Transformable>;
 
     public:
         const Sphere& volume() const { return _volume; }
@@ -26,7 +27,7 @@ namespace scene
     private:
         Sphere _volume;
 
-        mutable SceneContainer<Transformable>::TransformableInfo _containerInfo;
+        mutable BasicScene<Transformable>::TransformableInfo _containerInfo;
     };
 
     inline Transformable::~Transformable() {}
