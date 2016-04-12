@@ -1,7 +1,7 @@
 #ifndef SIMPLESCENE_H
 #define SIMPLESCENE_H
 
-#include "scene/SceneContainer.h"
+#include "scene/BasicScene.h"
 #include "scene/Transformable.h"
 #include "Frustum.h"
 
@@ -11,7 +11,7 @@ namespace tim
     using namespace core;
 namespace interface
 {
-    using SimpleScene = scene::SceneContainer<scene::Transformable>;
+    using SimpleScene = scene::BasicScene<scene::Transformable>;
 
     struct CameraCulling
     {
