@@ -1,12 +1,9 @@
 #ifndef CORE_H_INCLUDED
 #define CORE_H_INCLUDED
 
-#include <cstdio>
-#include <mutex>
 #include "Vector.h"
 #include "Logger.h"
 #include "MemoryLogger.h"
-
 
 #define RENDERABLE_OBJECT_NB_LOD 4
 
