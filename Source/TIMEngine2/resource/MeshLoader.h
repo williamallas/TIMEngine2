@@ -19,6 +19,7 @@ namespace resource
     public:
         struct LoadedMeshData
         {
+            using DataType = renderer::VNCT_Vertex;
             std::string name;
 
             uint nbIndex = 0;
@@ -26,7 +27,7 @@ namespace resource
 
             renderer::VertexFormat format = renderer::VertexFormat::VNCT;
             uint nbVertex = 0;
-            renderer::VNCT_Vertex* vData = nullptr;
+            DataType* vData = nullptr;
 
             void clear()
             {

@@ -36,7 +36,7 @@ MeshLoader::LoadedMeshData MeshLoader::importObj(const std::string& file, bool t
             meshData.format = renderer::VertexFormat::V;
 
     meshData.nbVertex = nbVertex;
-    meshData.vData = new renderer::VNCT_Vertex[nbVertex];
+    meshData.vData = new LoadedMeshData::DataType[nbVertex];
     for(auto it : mapIndex)
         meshData.vData[it.second] = {it.first.v, it.first.n, it.first.c, vec3()};
 
@@ -279,7 +279,7 @@ void MeshLoader::computeTangent(LoadedMeshData& meshData)
     uivec3* triangles = reinterpret_cast<uivec3*>(meshData.indexData);
     uint trianglesCount = meshData.nbIndex/3;
 
-    renderer::VNCT_Vertex* vbuffer = meshData.vData;
+    LoadedMeshData::DataType* vbuffer = meshData.vData;
     uint vertexCount = meshData.nbVertex;
 
     vec3* tan1 = new vec3[vertexCount*2]();
@@ -363,10 +363,10 @@ MeshLoader::LoadedMeshData MeshLoader::importTim(const std::string& file)
     read(fs, data.nbVertex);
     read(fs, data.nbIndex);
 
-    data.vData = new renderer::VNCT_Vertex[data.nbVertex];
+    data.vData = new LoadedMeshData::DataType[data.nbVertex];
     data.indexData = new uint[data.nbIndex];
 
-    fs.read(reinterpret_cast<char*>(data.vData), sizeof(renderer::VNCT_Vertex)*data.nbVertex);
+    fs.read(reinterpret_cast<char*>(data.vData), sizeof(LoadedMeshData::DataType)*data.nbVertex);
     fs.read(reinterpret_cast<char*>(data.indexData), sizeof(uint)*data.nbIndex);
 
     return data;
@@ -385,7 +385,7 @@ void MeshLoader::exportTim(const LoadedMeshData& data, const std::string& file)
     write(fs, data.nbVertex);
     write(fs, data.nbIndex);
 
-    fs.write(reinterpret_cast<char*>(data.vData), sizeof(renderer::VNCT_Vertex)*data.nbVertex);
+    fs.write(reinterpret_cast<char*>(data.vData), sizeof(LoadedMeshData::DataType)*data.nbVertex);
     fs.write(reinterpret_cast<char*>(data.indexData), sizeof(uint)*data.nbIndex);
 }
 
