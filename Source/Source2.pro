@@ -53,7 +53,13 @@ debug: DEFINES += TIM_DEBUG
 # Input
 HEADERS += TIM_SDL/*.h TIMEngine2/core/*.h TIMEngine2/renderer/*.h TIMEngine2/resource/*.h TIMEngine2/interface/*.h TIMEngine2/interface/pipeline/*.h TIMEngine2/scene/*.h \
     DebugCamera.h \
-    TIMEngine2/bullet/*.h
+    TIMEngine2/bullet/*.h \
+    RTSEngine/Map/Case.h \
+    RTSEngine/Map/FiniteGrid.h \
+    RTSEngine/Graphic/MapRenderer.h \
+    RTSEngine/Graphic/TerrainRenderer.h \
+    TIMEngine2/interface/ShaderPool.h \
+    TIMEngine2/interface/ResourceManager.h
 
 SOURCES += main2.cpp \
            TIM_SDL/SDLInputManager.cpp \
@@ -98,5 +104,10 @@ SOURCES += main2.cpp \
     TIMEngine2/bullet/BulletEngine.cpp \
     TIMEngine2/bullet/BulletObject.cpp \
     TIMEngine2/bullet/GeometryShape.cpp \
+    RTSEngine/Map/FiniteGrid.cpp \
+    RTSEngine/Graphic/MapRenderer.cpp \
+    RTSEngine/Graphic/TerrainRenderer.cpp \
+    TIMEngine2/interface/ShaderPool.cpp \
+    TIMEngine2/interface/ResourceManager.cpp
 
 
