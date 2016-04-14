@@ -91,6 +91,7 @@ SOURCES += main2.cpp \
     TIMEngine2/core/Rand.cpp \
     TIMEngine2/core/Sphere.cpp \
     TIMEngine2/core/Frustum.cpp \
+    TIMEngine2/core/ImageAlgorithm.cpp \
     TIMEngine2/resource/MeshLoader.cpp \
     TIMEngine2/resource/TextureLoader.cpp \
     TIMEngine2/resource/Image.cpp \
