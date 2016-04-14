@@ -16,16 +16,16 @@ public:
 
     private:
         vec3 _pos;
-        vector<std::reference_wrapper<interface::MeshInstance>> _graphicObject;
+        vector<std::reference_wrapper<tim::interface::MeshInstance>> _graphicObject;
 
         MapRenderer& _renderer;
     };
 
-    MapRenderer(float, interface::SimpleScene&);
+    MapRenderer(float, tim::interface::SimpleScene&);
 
 private:
     float _unitSize;
-    interface::SimpleScene& _scene;
+    tim::interface::SimpleScene& _scene;
 };
 
 #endif // MAPRENDERER_H

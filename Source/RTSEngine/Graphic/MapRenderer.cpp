@@ -1,6 +1,6 @@
 #include "MapRenderer.h"
 
-MapRenderer::MapRenderer(float unitSize, interface::SimpleScene& scene) : _unitSize(unitSize), _scene(scene)
+MapRenderer::MapRenderer(float unitSize, tim::interface::SimpleScene& scene) : _unitSize(unitSize), _scene(scene)
 {
 
 }

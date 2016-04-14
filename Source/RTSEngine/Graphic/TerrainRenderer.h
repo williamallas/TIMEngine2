@@ -11,24 +11,24 @@ public:
     class Patch
     {
     public:
-        Patch(interface::SimpleScene&, uint, vec2, uint);
+        Patch(tim::interface::SimpleScene&, uint, vec2, uint);
         ~Patch();
 
         ImageAlgorithm<vec3>& heightData() { return _heightData; }
         void generateHeightmap();
 
     private:
-        interface::SimpleScene& _scene;
+        tim::interface::SimpleScene& _scene;
         uint _resolution;
         uint _uboId;
         float _sizeXY, _sizeZ;
 
-        interface::Texture _heightMap;
+        tim::interface::Texture _heightMap;
         ImageAlgorithm<vec3> _heightData;
-        interface::MeshInstance** _patch;
+        tim::interface::MeshInstance** _patch;
     };
 
-    TerrainRenderer(float, float, interface::SimpleScene&);
+    TerrainRenderer(float, float, tim::interface::SimpleScene&);
 
 private:
     struct Material
@@ -36,10 +36,10 @@ private:
         uint64_t textures[4];
         float scales[8] = {10};
     };
-    static_assert(sizeof(Material) == sizeof(renderer::DummyMaterial), "internal terrain Material is not well sized.");
+    static_assert(sizeof(Material) == sizeof(tim::renderer::DummyMaterial), "internal terrain Material is not well sized.");
 
     float _patchSize;
-    interface::SimpleScene& _scene;
+    tim::interface::SimpleScene& _scene;
 
     struct TerrainInfo
     {
@@ -50,7 +50,7 @@ private:
         float vRes;
     };
     TerrainInfo _terrainInfo;
-    renderer::UniformBuffer<TerrainInfo> _uboTerrainInfo;
+    tim::renderer::UniformBuffer<TerrainInfo> _uboTerrainInfo;
 
     Patch* _patch; // actually only a single patch
 };

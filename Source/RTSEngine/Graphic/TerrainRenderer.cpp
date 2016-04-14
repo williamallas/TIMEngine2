@@ -4,6 +4,7 @@
 
 #include "Rand.h"
 
+using namespace tim;
 using namespace interface;
 
 TerrainRenderer::TerrainRenderer(float pSize, float zScale, interface::SimpleScene& scene) : _patchSize(pSize), _scene(scene)
