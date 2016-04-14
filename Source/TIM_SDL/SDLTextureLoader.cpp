@@ -23,17 +23,8 @@ ubyte* SDLTextureLoader::loadImage(const std::string& file, ImageFormat& format)
 
     SDL_LockSurface(converted);
 
-    ubyte* pixels = nullptr;
-    if(format.size.x() <= 1024 && format.size.y() <= 1024)
-    {
-        pixels = (unsigned char*)converted->pixels;
-        converted->pixels = nullptr;
-    }
-    else
-    {
-        pixels = new ubyte[format.size.x()*format.size.y()*format.nbComponent];
-        memcpy(pixels, converted->pixels, format.size.x()*format.size.y()*format.nbComponent);
-    }
+    ubyte* pixels = new ubyte[format.size.x()*format.size.y()*format.nbComponent];
+    memcpy(pixels, converted->pixels, format.size.x()*format.size.y()*format.nbComponent);
 
     SDL_UnlockSurface(converted);
     SDL_UnlockSurface(img);
