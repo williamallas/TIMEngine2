@@ -188,7 +188,7 @@ namespace core
             int32_t res=0;
             for(size_t i=0;i<A;++i)
             {
-                memcpy(reinterpret_cast<byte*>(&res)+i, &_val[i], 4/A);
+                memcpy(reinterpret_cast<sbyte*>(&res)+i, &_val[i], 4/A);
             }
             return res+1734642733;
         }

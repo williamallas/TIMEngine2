@@ -4,8 +4,6 @@
 #include "interface/SimpleScene.h"
 #include "interface/MeshInstance.h"
 
-using namespace tim;
-
 class MapRenderer
 {
 public:

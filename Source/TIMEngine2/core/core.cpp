@@ -12,7 +12,7 @@ void init()
     std::freopen("err.txt", "w+", stderr);
     Rand::seed(time(0));
 
-    static_assert(sizeof(byte)==1, "Assertion type failed.");
+    static_assert(sizeof(sbyte)==1, "Assertion type failed.");
     static_assert(sizeof(ubyte)==1, "Assertion type failed.");
     static_assert(sizeof(real)==4, "Assertion type failed.");
     static_assert(sizeof(integer)==4, "Assertion type failed.");

@@ -5,8 +5,6 @@
 #include "interface/MeshInstance.h"
 #include "ImageAlgorithm.h"
 
-using namespace tim;
-
 class TerrainRenderer
 {
 public:

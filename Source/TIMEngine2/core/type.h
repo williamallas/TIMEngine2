@@ -14,7 +14,7 @@ namespace tim
 {
 namespace core
 {
-    typedef char byte; // 1 byte (signed)
+    typedef char sbyte; // 1 byte (signed)
     typedef unsigned char ubyte; // 1 byte (unsigned)
     typedef int integer; // 4 byte (signed)
     typedef unsigned int uint; // 4 byte (unsigned)
