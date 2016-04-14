@@ -41,10 +41,11 @@ void MeshRenderer::setDrawState(const DrawState& s)
     _states = s;
 }
 
-int MeshRenderer::draw(const vector<MeshBuffers*>& meshs, const vector<mat4>& models,
-                       const vector<DummyMaterial>& materials, bool useCameraUbo)
+int MeshRenderer::draw(const vector<MeshBuffers*>& meshs, const vector<mat4>& models, const vector<DummyMaterial>& materials,
+                       const vector<vector<uint>>& extraUbo, bool useCameraUbo)
 {
-    if(meshs.empty() || models.size() != meshs.size() || (!materials.empty() && materials.size() < meshs.empty()))
+    if(meshs.empty() || models.size() != meshs.size() || (!materials.empty() && materials.size() < meshs.size())
+       || (!extraUbo.empty() && extraUbo.size() < meshs.size()))
         return 0;
 
 #ifdef USE_SSBO_MODELS
@@ -87,6 +88,12 @@ int MeshRenderer::draw(const vector<MeshBuffers*>& meshs, const vector<mat4>& mo
             _parameter.bind(0);
 
         openGL.bindUniformBuffer(_modelBuffer.id(), 1);
+
+        if(!extraUbo.empty())
+        {
+            for(uint j=0 ; j<extraUbo[i].size() ; ++j)
+                openGL.bindUniformBuffer(extraUbo[i][j], 3+j);
+        }
 
         if(!materials.empty())
             openGL.bindUniformBuffer(_materialBuffer.id(), 2);

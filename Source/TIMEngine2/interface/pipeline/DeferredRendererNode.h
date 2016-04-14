@@ -29,7 +29,14 @@ namespace pipeline
 
         vector<std::reference_wrapper<LightInstance>> _culledLight;
 
-        using ElementInstance = std::pair<const Mesh::Element*, const mat4*>;
+        struct EInst
+        {
+            const Mesh::Element* elem;
+            const mat4* matrix;
+            const vector<uint>* extraUbo;
+        };
+
+        using ElementInstance = EInst;//std::pair<const Mesh::Element*, const mat4*>;
         vector<ElementInstance> _toDraw;
 
         Pipeline::DeferredRendererEntity* _rendererEntity = nullptr;

@@ -22,9 +22,14 @@ namespace interface
         const mat4& matrix() const { return _model; }
         void setMatrix(const mat4&);
 
+        void attachUBO(uint id, uint index);
+        const vector<uint>& attachedUBO() const;
+        void clearAttachedUBO();
+
     protected:
         mat4 _model;
         Mesh _mesh;
+        vector<uint> _extraUbo;
 
         MeshInstance() = default;
         ~MeshInstance() = default;

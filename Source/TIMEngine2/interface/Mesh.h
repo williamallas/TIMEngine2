@@ -66,6 +66,7 @@ namespace interface
 
             renderer::DrawState _state;
 
+
             void setDefault();
             void flushMat();
         };

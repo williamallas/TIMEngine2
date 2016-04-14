@@ -37,7 +37,7 @@ void DeferredRendererNode::prepare()
         for(const MeshInstance& m : culledMesh)
         {
             for(uint i=0 ; i<m.mesh().nbElements() ; ++i)
-                _toDraw.push_back({&(m.mesh().element(i)), &(m.matrix())});
+                _toDraw.push_back({&(m.mesh().element(i)), &(m.matrix()), &(m.attachedUBO())});
         }
     }
 
@@ -48,7 +48,7 @@ void DeferredRendererNode::prepare()
     }
 
     std::sort(_toDraw.begin(), _toDraw.end(), [](const ElementInstance& e1, const ElementInstance& e2)
-        { return e1.first->drawState() < e2.first->drawState(); });
+        { return e1.elem->drawState() < e2.elem->drawState(); });
 
     for(size_t i=0 ; i<_lightInstanceSource.size() ; ++i)
     {
@@ -79,32 +79,35 @@ void DeferredRendererNode::render()
         vector<mat4> accMatr;
         vector<renderer::MeshBuffers*> accMesh;
         vector<renderer::DummyMaterial> accMate;
-        renderer::DrawState curDrawState = _toDraw[0].first->drawState();
+        vector<vector<uint>> accExtraUbo;
+        renderer::DrawState curDrawState = _toDraw[0].elem->drawState();
         uint curIndex=0;
 
         for(curIndex=0 ; curIndex < _toDraw.size() ; ++curIndex)
         {
-            if(curDrawState != _toDraw[curIndex].first->drawState())
+            if(curDrawState != _toDraw[curIndex].elem->drawState())
             {
                 _meshDrawer.setDrawState(curDrawState);
                 _meshDrawer.draw(accMesh, accMatr, accMate);
                 accMesh.resize(0);
                 accMatr.resize(0);
                 accMate.resize(0);
-                curDrawState = _toDraw[curIndex].first->drawState();
+                accExtraUbo.resize(0);
+                curDrawState = _toDraw[curIndex].elem->drawState();
             }
 
-            if(_toDraw[curIndex].first->geometry().buffers() && !_toDraw[curIndex].first->geometry().buffers()->isNull())
+            if(_toDraw[curIndex].elem->geometry().buffers() && !_toDraw[curIndex].elem->geometry().buffers()->isNull())
             {
-                accMatr.push_back(_toDraw[curIndex].second->transposed());
-                accMesh.push_back(_toDraw[curIndex].first->geometry().buffers());
-                accMate.push_back(_toDraw[curIndex].first->dummyMaterial());
+                accMatr.push_back(_toDraw[curIndex].matrix->transposed());
+                accMesh.push_back(_toDraw[curIndex].elem->geometry().buffers());
+                accMate.push_back(_toDraw[curIndex].elem->dummyMaterial());
+                accExtraUbo.push_back(*(_toDraw[curIndex].extraUbo));
             }
         }
         if(!accMesh.empty())
         {
             _meshDrawer.setDrawState(curDrawState);
-            _meshDrawer.draw(accMesh, accMatr, accMate);
+            _meshDrawer.draw(accMesh, accMatr, accMate, accExtraUbo);
         }
     }
 

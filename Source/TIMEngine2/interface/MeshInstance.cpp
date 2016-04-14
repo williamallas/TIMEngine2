@@ -21,5 +21,23 @@ void MeshInstance::setMesh(const Mesh& m)
     setMatrix(_model);
 }
 
+void MeshInstance::attachUBO(uint id, uint index)
+{
+    if(_extraUbo.size() <= index)
+        _extraUbo.resize(index+1);
+
+    _extraUbo[index] = id;
+}
+
+const vector<uint>& MeshInstance::attachedUBO() const
+{
+    return _extraUbo;
+}
+
+void MeshInstance::clearAttachedUBO()
+{
+    _extraUbo.clear();
+}
+
 }
 }
