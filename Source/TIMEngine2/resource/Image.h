@@ -70,7 +70,7 @@ namespace resource
 
     inline bool Image::empty() const { return _data == nullptr; }
 
-    inline size_t Image::memoryUsage() const { return _size.dot(_size) * sizeof(uint); }
+    inline size_t Image::memoryUsage() const { return _size.x() * _size.y() * sizeof(uint); }
 
     template <int N>
     Image* Image::reduceMinMax(const uivec2& s) const
