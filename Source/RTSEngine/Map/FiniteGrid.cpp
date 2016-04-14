@@ -1,6 +1,6 @@
 #include "FiniteGrid.h"
 
-FiniteGrid::FiniteGrid(const uivec2& s) : _SIZE(s), _map(std::unique_ptr<Case[]>(new Case[s.dot(s)]))
+FiniteGrid::FiniteGrid(const uivec2& s) : _SIZE(s), _map(std::unique_ptr<Case[]>(new Case[s[0]*s[1]]))
 {
 
 }
