@@ -3,13 +3,13 @@
 
 struct Material
 {
-	vec4 header_offset_size;
+
 	uvec2 texture0;
 	uvec2 texture1;
 	uvec2 texture2;
 	uvec2 texture3;
 	
-	vec4 scaleZ_sharp_reso_other;
+	vec4 scales[2];
 };
 
 layout(std140, binding = 2) uniform Materials
@@ -28,7 +28,8 @@ layout(location=2) out vec4 outMaterial;
   
 void main()  
 {  	
-	vec4 texColor = texture(sampler2D(materials[v_drawId].texture1), tCoord*60);
+	sampler2DArray colorTex = sampler2DArray(materials[v_drawId].texture1);
+	vec4 texColor = texture(colorTex, vec3(tCoord*materials[v_drawId].scales[0][2],2));
 	
 	//vec3 n = normalize(v_normal);
 	
