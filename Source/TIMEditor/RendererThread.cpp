@@ -26,7 +26,7 @@ class GLContextWidget : public QGLWidget
 RendererThread::RendererThread(RendererWidget* renderer) : _renderer(renderer), _init(false) {
     _contextCreator = new GLContextWidget(QGLFormat());
     _contextCreator->doneCurrent();
-    _contextCreator->moveToThread(this);
+    _contextCreator->context()->moveToThread(this);
 }
 
 bool RendererThread::isInitialized() const {
@@ -35,29 +35,23 @@ bool RendererThread::isInitialized() const {
 
 void RendererThread::run() {
     QGLContext* glContext = new QGLContext(QGLFormat());
+
     if(_contextCreator) {
         glContext->create(_contextCreator->context());
     }
     _renderer->setContext(glContext);
-    qDebug() << "hi";
-    //_renderer->makeCurrent();
+
+    _renderer->makeCurrent();
     _init = true;
 
-    while (true) {
-
-    }
-
-    //_editor->makeCurrent();
-/*
     tim::core::init();
-    qDebug() << "hi";
     tim::renderer::init();
-    qDebug() << "hi";
 
     while (true) {
-        qDebug() << "hi";
+        tim::renderer::openGL.clearColor(vec4(1,0,0,0));
+        _renderer->swapBuffers();
     }
 
     tim::renderer::close();
-    tim::core::quit();*/
+    tim::core::quit();
 }

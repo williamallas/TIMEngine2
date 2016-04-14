@@ -18,6 +18,7 @@ protected:
     virtual void initializeGL() override {}
     virtual void resizeGL(int, int) override {}
     virtual void paintGL() override {}
+    virtual void resizeEvent(QResizeEvent *) override {}
 
     virtual void paintEvent(QPaintEvent *) override {}
 

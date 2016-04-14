@@ -16,7 +16,7 @@ public:
     explicit EditorWindow(QWidget *parent = 0);
     ~EditorWindow();
 
-    void makeCurrent();
+    //void makeCurrent();
 
 private:
     Ui::EditorWindow *ui;

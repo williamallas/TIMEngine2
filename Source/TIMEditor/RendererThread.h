@@ -13,20 +13,12 @@ class RendererThread : public QThread {
     Q_OBJECT
 public:
     explicit RendererThread(RendererWidget* editor);
-
     bool isInitialized() const;
 
-signals:
-
 protected:
-
     virtual void run();
 
-
-public slots:
-
 private:
-
     RendererWidget* _renderer;
     QGLWidget* _contextCreator;
     bool _init;

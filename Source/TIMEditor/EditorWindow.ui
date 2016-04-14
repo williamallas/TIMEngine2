@@ -36,7 +36,7 @@
   <customwidget>
    <class>RendererWidget</class>
    <extends>QWidget</extends>
-   <header>rendererwidget.h</header>
+   <header>TIMEditor/rendererwidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
