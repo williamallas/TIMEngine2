@@ -25,6 +25,8 @@ __stdcall void debugOut(GLenum , GLenum , GLuint , GLenum severity , GLsizei , c
     }
 }
 
+bool hasBeenInit = false;
+
 bool init()
 {
     GLenum glewerr;
@@ -62,7 +64,6 @@ bool init()
     vDrawQuad.setSource(drawQuad_vertex);
     ShaderCompiler pDrawQuad(ShaderCompiler::PIXEL_SHADER);
     pDrawQuad.setSource(drawQuad_pixel);
-    LOG("You have a sufficient openGL version.");
 
     auto optShader = Shader::combine(vDrawQuad.compile({}), pDrawQuad.compile({}));
     if(!optShader.hasValue())
@@ -77,9 +78,7 @@ bool init()
     ShaderCompiler vDepthPass(ShaderCompiler::VERTEX_SHADER);
     vDepthPass.setSource(depthPass_vertex);
     LOG("No gs for DepthPass shader, expect a warning");
-    LOG("You have a sufficient openGL version.");
     optShader = Shader::linkVertexShader(vDepthPass.compile({}));
-    LOG("You have a sufficient openGL version.");
     if(!optShader.hasValue())
     {
         LOG_EXT("DepthPass Vertex shader error:\n", vDepthPass.error());
@@ -87,7 +86,6 @@ bool init()
     }
     else
         depthPassShader = optShader.value();
-    LOG("You have a sufficient openGL version.");
 
     VNCT_Vertex vData[4] = {{vec3(-1,-1,0),vec3(),vec2(0,0),vec3()},
                             {vec3(-1, 1,0),vec3(),vec2(0,1),vec3()},
@@ -95,22 +93,20 @@ bool init()
                             {vec3( 1,-1,0),vec3(),vec2(1,0),vec3()}};
     uint iData[6] = {0,1,2,2,3,0};
 
-    LOG("You have a sufficient openGL version.");
     VBuffer* tmpVB = vertexBufferPool->alloc(4);
     IBuffer* tmpIB = indexBufferPool->alloc(6);
-    LOG("You have a sufficient openGL version.");
     tmpVB->flush(reinterpret_cast<float*>(vData),0,4);
     tmpIB->flush(iData,0,6);
-    LOG("You have a sufficient openGL version.");
     quadMeshBuffers = new MeshBuffers(tmpVB,tmpIB);
-    LOG("You have a sufficient openGL version.");
 
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-    LOG("You have a sufficient openGL version.");
     if(openGL.hardward(GLState::Hardward::MAJOR_VERSION) > 4 ||
-       (openGL.hardward(GLState::Hardward::MAJOR_VERSION)==4 && openGL.hardward(GLState::Hardward::MINOR_VERSION)>=3)) {
+       (openGL.hardward(GLState::Hardward::MAJOR_VERSION)==4 && openGL.hardward(GLState::Hardward::MINOR_VERSION)>=3))
+    {
+        hasBeenInit = true;
         return true;
-    } else
+    }
+    else
     {
         LOG("You don't have a sufficient openGL version.");
         return false;
@@ -120,6 +116,10 @@ bool init()
 
 bool close()
 {
+    if(!hasBeenInit) return true;
+
+    hasBeenInit = false;
+
     for(int i=0 ; i<TextureMode::Last ; ++i)
         Texture::removeTextureSampler(textureSampler[i]);
 
