@@ -1,2 +1,3 @@
 /build/
 /Lib/
+*.pro.user*
