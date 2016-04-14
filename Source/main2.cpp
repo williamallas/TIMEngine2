@@ -123,7 +123,7 @@ int main(int, char**)
     mat.setTranslation({0,0,-0.5});
     MeshInstance& inst = sceneEntity.scene.add<MeshInstance>(mesh[2], mat);
 
-    TerrainRenderer terrain(512, 60, sceneEntity.scene);
+    TerrainRenderer terrain(512, 100, sceneEntity.scene);
 
     Mesh tmp = inst.mesh();
     tmp.element(0).setColor({0.5,0.5,0.5,1});
@@ -348,7 +348,7 @@ void initContextSDL()
     pWindow = SDL_CreateWindow("SDL2",SDL_WINDOWPOS_UNDEFINED,
                                       SDL_WINDOWPOS_UNDEFINED,
                                       x,y,
-                                      SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL  | SDL_WINDOW_FULLSCREEN);
+                                      SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL /* | SDL_WINDOW_FULLSCREEN*/);
     contexteOpenGL = SDL_GL_CreateContext(pWindow);
 
     //SDL_ShowCursor(SDL_DISABLE);

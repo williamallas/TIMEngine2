@@ -157,7 +157,7 @@ void DirLightShadowNode::render()
                 _defaultDrawState.shader()->setUniform(projView,
                                                        _defaultDrawState.shader()->engineUniformId(renderer::Shader::PROJVIEW));
 
-                _meshDrawer.draw(accMesh, accMatr, {}, false);
+                _meshDrawer.draw(accMesh, accMatr, {}, {}, false);
             }
         }
 
