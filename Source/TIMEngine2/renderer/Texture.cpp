@@ -140,7 +140,7 @@ Texture* Texture::genTextureArray2D(uint dataType, const GenTexParam& param, con
     uint dataFormat = glDataFormat(nbComponent);
     if(data && dataFormat != GL_NONE)
     {
-        glTexSubImage3D(GL_TEXTURE_2D, 0, 0, 0, 0, param.size.x(), param.size.y(), param.size.z(), dataFormat, dataType, data);
+        glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, param.size.x(), param.size.y(), param.size.z(), dataFormat, dataType, data);
         if(level > 1)
             glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
     }
