@@ -79,7 +79,6 @@ namespace resource
 
             for(size_t i=0 ; i<datas.size() ; ++i)
             {
-                std::cout << "i" << ":"<<i<<std::endl;
                 std::memcpy(concatData+res.x()*res.y()*nbComponent*i, datas[i], res.x()*res.y()*nbComponent);
                 delete[] datas[i];
             }

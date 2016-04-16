@@ -35,7 +35,6 @@ LIBS += -lSDL2_image.dll
 LIBS += -lBulletDynamics
 LIBS += -lBulletCollision -lLinearMath
 
-
 QMAKE_CXXFLAGS_RELEASE -= -O
 QMAKE_CXXFLAGS_RELEASE -= -O1
 QMAKE_CXXFLAGS_RELEASE -= -O2
@@ -43,9 +42,11 @@ QMAKE_CXXFLAGS_RELEASE += -O3
 QMAKE_CXXFLAGS_RELEASE += -fomit-frame-pointer
 QMAKE_CXXFLAGS_RELEASE += -fexpensive-optimizations
 QMAKE_CXXFLAGS_RELEASE += -flto
+debug: QMAKE_LFLAGS -= -flto -O3 -fomit-frame-pointer -fexpensive-optimizations
 
 QMAKE_LFLAGS += -O3
 QMAKE_LFLAGS += -flto
+debug: QMAKE_LFLAGS -= -flto -O3
 
 DEFINES += GLEW_STATIC GLEW_NO_GLU TIXML_USE_STL USE_SDL
 debug: DEFINES += TIM_DEBUG
@@ -59,7 +60,9 @@ HEADERS += TIM_SDL/*.h TIMEngine2/core/*.h TIMEngine2/renderer/*.h TIMEngine2/re
     RTSEngine/Graphic/MapRenderer.h \
     RTSEngine/Graphic/TerrainRenderer.h \
     TIMEngine2/interface/ShaderPool.h \
-    TIMEngine2/interface/ResourceManager.h
+    TIMEngine2/interface/ResourceManager.h \
+    RTSEngine/Graphic/RTSCamera.h \
+    RTSEngine/Game.h
 
 SOURCES += main2.cpp \
            TIM_SDL/SDLInputManager.cpp \
@@ -109,6 +112,8 @@ SOURCES += main2.cpp \
     RTSEngine/Graphic/MapRenderer.cpp \
     RTSEngine/Graphic/TerrainRenderer.cpp \
     TIMEngine2/interface/ShaderPool.cpp \
-    TIMEngine2/interface/ResourceManager.cpp
+    TIMEngine2/interface/ResourceManager.cpp \
+    RTSEngine/Graphic/RTSCamera.cpp \
+    RTSEngine/Game.cpp
 
 

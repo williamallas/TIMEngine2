@@ -19,7 +19,7 @@ namespace core
     public:
         using addr = unsigned long int;
 
-        BuddyBlocksAllocator(size_t maxSize) : _maxSize(lower_power_2(maxSize))
+        BuddyBlocksAllocator(size_t maxSize) : _maxSize(le_power2(maxSize))
         {
             _remainingMemory = _maxSize;
             _root = _pool.construct();
@@ -34,7 +34,7 @@ namespace core
         {
             std::lock_guard<MutexType> guard(_mutex);
 
-            size_t upperSize = std::max(upper_power_2(size), 1u<<BLOCK_BIT_SIZE);
+            size_t upperSize = std::max(ge_power2(size), 1u<<BLOCK_BIT_SIZE);
             uint m = magnitudeFromSize(upperSize);
 
             while(1)

@@ -69,7 +69,7 @@ Texture* Texture::genTexture2D(uint dataType, const GenTexParam& param, const vo
 
     int level = param.nbLevels;
     if(level <= 0)
-        level = 1+log2_ui(upper_power_2(std::max(param.size.x(), param.size.y())));
+        level = 1+log2_ui(ge_power2(std::max(param.size.x(), param.size.y())));
 
     glTexStorage2D(GL_TEXTURE_2D, level, toGLFormat(param.format), param.size.x(), param.size.y());
 
@@ -99,7 +99,7 @@ Texture* Texture::genTextureCube(const GenTexParam& param, const vector<ubyte*>&
 
     int level = param.nbLevels;
     if(level <= 0)
-        level = 1+log2_ui(upper_power_2(std::max(param.size.x(), param.size.y())));
+        level = 1+log2_ui(ge_power2(std::max(param.size.x(), param.size.y())));
 
     glTexStorage2D(GL_TEXTURE_CUBE_MAP, level, toGLFormat(param.format), param.size.x(), param.size.y());
 
@@ -133,7 +133,7 @@ Texture* Texture::genTextureArray2D(uint dataType, const GenTexParam& param, con
 
     int level = param.nbLevels;
     if(level <= 0)
-        level = 1+log2_ui(upper_power_2(std::max(param.size.x(), param.size.y())));
+        level = 1+log2_ui(ge_power2(std::max(param.size.x(), param.size.y())));
 
     glTexStorage3D(GL_TEXTURE_2D_ARRAY, level, toGLFormat(param.format), param.size.x(), param.size.y(), param.size.z());
 

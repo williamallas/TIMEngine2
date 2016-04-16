@@ -15,6 +15,7 @@
 #include "interface/Pipeline.h"
 
 #include "RTSEngine/Graphic/TerrainRenderer.h"
+#include "RTSEngine/Graphic/RTSCamera.h"
 
 using namespace tim::core;
 using namespace tim::renderer;
@@ -64,10 +65,10 @@ int main(int, char**)
 
     BulletEngine physEngine;
     btBoxShape boxShape(btVector3(0.5,0.5,0.5));
-    btStaticPlaneShape groundShape(btVector3(0,0,1), 0);
-    BulletObject obj(mat4::IDENTITY(), &groundShape);
-    physEngine.addObject(&obj);
-    obj.body()->setFriction(1000);
+    //btStaticPlaneShape groundShape(btVector3(0,0,1), 0);
+    //BulletObject obj(mat4::IDENTITY(), &groundShape);
+    //physEngine.addObject(&obj);
+    //obj.body()->setFriction(10);
 
     Geometry geometry[3];
 
@@ -106,6 +107,9 @@ int main(int, char**)
     //int indexSkybox=0;
 
     DebugCamera freeFly(&input);
+    RTSCamera rtsCamera;
+    rtsCamera.setResolution({int(RES_X), int(RES_Y)});
+    bool chooseCamera=false;
 
     /* Example of main */
 
@@ -119,34 +123,35 @@ int main(int, char**)
     sceneView.camera.ratio = RES_X/RES_Y;
     sceneView.camera.clipDist = {.1,1000};
 
-    mat4 mat = mat4::Scale(vec3(100,100,1));
-    mat.setTranslation({0,0,-0.5});
-    MeshInstance& inst = sceneEntity.scene.add<MeshInstance>(mesh[2], mat);
+    TerrainRenderer terrain(512, 50, sceneEntity.scene);
+    ImageAlgorithm<float> physicHM = terrain.patch()->heightData().map([](vec3 v) -> float { return v.z(); });
+    btHeightfieldTerrainShape* heightFieldShape = tim::createHeightFieldShape(vec3(512,512,50), physicHM);
+    BulletObject objHM(mat4::Translation({0,0,25}), heightFieldShape);
+    physEngine.addObject(&objHM);
+    objHM.body()->setFriction(10);
 
-    TerrainRenderer terrain(512, 100, sceneEntity.scene);
+//    Mesh tmp = inst.mesh();
+//    tmp.element(0).setColor({0.5,0.5,0.5,1});
+//    tmp.element(0).setRougness(0.7);
+//    tmp.element(0).setMetallic(0);
+//    tmp.element(0).setSpecular(0.08);
+//    tmp.element(0).setTexture(solTexture, 0);
+//    tmp.element(0).setTexture(solNrmTexture, 1);
+//    inst.setMesh(tmp);
 
-    Mesh tmp = inst.mesh();
-    tmp.element(0).setColor({0.5,0.5,0.5,1});
-    tmp.element(0).setRougness(0.7);
-    tmp.element(0).setMetallic(0);
-    tmp.element(0).setSpecular(0.08);
-    tmp.element(0).setTexture(solTexture, 0);
-    tmp.element(0).setTexture(solNrmTexture, 1);
-    inst.setMesh(tmp);
-
-    for(int i=0 ; i<100 ; ++i)
-        sceneEntity.scene.add<MeshInstance>(mesh[i%2], mat4::Translation({Rand::frand()*100-50,Rand::frand()*100-50,Rand::frand()*10}));
+//    for(int i=0 ; i<100 ; ++i)
+//        sceneEntity.scene.add<MeshInstance>(mesh[i%2], mat4::Translation({Rand::frand()*100-50,Rand::frand()*100-50,Rand::frand()*10}));
 
     vector<std::shared_ptr<BulletObject>> physObj(10000);
 
     int index=0;
-    for(int i=0 ; i<3 ; ++i)
-        for(int j=0 ; j<3 ; ++j)
-            for(int k=0 ; k<100 ; ++k)
+    for(int i=0 ; i<2 ; ++i)
+        for(int j=0 ; j<2 ; ++j)
+            for(int k=0 ; k<30 ; ++k)
     {
-        MeshInstance& m = sceneEntity.scene.add<MeshInstance>(mesh[2], mat4::Translation({i*1.01,j*1.01,k*1.01+10}));
+        MeshInstance& m = sceneEntity.scene.add<MeshInstance>(mesh[2], mat4::Translation({i*1.01,j*1.01,k*1.01+50}));
         physObj[index] = std::shared_ptr<BulletObject>(new BulletObject(new SceneMotionState<MeshInstance>(m), &boxShape, 1));
-        physObj[index].get()->body()->setFriction(1000);
+        physObj[index].get()->body()->setFriction(10);
         physEngine.addObject(physObj[index++].get());
     }
 
@@ -244,7 +249,15 @@ int main(int, char**)
         if(input.keyState(SDLK_n).pressed)
              physEngine.dynamicsWorld->stepSimulation(timeElapsed, 10);
 
-        freeFly.update(timeElapsed, sceneView.camera);
+        rtsCamera.setMouseParameter(input.mousePos(), input.mouseWheel().y());
+        if(chooseCamera)
+            freeFly.update(timeElapsed, sceneView.camera);
+        else
+            rtsCamera.update(timeElapsed, sceneView.camera);
+
+        if(input.keyState(SDLK_c).firstPress)
+            chooseCamera = !chooseCamera;
+
         dirLightView.dirLightView.camPos = sceneView.camera.pos;
 
         pipeline.prepare();
@@ -262,9 +275,9 @@ int main(int, char**)
         if(input.keyState(SDLK_m).pressed)
         {
         int index=0;
-        for(int i=0 ; i<3 ; ++i)
-            for(int j=0 ; j<3 ; ++j)
-                for(int k=0 ; k<100 ; ++k)
+        for(int i=0 ; i<2 ; ++i)
+            for(int j=0 ; j<2 ; ++j)
+                for(int k=0 ; k<30 ; ++k)
         {
 
               physObj[index].get()->body()->applyForce(btVector3((Rand::frand()-0.5)*500, (Rand::frand()-0.5)*500, (Rand::frand()-0.5)*500), btVector3(0,0,0));
@@ -276,9 +289,9 @@ int main(int, char**)
         if(input.keyState(SDLK_l).pressed)
         {
         int index=0;
-        for(int i=0 ; i<3 ; ++i)
-            for(int j=0 ; j<3 ; ++j)
-                for(int k=0 ; k<100 ; ++k)
+        for(int i=0 ; i<2 ; ++i)
+            for(int j=0 ; j<2 ; ++j)
+                for(int k=0 ; k<30 ; ++k)
         {
 
               physObj[index].get()->body()->applyForce(-physObj[index].get()->body()->getWorldTransform().getOrigin().normalized()*100, btVector3(0,0,0));
@@ -348,12 +361,12 @@ void initContextSDL()
     pWindow = SDL_CreateWindow("SDL2",SDL_WINDOWPOS_UNDEFINED,
                                       SDL_WINDOWPOS_UNDEFINED,
                                       x,y,
-                                      SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL /* | SDL_WINDOW_FULLSCREEN*/);
+                                      SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL  | SDL_WINDOW_FULLSCREEN);
     contexteOpenGL = SDL_GL_CreateContext(pWindow);
 
     //SDL_ShowCursor(SDL_DISABLE);
     //SDL_SetWindowGrab(pWindow, SDL_TRUE);
-    SDL_SetRelativeMouseMode(SDL_TRUE);
+    //SDL_SetRelativeMouseMode(SDL_TRUE);
 
     if(contexteOpenGL == 0)
     {
