@@ -5,9 +5,8 @@
 #include <btBulletDynamicsCommon.h>
 
 #include "BulletObject.h"
-
+#include "HeightFieldShape.h"
 //#include "bullet/BulletTerrainObject.h"
-//#include "bullet/GeometryShape.h"
 
 namespace tim
 {
