@@ -14,8 +14,8 @@ namespace core
     {
     public:
         ImageAlgorithm() : _data(nullptr), _size(0,0) {}
-        ImageAlgorithm(T* && data, uivec2 size) : _data(data), _size(size) {}
-        ImageAlgorithm(T*, uivec2);
+        //ImageAlgorithm(const T* && data, uivec2 size) : _data(data), _size(size) {}
+        ImageAlgorithm(const T* const, uivec2);
         ImageAlgorithm(uivec2);
         ImageAlgorithm(const ImageAlgorithm&);
         ImageAlgorithm(ImageAlgorithm&&);
@@ -27,13 +27,21 @@ namespace core
         uivec2 size() const { return _size; }
         bool empty() const { return _data == nullptr; }
 
+        std::string str() const;
+
         T* data() const { return _data; }
         T* detachData();
+
+        template <class F>
+        ImageAlgorithm<decltype((*(F*)NULL)(T()))> map(F f) const;
 
         void set(uint, uint, const T&);
 
         const T& get(uint x, uint y) const { return safe_get({x,y}); }
         T& get(uint x, uint y) { return safe_get({x,y}); }
+
+        T getLinear(vec2) const;
+        T getSmooth(vec2) const;
 
         const T& clamp_get(int x, int y) const;
         T& clamp_get(int x, int y);
@@ -41,6 +49,7 @@ namespace core
         ImageAlgorithm blur3x3() const;
         template <uint KS> ImageAlgorithm blur() const;
 
+        ImageAlgorithm resized(uivec2) const;
 
     private:
         T* _data;
@@ -58,7 +67,7 @@ namespace core
     };
 
     template <class T>
-    ImageAlgorithm<T>::ImageAlgorithm(T* dat, uivec2 s) : _data(nullptr), _size(0,0)
+    ImageAlgorithm<T>::ImageAlgorithm(const T* const dat, uivec2 s) : _data(nullptr), _size(0,0)
     {
         if(!dat) return;
 
@@ -137,7 +146,7 @@ namespace core
     const T& ImageAlgorithm<T>::safe_get(uivec2 s) const
     {
         if(check(s)) return _data[s.x()*_size.y()+s.y()];
-        else return T();
+        else return _data[0];
     }
 
     template <class T>
@@ -178,6 +187,31 @@ namespace core
     }
 
     template <class T>
+    T ImageAlgorithm<T>::getLinear(vec2 v) const
+    {
+        const T& nx_ny = clamp_get(int(v.x()), int(v.y()));
+        const T& px_ny = clamp_get(int(v.x())+1, int(v.y()));
+        const T& nx_py = clamp_get(int(v.x()), int(v.y())+1);
+        const T& px_py = clamp_get(int(v.x())+1, int(v.y())+1);
+
+        return interpolate(
+                    interpolate(nx_ny, px_ny, v.x()-floorf(v.x())),
+                    interpolate(nx_py, px_py, v.x()-floorf(v.x())),
+                    v.y() - floorf(v.y()));
+    }
+
+    template <class T>
+    T ImageAlgorithm<T>::getSmooth(vec2 v) const
+    {
+        const T& nx_ny = clamp_get(int(v.x()), int(v.y()));
+        const T& px_ny = clamp_get(int(v.x())+1, int(v.y()));
+        const T& nx_py = clamp_get(int(v.x()), int(v.y())+1);
+        const T& px_py = clamp_get(int(v.x())+1, int(v.y())+1);
+
+        return interpolateCos2(nx_ny, px_ny, nx_py, px_py, v.x(), v.y());
+    }
+
+    template <class T>
     void ImageAlgorithm<T>::set(uint x, uint y, const T& dat)
     {
         if(check({x,y}))
@@ -191,6 +225,19 @@ namespace core
         _data = nullptr;
         _size = uivec2(0,0);
         return dat;
+    }
+
+    template <class T>
+    template <class F>
+    ImageAlgorithm<decltype((*(F*)NULL)(T()))> ImageAlgorithm<T>::map(F f) const
+    {
+        ImageAlgorithm<decltype((*(F*)NULL)(T()))> img(_size);
+        for(uint i=0 ; i<_size.x() ; ++i)
+            for(uint j=0 ; j<_size.y() ; ++j)
+        {
+            img.set(i,j, f(get({i,j})));
+        }
+        return img;
     }
 
     template <class T>
@@ -243,6 +290,90 @@ namespace core
         return imgV;
     }
 
+    template <class T>
+    ImageAlgorithm<T> ImageAlgorithm<T>::resized(uivec2 s) const
+    {
+        if(s.x() == 0 || s.y() == 0 || (s == _size))
+            return *this;
+
+        class Foo
+        {   public:
+            static ImageAlgorithm<T> reduceX(const ImageAlgorithm<T>& img, uint minX)
+            {
+                uint lp2 = l_power2(img.size().x());
+                if(lp2 < minX) lp2 = minX;
+                bool times2 = (lp2 == (img.size().x()>>1));
+
+                ImageAlgorithm res({lp2, img.size().y()});
+                for(uint i=0 ; i<img.size().y() ; ++i)
+                    for(uint j=0 ; j<lp2 ; ++j)
+                {
+                    if(times2)
+                        res.set(j,i, (img.clamp_get(j*2,i)+img.clamp_get(j*2+1,i))/2);
+                    else
+                    {
+                        float ratio = float(img.size().x()) / lp2;
+                        float offset = 0.5f*(float(lp2) - (ratio*(lp2-1)));
+                        res.set(j,i, img.getLinear(vec2(ratio*j+offset, float(i))));
+                    }
+                }
+                return res;
+            }
+
+            static ImageAlgorithm<T> reduceY(const ImageAlgorithm<T>& img, uint minY)
+            {
+                uint lp2 = l_power2(img.size().y());
+                if(lp2 < minY) lp2 = minY;
+                bool times2 = (lp2 == (img.size().y()>>1));
+
+                ImageAlgorithm res({lp2, img.size().x()});
+                for(uint i=0 ; i<img.size().x() ; ++i)
+                    for(uint j=0 ; j<lp2 ; ++j)
+                {
+                    if(times2)
+                        res.set(i,j, (img.clamp_get(i,j*2)+img.clamp_get(i,j*2+1))/2);
+                    else
+                    {
+                        float ratio = float(img.size().y()) / lp2;
+                        float offset = 0.5f*(float(lp2) - (ratio*(lp2-1)));
+                        res.set(i,j, img.getLinear(vec2(float(i), ratio*j+offset)));
+                    }
+                }
+                return res;
+            }
+        };
+
+
+        ImageAlgorithm res;
+        while(true)
+        {
+            if((res.empty() && _size.x() > s.x()) || res.size().x() > s.x())
+                res = Foo::reduceX(res.empty() ? *this : res, s.x());
+
+            if((res.empty() && _size.y() > s.y()) || res.size().y() > s.y())
+                res = Foo::reduceY(res.empty() ? *this : res, s.y());
+
+            if(!res.empty() && res.size().x() <= s.x() && res.size().y() <= s.y())
+                break;
+        }
+        return res;
+    }
+
+#include "StringUtils.h"
+    template <class T>
+    std::string ImageAlgorithm<T>::str() const
+    {
+        std::string res;
+        for(uint j=0 ; j<_size.y() ; ++j)
+        {
+            for(uint i=0 ; i<_size.x() ; ++i)
+            {
+                res += StringUtils(get(i,j)).str() + " ";
+            }
+            res += "\n";
+        }
+        return res;
+    }
 
 }
 }
