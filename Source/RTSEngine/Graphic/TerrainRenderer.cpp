@@ -7,16 +7,22 @@
 using namespace tim;
 using namespace interface;
 
-TerrainRenderer::TerrainRenderer(float pSize, float zScale, interface::SimpleScene& scene) : _patchSize(pSize), _scene(scene)
+TerrainRenderer::TerrainRenderer(float pSize, float zScale, interface::SimpleScene& scene) : _scene(scene)
 {
-    _terrainInfo.offset = {0,0};
-    _terrainInfo.sharpness = 200;
-    _terrainInfo.vRes = 64*8;
-    _terrainInfo.XY_size = pSize;
-    _terrainInfo.zscale = zScale;
+    _parameter.cellResolution = 8;
+    _parameter.offset = vec3(-vec2::construct(pSize*0.5),0);
+    _parameter.sharpness = 200;
+    _parameter.size = pSize;
+    _parameter.zscale = zScale;
+
+    _terrainInfo.offset = _parameter.offset.to<2>();
+    _terrainInfo.sharpness = _parameter.sharpness;
+    _terrainInfo.vRes = _parameter.cellResolution * 64;
+    _terrainInfo.XY_size = _parameter.size;
+    _terrainInfo.zscale = _parameter.zscale;
     _uboTerrainInfo.create(1, &_terrainInfo);
 
-    _patch = new Patch(_scene, 8, vec2(_patchSize, zScale), _uboTerrainInfo.id());
+    _patch = new Patch(_scene, _parameter, _uboTerrainInfo.id());
 
     resource::TextureLoader::ImageFormat imgFormat;
     ubyte* data = resource::textureLoader->loadImage("heightmap.png", imgFormat);
@@ -35,23 +41,23 @@ TerrainRenderer::TerrainRenderer(float pSize, float zScale, interface::SimpleSce
     _patch->generateHeightmap();
 }
 
-TerrainRenderer::Patch::Patch(interface::SimpleScene& scene, uint cellRes, vec2 size, uint terrainUbo)
-    : _scene(scene), _resolution(cellRes), _sizeXY(size.x()), _sizeZ(size.y())
+TerrainRenderer::Patch::Patch(interface::SimpleScene& scene, const Parameter& p, uint terrainUbo)
+    : _scene(scene), _param(p)
 {
-    _patch = new MeshInstance*[cellRes*cellRes];
-    for(uint i=0 ; i<cellRes*cellRes ; ++i)
+    _patch = new MeshInstance*[_param.cellResolution*_param.cellResolution];
+    for(uint i=0 ; i<_param.cellResolution*_param.cellResolution ; ++i)
         _patch[i] = nullptr;
 
-    float cellSize = _sizeXY / _resolution;
-    for(uint x=0 ; x<cellRes ; ++x)
-        for(uint y=0 ; y<cellRes ; ++y)
+    float cellSize = _param.size / _param.cellResolution;
+    for(uint x=0 ; x<_param.cellResolution ; ++x)
+        for(uint y=0 ; y<_param.cellResolution ; ++y)
     {
-        vec2 hpos = vec2(cellSize * x, cellSize * y);
+        vec2 hpos = vec2(cellSize * x + cellSize*0.5, cellSize * y + cellSize*0.5);
         mat4 m = mat4::Scale(vec3::construct(cellSize*0.5));
-        m.setTranslation(vec3(hpos,0));
+        m.setTranslation(vec3(hpos,0) + _param.offset);
 
-        _patch[x*_resolution+y] = &_scene.add<MeshInstance>(Mesh(), m);
-        _patch[x*_resolution+y]->attachUBO(terrainUbo, 0);
+        _patch[x*_param.cellResolution+y] = &_scene.add<MeshInstance>(Mesh(), m);
+        _patch[x*_param.cellResolution+y]->attachUBO(terrainUbo, 0);
     }
 }
 
@@ -83,10 +89,10 @@ void TerrainRenderer::Patch::generateHeightmap()
     Mesh mesh(elem);
     mesh.setInitialVolume(Sphere({0,0,10}, 20));
 
-    for(uint x=0 ; x<_resolution ; ++x)
-        for(uint y=0 ; y<_resolution ; ++y)
+    for(uint x=0 ; x<_param.cellResolution ; ++x)
+        for(uint y=0 ; y<_param.cellResolution ; ++y)
     {
-        _patch[x*_resolution+y]->setMesh(mesh);
+        _patch[x*_param.cellResolution+y]->setMesh(mesh);
     }
 }
 

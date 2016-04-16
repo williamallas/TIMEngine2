@@ -49,7 +49,7 @@ smooth out vec3 v_tangent;
   
 void main()  
 {  
-	vec2 OFFSET = offset_zscale_sharpness.xy;
+	vec2 OFFSET = -offset_zscale_sharpness.xy;
 	float SCALEZ = offset_zscale_sharpness.z;
 	float SHARPNESS = offset_zscale_sharpness.w;
 	float TRES = XYsize_vRes.y;

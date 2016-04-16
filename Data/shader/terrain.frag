@@ -34,6 +34,7 @@ void main()
 	//vec3 n = normalize(v_normal);
 	
 	outColor = texColor;
+	
 	//outColor = vec4(v_normal*0.5+0.5,1);
 	outNormal = vec4(v_normal*0.5+0.5,1);
 	outMaterial = vec4(1,0,0.5,1);

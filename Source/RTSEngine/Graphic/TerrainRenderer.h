@@ -8,20 +8,29 @@
 class TerrainRenderer
 {
 public:
+    struct Parameter
+    {
+        vec3 offset;
+        float size;
+        float zscale;
+        float sharpness;
+        uint cellResolution;
+    };
+
     class Patch
     {
     public:
-        Patch(tim::interface::SimpleScene&, uint, vec2, uint);
+        Patch(tim::interface::SimpleScene&, const Parameter&, uint);
         ~Patch();
 
         ImageAlgorithm<vec3>& heightData() { return _heightData; }
+        const ImageAlgorithm<vec3>& heightData() const { return _heightData; }
         void generateHeightmap();
 
     private:
         tim::interface::SimpleScene& _scene;
-        uint _resolution;
+        const Parameter& _param;
         uint _uboId;
-        float _sizeXY, _sizeZ;
 
         tim::interface::Texture _heightMap;
         ImageAlgorithm<vec3> _heightData;
@@ -29,6 +38,8 @@ public:
     };
 
     TerrainRenderer(float, float, tim::interface::SimpleScene&);
+
+    const Patch* patch() const { return _patch; }
 
 private:
     struct Material
@@ -38,10 +49,9 @@ private:
     };
     static_assert(sizeof(Material) == sizeof(tim::renderer::DummyMaterial), "internal terrain Material is not well sized.");
 
-    float _patchSize;
     tim::interface::SimpleScene& _scene;
 
-    struct TerrainInfo
+    struct UBOTerrainInfo
     {
         vec2 offset;
         float zscale;
@@ -49,10 +59,12 @@ private:
         float XY_size;
         float vRes;
     };
-    TerrainInfo _terrainInfo;
-    tim::renderer::UniformBuffer<TerrainInfo> _uboTerrainInfo;
+    UBOTerrainInfo _terrainInfo;
+    tim::renderer::UniformBuffer<UBOTerrainInfo> _uboTerrainInfo;
 
     Patch* _patch; // actually only a single patch
+
+    Parameter _parameter;
 };
 
 #endif // TERRAINRENDERER_H
