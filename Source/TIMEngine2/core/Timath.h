@@ -41,7 +41,7 @@ namespace core
     }
 
     template <class T>
-    T lower_power_2(T n)
+    T le_power2(T n)
     {
         T p = 1;
         while (p <= n) p <<= 1;
@@ -49,14 +49,28 @@ namespace core
     }
 
     template <class T>
-    T upper_power_2(T n)
+    T l_power2(T n)
+    {
+        T p = 1;
+        while (p < n) p <<= 1;
+        return p >> 1;
+    }
+
+    template <class T>
+    T ge_power2(T n)
     {
         T p = 1;
         while (p < n) p <<= 1;
         return p;
     }
 
-
+    template <class T>
+    T g_power2(T n)
+    {
+        T p = 1;
+        while (p <= n) p <<= 1;
+        return p;
+    }
 
     template<class T>
     inline T interpolate(T a, T b, float x)
