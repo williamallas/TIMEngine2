@@ -23,8 +23,9 @@ ubyte* SDLTextureLoader::loadImage(const std::string& file, ImageFormat& format)
 
     SDL_LockSurface(converted);
 
-    ubyte* pixels = new ubyte[format.size.x()*format.size.y()*format.nbComponent];
-    memcpy(pixels, converted->pixels, format.size.x()*format.size.y()*format.nbComponent);
+    //ubyte* pixels = new ubyte[format.size.x()*format.size.y()*format.nbComponent];
+    ubyte* pixels = TextureLoader::toGLFormat((ubyte*)converted->pixels, nullptr, format);
+    //memcpy(pixels, converted->pixels, format.size.x()*format.size.y()*format.nbComponent);
 
     SDL_UnlockSurface(converted);
     SDL_UnlockSurface(img);
@@ -70,10 +71,10 @@ vector<ubyte*> SDLTextureLoader::loadImageCube(const vector<std::string>& files,
         if(!dat)
             return result;
 
-        ubyte* tmp = new ubyte[format.size.x()*format.size.y()*format.nbComponent];
-        toGLFormat(dat, tmp, format);
+        //ubyte* tmp = new ubyte[format.size.x()*format.size.y()*format.nbComponent];
+        //toGLFormat(dat, tmp, format);
         resource::Image img;
-        img.buildFromData(tmp, format);
+        img.buildFromData(dat, format);
 
         switch(i)
         {
@@ -89,7 +90,7 @@ vector<ubyte*> SDLTextureLoader::loadImageCube(const vector<std::string>& files,
 
         //memcpy(data+i*format.size.x()*format.size.y()*format.nbComponent, clonedData, format.size.x()*format.size.y()*format.nbComponent);
 
-        delete[] tmp;
+        delete[] dat;
         //delete[] clonedData;
     }
 
