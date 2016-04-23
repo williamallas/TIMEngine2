@@ -4,6 +4,7 @@
 #include "resource/TextureLoader.h"
 #include "resource/AssetLoader.h"
 #include "Texture.h"
+#include "ImageAlgorithm.h"
 
 namespace tim
 {

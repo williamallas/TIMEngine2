@@ -2,6 +2,7 @@
 #define TEXTURELOADER_H_INCLUDED
 
 #include "core/core.h"
+#include "ImageAlgorithm.h"
 
 #include "MemoryLoggerOn.h"
 namespace tim
