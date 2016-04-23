@@ -248,4 +248,39 @@ bool BulletObject::rayCastNotMe(const vec3& from, const vec3& to, CollisionPoint
     return rayCallback.m_closestHitFraction < 1;
 }
 
+bool BulletObject::rayCast(const vec3& from, const vec3& to, CollisionPoint& point) const
+{
+    class Closest : public btCollisionWorld::ClosestRayResultCallback
+    {
+    public:
+        Closest (btRigidBody* me, const vec3& from, const vec3& to)
+            : btCollisionWorld::ClosestRayResultCallback(btVector3(from[0], from[1], from[2]), btVector3(to[0], to[1], to[2]))
+        { _me = me; }
+
+        virtual btScalar addSingleResult(btCollisionWorld::LocalRayResult& rayResult, bool normalInWorldSpace)
+        {
+            if (rayResult.m_collisionObject == _me)
+                return ClosestRayResultCallback::addSingleResult (rayResult, normalInWorldSpace);
+
+            return 1;
+        }
+
+    protected:
+        btRigidBody* _me;
+    };
+
+    Closest rayCallback(_body, from, to);
+    _world->rayTest(btVector3(from[0], from[1], from[2]), btVector3(to[0], to[1], to[2]), rayCallback);
+
+    point.depth = rayCallback.m_closestHitFraction;
+    point.normal = vec3(rayCallback.m_hitNormalWorld.m_floats[0],
+                        rayCallback.m_hitNormalWorld.m_floats[1],
+                        rayCallback.m_hitNormalWorld.m_floats[2]);
+    point.pos = vec3(rayCallback.m_hitPointWorld.m_floats[0],
+                     rayCallback.m_hitPointWorld.m_floats[1],
+                     rayCallback.m_hitPointWorld.m_floats[2]);
+
+    return rayCallback.m_closestHitFraction < 1;
+}
+
 }

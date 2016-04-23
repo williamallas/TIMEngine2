@@ -33,6 +33,7 @@ using namespace core;
        vector<CollisionPoint> continuousCollide(const mat4& dest) const;
        bool firstCollision(const mat4& dest, CollisionPoint&) const;
        bool rayCastNotMe(const vec3& from, const vec3& to, CollisionPoint&) const;
+       bool rayCast(const vec3& from, const vec3& to, CollisionPoint&) const;
 
        static btTransform toBtTransform(const mat4& m)
        {
