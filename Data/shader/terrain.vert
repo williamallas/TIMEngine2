@@ -62,7 +62,7 @@ void main()
 	sampler2D hm = sampler2D(materials[drawId].texture0);
 	//float dxy = 1.f / textureSize(hm, 0).x;
 	
-	const int O = textureSize(hm, 0).x / int(TRES*2);
+	const int O = max(textureSize(hm, 0).x / int(TRES*2),1);
 	float f_px = textureOffset(hm, tCoord, ivec2(O,0)).r;
 	float f_nx = textureOffset(hm, tCoord, ivec2(-O,0)).r;
 	float f_py = textureOffset(hm, tCoord, ivec2(0,O)).r;

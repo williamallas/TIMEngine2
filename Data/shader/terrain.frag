@@ -29,7 +29,12 @@ layout(location=2) out vec4 outMaterial;
 void main()  
 {  	
 	sampler2DArray colorTex = sampler2DArray(materials[v_drawId].texture1);
-	vec4 texColor = texture(colorTex, vec3(tCoord*materials[v_drawId].scales[0][2],2));
+	sampler2D maskTex = sampler2D(materials[v_drawId].texture2);
+	
+	vec4 mask = texture(maskTex, tCoord);
+	vec4 texColor = texture(colorTex, vec3(tCoord*materials[v_drawId].scales[0][0],0));
+	
+	texColor = texture(colorTex, vec3(tCoord*materials[v_drawId].scales[0][1],1)) * mask.x + texColor*(1-mask.x);
 	
 	//vec3 n = normalize(v_normal);
 	
