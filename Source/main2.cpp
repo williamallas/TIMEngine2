@@ -14,8 +14,7 @@
 #include "interface/pipeline/pipeline.h"
 #include "interface/Pipeline.h"
 
-#include "RTSEngine/Graphic/TerrainRenderer.h"
-#include "RTSEngine/Graphic/RTSCamera.h"
+#include "RTSEngine/Game.h"
 
 using namespace tim::core;
 using namespace tim::renderer;
@@ -27,8 +26,8 @@ SDL_Window *pWindow;
 SDL_GLContext contexteOpenGL;
 void initContextSDL();
 void delContextSDL();
-#define RES_X 1920.f
-#define RES_Y 1080.f
+#define RES_X 1600.f
+#define RES_Y 900.f
 
 template <int I, int N=50>
 float countTime(float time)
@@ -123,12 +122,16 @@ int main(int, char**)
     sceneView.camera.ratio = RES_X/RES_Y;
     sceneView.camera.clipDist = {.1,1000};
 
-    TerrainRenderer terrain(512, 50, sceneEntity.scene);
+    const float TERRAIN_SIZE=128;
+    const float TERRAIN_H = 50;
+    TerrainRenderer terrain(TERRAIN_SIZE, TERRAIN_H, sceneEntity.scene);
     ImageAlgorithm<float> physicHM = terrain.patch()->heightData().map([](vec3 v) -> float { return v.z(); });
-    btHeightfieldTerrainShape* heightFieldShape = tim::createHeightFieldShape(vec3(512,512,50), physicHM);
-    BulletObject objHM(mat4::Translation({0,0,25}), heightFieldShape);
+    btHeightfieldTerrainShape* heightFieldShape = tim::createHeightFieldShape(vec3(TERRAIN_SIZE,TERRAIN_SIZE,TERRAIN_H), physicHM);
+    BulletObject objHM(mat4::Translation({0,0,TERRAIN_H*0.5}), heightFieldShape);
     physEngine.addObject(&objHM);
     objHM.body()->setFriction(10);
+    MeshInstance& movableObj = sceneEntity.scene.add<MeshInstance>(mesh[0], mat4::Translation({0,0,0}));
+
 
 //    Mesh tmp = inst.mesh();
 //    tmp.element(0).setColor({0.5,0.5,0.5,1});
@@ -249,11 +252,39 @@ int main(int, char**)
         if(input.keyState(SDLK_n).pressed)
              physEngine.dynamicsWorld->stepSimulation(timeElapsed, 10);
 
-        rtsCamera.setMouseParameter(input.mousePos(), input.mouseWheel().y());
+
+        BulletObject::CollisionPoint posInt;
+        bool has = false;//Game::rayCast(&objHM, sceneView.camera, {input.mousePos().x()/RES_X, input.mousePos().y()/RES_Y}, posInt);
+
+        if(has)
+        {
+            vec3 z = terrain.patch()->normal(posInt.pos.to<2>());
+            vec3 x = z.cross({1,0,0});
+            vec3 y = x.cross(z);
+            mat4 m = mat4::IDENTITY();
+            m[0] = vec4(-x,1);
+            m[1] = vec4(y,1);
+            m[2] = vec4(z,1);
+
+            m.setTranslation(posInt.pos);
+
+            movableObj.setMatrix(m);
+        }
+
         if(chooseCamera)
+        {
             freeFly.update(timeElapsed, sceneView.camera);
+
+            if(input.mouseState(SDLInputManager::LEFT).firstPress && has)
+                sceneView.camera.pos = posInt.pos;
+
+            sceneView.camera.pos.z() = terrain.patch()->height(sceneView.camera.pos.to<2>()) + 2;
+        }
         else
+        {
+            rtsCamera.setMouseParameter(input.mousePos(), input.mouseWheel().y());
             rtsCamera.update(timeElapsed, sceneView.camera);
+        }
 
         if(input.keyState(SDLK_c).firstPress)
             chooseCamera = !chooseCamera;
@@ -361,7 +392,7 @@ void initContextSDL()
     pWindow = SDL_CreateWindow("SDL2",SDL_WINDOWPOS_UNDEFINED,
                                       SDL_WINDOWPOS_UNDEFINED,
                                       x,y,
-                                      SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL  | SDL_WINDOW_FULLSCREEN);
+                                      SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL /* | SDL_WINDOW_FULLSCREEN*/);
     contexteOpenGL = SDL_GL_CreateContext(pWindow);
 
     //SDL_ShowCursor(SDL_DISABLE);
