@@ -3,6 +3,7 @@
 
 #include "Vector.h"
 #include "PascaleTriangle.h"
+#include "Matrix.h"
 
 #include "MemoryLoggerOn.h"
 namespace tim
@@ -50,6 +51,7 @@ namespace core
         template <uint KS> ImageAlgorithm blur() const;
 
         ImageAlgorithm resized(uivec2) const;
+        ImageAlgorithm transformed(const imat2&) const;
 
     private:
         T* _data;
@@ -113,6 +115,7 @@ namespace core
         for(uint i=0 ; i<_size.x() ; ++i)
             for(uint j=0 ; j<_size.y() ; ++j)
                 get({i,j}) = img.get({i,j});
+        return *this;
     }
 
     template <class T>
@@ -293,7 +296,7 @@ namespace core
     template <class T>
     ImageAlgorithm<T> ImageAlgorithm<T>::resized(uivec2 s) const
     {
-        if(s.x() == 0 || s.y() == 0 || (s == _size))
+        if(s.x() == 0 || s.y() == 0 || (s == _size) || s.x() > _size.x() || s.y() > _size.y())
             return *this;
 
         class Foo
@@ -357,6 +360,31 @@ namespace core
                 break;
         }
         return res;
+    }
+
+    template <class T>
+    ImageAlgorithm<T> ImageAlgorithm<T>::transformed(const imat2& m) const
+    {
+        if(empty()) return *this;
+
+        ivec2 s = ivec2(int(_size.x()), int(_size.y()));
+        s = m*s;
+        s.x() = abs(s.x());
+        s.y() = abs(s.y());
+
+        ImageAlgorithm img(uivec2(uint(s.x()), uint(s.y())));
+
+        for(size_t i=0 ; i<_size.x() ; ++i)
+            for(size_t j=0 ; j<_size.y() ; ++j)
+        {
+            ivec2 coord = m*ivec2(i,j);
+            if(coord.x() < 0) coord.x() += s.x();
+            if(coord.y() < 0) coord.y() += s.y();
+
+            img.set(coord.x(), coord.y(), get(i,j));
+        }
+
+        return img;
     }
 
 #include "StringUtils.h"
