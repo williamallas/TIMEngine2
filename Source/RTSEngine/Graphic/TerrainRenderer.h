@@ -23,9 +23,12 @@ public:
         Patch(tim::interface::SimpleScene&, const Parameter&, uint);
         ~Patch();
 
-        ImageAlgorithm<vec3>& heightData() { return _heightData; }
+        void setHeightData(const ImageAlgorithm<vec3>&);
         const ImageAlgorithm<vec3>& heightData() const { return _heightData; }
         void generateHeightmap();
+
+        float height(vec2) const;
+        vec3 normal(vec2) const;
 
     private:
         tim::interface::SimpleScene& _scene;
@@ -33,6 +36,7 @@ public:
         uint _uboId;
 
         tim::interface::Texture _heightMap;
+        ImageAlgorithm<vec3> _gpuHeightData;
         ImageAlgorithm<vec3> _heightData;
         tim::interface::MeshInstance** _patch;
     };

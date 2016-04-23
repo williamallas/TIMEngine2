@@ -1,6 +1,7 @@
 #include "TerrainRenderer.h"
 #include "interface/ResourceManager.h"
 #include "ImageAlgorithm.h"
+#include "resource/Image.h"
 
 #include "Rand.h"
 
@@ -9,7 +10,7 @@ using namespace interface;
 
 TerrainRenderer::TerrainRenderer(float pSize, float zScale, interface::SimpleScene& scene) : _scene(scene)
 {
-    _parameter.cellResolution = 8;
+    _parameter.cellResolution = 4;
     _parameter.offset = vec3(-vec2::construct(pSize*0.5),0);
     _parameter.sharpness = 200;
     _parameter.size = pSize;
@@ -37,8 +38,15 @@ TerrainRenderer::TerrainRenderer(float pSize, float zScale, interface::SimpleSce
 
     delete[] data;
 
-    _patch->heightData() = f_img.blur<7>();
+    _patch->setHeightData(f_img.blur<13>()/*.transformed(imat2::FLIP_Y())*/);
     _patch->generateHeightmap();
+}
+
+void TerrainRenderer::Patch::setHeightData(const ImageAlgorithm<vec3>& img)
+{
+    _gpuHeightData = img;
+    uivec2 newSize(std::min(img.size().x(),256u), std::min(img.size().y(),256u));
+    _heightData = _gpuHeightData.resized(newSize);
 }
 
 TerrainRenderer::Patch::Patch(interface::SimpleScene& scene, const Parameter& p, uint terrainUbo)
@@ -66,9 +74,9 @@ void TerrainRenderer::Patch::generateHeightmap()
     renderer::Texture::GenTexParam param = Texture::genParam(false, true, false, false);
     param.format = renderer::Texture::Format::RGBA16F;
     param.nbLevels = 1;
-    param.size = uivec3(_heightData.size(),0);
+    param.size = uivec3(_gpuHeightData.size(),0);
 
-    renderer::Texture* tex = renderer::Texture::genTexture2D(param, reinterpret_cast<float*>(_heightData.data()), 3);
+    renderer::Texture* tex = renderer::Texture::genTexture2D(param, reinterpret_cast<float*>(_gpuHeightData.data()), 3);
     tex->makeBindless();
     _heightMap = Texture(tex);
 
@@ -78,11 +86,13 @@ void TerrainRenderer::Patch::generateHeightmap()
 
     Material mat;
     mat.textures[0] = _heightMap.handle();
-    mat.textures[1] = textureManager.load<false>(vector<std::string>({"grass1.png","grass2.png","ground.png"}),
-                                                 Texture::genParam()).value().handle();
+    mat.textures[1] = textureManager.load<false>(vector<std::string>({"ground.png", "grass1.png","grass2.png"}),
+                                                 Texture::genParam(true,true,true,8)).value().handle();
+    mat.textures[2] = textureManager.load<false>("mask.png", Texture::genParam()).value().handle();
+
     mat.scales[0] = 30;
-    mat.scales[1] = 30;
-    mat.scales[2] = 60;
+    mat.scales[1] = 20;
+    mat.scales[2] = 20;
 
     elem.copyUserDefinedMaterial(mat);
 
@@ -99,5 +109,28 @@ void TerrainRenderer::Patch::generateHeightmap()
 TerrainRenderer::Patch::~Patch()
 {
     delete[] _patch;
+}
+
+float TerrainRenderer::Patch::height(vec2 v) const
+{
+    v -= _param.offset.to<2>();
+    v /= _param.size;
+
+    std::swap(v.x(), v.y());
+
+    v *= vec2(_gpuHeightData.size().x()-1, _gpuHeightData.size().y()-1);
+    return _gpuHeightData.getLinear(v).z() * _param.zscale;
+}
+
+vec3 TerrainRenderer::Patch::normal(vec2 v) const
+{
+    vec3 a = vec3(v+vec2(-0.25,0), height(v+vec2(-0.25,0)));
+    vec3 b = vec3(v+vec2(0.25,0.25), height(v+vec2(0.25,0.25)));
+    vec3 c = vec3(v+vec2(0.25,-0.25), height(v+vec2(0.25,-0.25)));
+
+    vec3 n = Plan(a,b,c).plan().to<3>().normalized();
+    std::swap(n.x(), n.y());
+    n.x() *= -1;
+    return n;
 }
 
