@@ -274,7 +274,7 @@ namespace core
         static const Matrix2& ROT_270() {  static Matrix2 m = Matrix2({0,1,-1,0}); return m; }
         static const Matrix2& FLIP_X()  {  static Matrix2 m = Matrix2({1,0,0,-1}); return m; }
         static const Matrix2& FLIP_Y()  {  static Matrix2 m = Matrix2({-1,0,0,1}); return m; }
-        static const Matrix2& TRANSPOSE() {  static Matrix2 m = Matrix2(0,1,1,0); return m; }
+        static const Matrix2& TRANSPOSE() {  static Matrix2 m = Matrix2({0,1,1,0}); return m; }
     };
 
     template<class T>
