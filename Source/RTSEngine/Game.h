@@ -12,6 +12,7 @@ class Game
 public:
     Game();
 
+    static bool rayCast(tim::BulletObject*, const tim::core::Camera&, vec2 mousePos, tim::BulletObject::CollisionPoint&);
 protected:
 
 
