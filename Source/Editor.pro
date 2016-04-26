@@ -58,7 +58,12 @@ HEADERS += TIM_SDL/*.h TIMEngine2/core/*.h TIMEngine2/renderer/*.h TIMEngine2/re
     TIMEngine2/bullet/*.h \
     TIMEditor/EditorWindow.h \
     TIMEditor/RendererThread.h \
-    TIMEditor/RendererWidget.h
+    TIMEditor/RendererWidget.h \
+    TIMEditor/QtTextureLoader.h \
+    TIMEditor/FullPipeline.h \
+    TIMEditor/MainRenderer.h \
+    TIMEditor/ResourceViewWidget.h \
+    TIMEditor/FullScreenDock.h
 
 SOURCES += mainEditor.cpp \
            TIM_SDL/SDLInputManager.cpp \
@@ -95,6 +100,7 @@ SOURCES += mainEditor.cpp \
     TIMEngine2/resource/Image.cpp \
     TIMEngine2/interface/Mesh.cpp \
     TIMEngine2/interface/MeshInstance.cpp \
+    TIMEngine2/interface/ShaderPool.cpp \
     TIMEngine2/interface/Pipeline.cpp \
     TIMEngine2/interface/pipeline/DeferredRendererNode.cpp \
     TIMEngine2/interface/pipeline/OnScreenRenderer.cpp \
@@ -105,7 +111,12 @@ SOURCES += mainEditor.cpp \
     TIMEngine2/bullet/GeometryShape.cpp \
     TIMEditor/EditorWindow.cpp \
     TIMEditor/RendererThread.cpp \
-    TIMEditor/RendererWidget.cpp
+    TIMEditor/RendererWidget.cpp \
+    TIMEditor/QtTextureLoader.cpp \
+    TIMEditor/FullPipeline.cpp \
+    TIMEditor/MainRenderer.cpp \
+    TIMEditor/ResourceViewWidget.cpp \
+    TIMEditor/FullScreenDock.cpp
 
 FORMS += \
     TIMEditor/EditorWindow.ui

@@ -11,12 +11,7 @@ namespace tim
     {
     public:
         SDLTextureLoader() = default;
-
-        ubyte* loadImage(const std::string&, ImageFormat&) const;
-        ubyte* loadImageArray(const vector<std::string>&, ImageFormat&) const;
-        vector<ubyte*> loadImageCube(const vector<std::string>&, ImageFormat&) const;
-
-    private:
+        ubyte* loadImage(const std::string&, ImageFormat&) const override;
     };
 
 }

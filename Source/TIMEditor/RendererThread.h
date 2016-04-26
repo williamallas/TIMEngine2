@@ -3,9 +3,12 @@
 
 #include "core/core.h"
 #include "renderer/renderer.h"
+#include "resource/TextureLoader.h"
+#include "MainRenderer.h"
+
 #include <QThread>
 #include <QGLContext>
-#include "RendererWidget.h"
+#include <QMutex>
 
 class EditorWindow;
 
@@ -15,6 +18,8 @@ public:
     explicit RendererThread(RendererWidget* editor);
     bool isInitialized() const;
 
+    tim::MainRenderer* mainRenderer() { return _main; }
+
 protected:
     virtual void run();
 
@@ -22,6 +27,10 @@ private:
     RendererWidget* _renderer;
     QGLWidget* _contextCreator;
     bool _init;
+
+    tim::MainRenderer* _main = nullptr;
+
+    void initContext();
 
 };
 

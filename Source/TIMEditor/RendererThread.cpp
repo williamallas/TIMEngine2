@@ -1,14 +1,16 @@
+#include "TIMEditor/QtTextureLoader.h"
 #include "RendererThread.h"
-#include "EditorWindow.h"
-#include <QDebug>
+
+#undef interface
+using namespace tim;
+using namespace core;
+using namespace interface;
 
 class GLContextWidget : public QGLWidget
 {
     public:
         GLContextWidget(const QGLFormat &format) : QGLWidget(format) {
             setAutoBufferSwap(false);
-            //doneCurrent();
-            //setVisible(false);
         }
 
     protected:
@@ -33,25 +35,36 @@ bool RendererThread::isInitialized() const {
     return _init;
 }
 
-void RendererThread::run() {
+void RendererThread::run()
+{
+    initContext();
+
+    _main->main();
+
+    delete _main;
+    resource::AssetManager<Geometry>::freeInstance();
+    resource::AssetManager<Texture>::freeInstance();
+    ShaderPool::freeInstance();
+    renderer::openGL.execAllGLTask();
+
+    delete resource::textureLoader;
+    renderer::close();
+    core::quit();
+}
+
+void RendererThread::initContext()
+{
     QGLContext* glContext = new QGLContext(QGLFormat());
 
     if(_contextCreator) {
         glContext->create(_contextCreator->context());
     }
     _renderer->setContext(glContext);
-
     _renderer->makeCurrent();
+
+    core::init();
+    renderer::init();
+    resource::textureLoader = new tim::QtTextureLoader;
+    _main = new MainRenderer(_renderer);
     _init = true;
-
-    tim::core::init();
-    tim::renderer::init();
-
-    while (true) {
-        tim::renderer::openGL.clearColor(vec4(1,0,0,0));
-        _renderer->swapBuffers();
-    }
-
-    tim::renderer::close();
-    tim::core::quit();
 }

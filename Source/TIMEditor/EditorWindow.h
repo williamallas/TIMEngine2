@@ -16,11 +16,15 @@ public:
     explicit EditorWindow(QWidget *parent = 0);
     ~EditorWindow();
 
-    //void makeCurrent();
-
+protected:
+    void dragEnterEvent(QDragEnterEvent*) override{std::cout << "Enter main\n";}
 private:
     Ui::EditorWindow *ui;
     RendererThread* _rendererThread;
+
+public slots:
+    void addResourceFolder();
+    void addResourceFolderRec();
 };
 
 #endif // EDITORWINDOW_H
