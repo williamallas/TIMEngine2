@@ -16,7 +16,7 @@ namespace interface
     {
     public:
         ShaderPool();
-         ~ShaderPool();
+        ~ShaderPool();
 
         Option<renderer::Shader*> add(std::string name, std::string vs, std::string ps, std::string gs="");
         Option<renderer::Shader*> addCompute(std::string name, std::string cs);

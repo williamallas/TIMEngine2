@@ -7,4 +7,12 @@
 #include "interface/pipeline/DirLightCullingNode.h"
 #include "interface/pipeline/OnScreenRenderer.h"
 
+namespace tim{
+namespace interface{
+    using Scene = Pipeline::SceneEntity<SimpleScene>;
+    using View = Pipeline::SceneView;
+}
+}
+
+
 #endif // pipeline_NODE_H

@@ -14,6 +14,7 @@
 #include "renderer/PostReflexionRenderer.h"
 #include "MeshInstance.h"
 #include "LightInstance.h"
+#include <boost/tuple/tuple_comparison.hpp>
 
 #include "MemoryLoggerOn.h"
 namespace tim
@@ -59,26 +60,36 @@ namespace interface
 
         public:
             renderer::DeferredRenderer& deferredRenderer() { return _renderer; }
-            renderer::TiledLightRenderer& lightRenderer() { return _lightContext; }
+
+            renderer::TiledLightRenderer* lightRenderer() { return _lightRenderer; }
+            renderer::LightContextRenderer* lightContext() { return _lightContext; }
+
             renderer::DirectionalLightRenderer& dirLightRenderer() { return _dirLightRenderer; }
             renderer::IndirectLightRenderer& envLightRenderer() { return _envLightRenderer; }
             renderer::PostReflexionRenderer* reflexionRenderer() { return _reflexionRenderer; }
 
         private:
             renderer::DeferredRenderer _renderer;
-            renderer::TiledLightRenderer _lightContext;
+
+            renderer::TiledLightRenderer* _lightRenderer = nullptr;
+            renderer::LightContextRenderer* _lightContext = nullptr;
+
             renderer::DirectionalLightRenderer _dirLightRenderer;
             renderer::IndirectLightRenderer _envLightRenderer;
             renderer::PostReflexionRenderer* _reflexionRenderer = nullptr;
 
-            DeferredRendererEntity(const uivec2& res, const renderer::FrameParameter& param)
-                : _renderer(res, param), _lightContext(_renderer),
-                  _dirLightRenderer(_lightContext), _envLightRenderer(_lightContext)
-                  /*,_reflexionRenderer(new renderer::PostReflexionRenderer(_lightContext))*/ {}
+            DeferredRendererEntity(const uivec2& res, const renderer::FrameParameter& param,
+                                   bool noLightRenderer=false, bool reflexionRenderer=false)
+                : _renderer(res, param),
+                  _lightRenderer(noLightRenderer ? nullptr : new renderer::TiledLightRenderer(_renderer)),
+                  _lightContext(noLightRenderer ? new renderer::LightContextRenderer(_renderer) : _lightRenderer),
+                  _dirLightRenderer(*_lightContext), _envLightRenderer(*_lightContext),
+                  _reflexionRenderer(reflexionRenderer ? new renderer::PostReflexionRenderer(*_lightContext) : nullptr) {}
 
             ~DeferredRendererEntity()
             {
                 delete _reflexionRenderer;
+                delete _lightContext;
             }
         };
 
@@ -271,7 +282,7 @@ namespace interface
 
         renderer::MeshRenderer& meshRenderer();
 
-        DeferredRendererEntity& genDeferredRendererEntity(const uivec2&);
+        DeferredRendererEntity& genDeferredRendererEntity(const uivec2&, bool useLightRenderer, bool useReflexionRenderer);
 
         template <class T>
         typename std::enable_if<std::is_default_constructible<T>::value, T>::type& createNode()
@@ -305,7 +316,7 @@ namespace interface
     private:
         renderer::MeshRenderer _meshRenderer;
 
-        boost::container::map<uivec2, std::unique_ptr<DeferredRendererEntity>> _deferredRendererEntity;
+        boost::container::map<boost::tuple<uivec2,bool,bool>, std::unique_ptr<DeferredRendererEntity>> _deferredRendererEntity;
 
         vector<ProcessNode*> _allProcessNodes;
         TerminalNode* _outputNode = nullptr;

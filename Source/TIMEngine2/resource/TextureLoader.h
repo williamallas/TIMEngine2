@@ -23,8 +23,8 @@ namespace resource
         virtual ~TextureLoader()=default;
 
         virtual ubyte* loadImage(const std::string&, ImageFormat&) const = 0;
-        virtual ubyte* loadImageArray(const vector<std::string>&, ImageFormat&) const = 0;
-        virtual vector<ubyte*> loadImageCube(const vector<std::string>&, ImageFormat&) const = 0;
+        virtual ubyte* loadImageArray(const vector<std::string>&, ImageFormat&) const;
+        virtual vector<ubyte*> loadImageCube(const vector<std::string>&, ImageFormat&) const;
 
         static ubyte* toGLFormat(ubyte*, ubyte*, const ImageFormat&);
         static float* toGLFormat(float*, float*, const ImageFormat&);

@@ -15,7 +15,7 @@ renderer::Texture* DeferredRendererNode::buffer(uint index) const
     if(!_rendererEntity) return nullptr;
 
     if(index == 0)
-        return _rendererEntity->lightRenderer().buffer();
+        return _rendererEntity->lightContext()->buffer();
     else if(index-1 < 4) return _rendererEntity->deferredRenderer().buffer(index-1);
     else return nullptr;
 }
@@ -115,7 +115,8 @@ void DeferredRendererNode::render()
     for(uint i=0 ; i<lights.size() ; ++i)
         lights[i] = _culledLight[i].get().get();
 
-    _rendererEntity->lightRenderer().draw(lights);
+    if(_rendererEntity->lightRenderer())
+        _rendererEntity->lightRenderer()->draw(lights);
 
     if(_globalLightInfo)
     {

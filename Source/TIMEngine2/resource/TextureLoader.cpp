@@ -1,4 +1,5 @@
 #include "TextureLoader.h"
+#include "Image.h"
 
 #include "MemoryLoggerOn.h"
 namespace tim
@@ -41,6 +42,59 @@ float* TextureLoader::toGLFormat(float* ptr, float* out_ptr, const ImageFormat& 
 
     delete[] ptr;
     return out_ptr;
+}
+
+ubyte* TextureLoader::loadImageArray(const vector<std::string>& files, ImageFormat& format) const
+{
+    ubyte* data = nullptr;
+    for(size_t i=0 ; i<files.size() ; ++i)
+    {
+        ubyte* dat=loadImage(files[i], format);
+        if(!dat)
+        {
+            delete[] data;
+            return nullptr;
+        }
+
+        if(!data)
+            data = new ubyte[format.size.x()*format.size.y()*format.nbComponent*files.size()];
+
+        memcpy(data+i*format.size.x()*format.size.y()*format.nbComponent, dat, format.size.x()*format.size.y()*format.nbComponent);
+        delete[] dat;
+        //toGLFormat(dat, data+i*format.size.x()*format.size.y()*format.nbComponent, format);
+    }
+    return data;
+}
+
+vector<ubyte*> TextureLoader::loadImageCube(const vector<std::string>& files, ImageFormat& format) const
+{
+    vector<ubyte*> result;
+
+    for(size_t i=0 ; i<files.size() ; ++i)
+    {
+        ubyte* dat=loadImage(files[i], format);
+        if(!dat)
+            return result;
+
+        //ubyte* tmp = new ubyte[format.size.x()*format.size.y()*format.nbComponent];
+        //toGLFormat(dat, tmp, format);
+        resource::Image img;
+        img.buildFromData(dat, format);
+
+        switch(i)
+        {
+            case 0: img.transform(imat2::ROT_270()); break;
+            case 1: img.transform(imat2::ROT_90()); break;
+            case 2: /*img.transform(imat2::ROT_180());*/ break;
+            case 3: img.transform(imat2::ROT_180()); break;
+            default: break;
+        }
+
+        result.push_back(img.cloneData(format.nbComponent));
+        delete[] dat;
+    }
+
+    return result;
 }
 
 }
