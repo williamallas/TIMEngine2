@@ -8,10 +8,10 @@ EditorWindow::EditorWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::EditorWindow)
 {
-    //setAcceptDrops(true);
     ui->setupUi(this);
-
     this->setCentralWidget(nullptr);
+
+    ui->resourceWidget->viewport()->setAcceptDrops(true);
 
     QMenu* editorMenu = ui->menubar->addMenu("Editor");
     QAction* actionCloseContext = new QAction("Close context", this);
@@ -34,6 +34,9 @@ EditorWindow::EditorWindow(QWidget *parent) :
     }
 
     ui->glWidget->setMainRenderer(_rendererThread->mainRenderer());
+    ui->meshEditorWidget->setMainRenderer(_rendererThread->mainRenderer());
+
+    ui->meshEditorWidget->addElement("tor.obj");
 }
 
 EditorWindow::~EditorWindow()

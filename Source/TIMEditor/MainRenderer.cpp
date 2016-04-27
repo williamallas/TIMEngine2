@@ -18,53 +18,30 @@ MainRenderer::MainRenderer(RendererWidget* parent) : _parent(parent)
     _currentSize = {200,200};
 
     _running = true;
+
+    _view[0].camera.ratio = 1;
+    _view[0].camera.clipDist = {.1,1000};
+    _view[0].camera.pos = {3,3,3};
+    _view[0].camera.dir = {0,0,0};
 }
 
 void MainRenderer::main()
 {
     lock();
 
-    Geometry geometry[3];
-    geometry[0] = AssetManager<Geometry>::instance().load<false>("tor.obj").value();
-    geometry[1] = AssetManager<Geometry>::instance().load<false>("sphere.tim").value();
-    geometry[2] = AssetManager<Geometry>::instance().load<false>("cube_uv.obj").value();
+    ShaderPool::instance().add("gPass", "shader/gBufferPass.vert", "shader/gBufferPass.frag").value();
 
-    Shader* gPass = ShaderPool::instance().add("gPass", "shader/gBufferPass.vert", "shader/gBufferPass.frag").value();
-
-    Mesh mesh[3];
-    for(int i=0 ; i<3 ; ++i)
-    {
-        Mesh::Element elem;
-        elem.drawState().setShader(gPass);
-        elem.setGeometry(geometry[i]);
-        elem.setRougness(0.5);
-        elem.setMetallic(0);
-        elem.setSpecular(0.1);
-        elem.setColor(vec4(vec3(Rand::frand(), Rand::frand(), Rand::frand()).saturated(),1));
-
-        mesh[i].addElement(elem);
-    }
-
-    /* Pipeline entity */
-    Pipeline::SceneEntity<SimpleScene> sceneEntity;
-    sceneEntity.globalLight.dirLights.push_back({vec3(1,1,-1), vec4::construct(1), true});
-
-    Pipeline::SceneView sceneView;
-    sceneView.camera.ratio = 1;
-    sceneView.camera.clipDist = {.1,1000};
-    sceneView.camera.pos = {5,5,5};
-    sceneView.camera.dir = {0,0,0};
-
-    sceneEntity.scene.add<MeshInstance>(mesh[0], mat4::Translation({-3,0,0}));
-    sceneEntity.scene.add<MeshInstance>(mesh[1], mat4::Translation({0,0,0}));
-    sceneEntity.scene.add<MeshInstance>(mesh[2], mat4::Translation({3,0,0}));
-
-    _pipeline.setScene(sceneEntity, sceneView);
+    _pipeline.setScene(_scene[0], _view[0]);
 
     unlock();
     while(_running)
     {
         lock();
+
+        _eventMutex.lock();
+        while(!_events.empty())
+            _events.pop()();
+        _eventMutex.unlock();
 
         if(_pipeline.pipeline)
         {
@@ -73,13 +50,12 @@ void MainRenderer::main()
             _pipeline.pipeline->render();
         }
 
-        GL_ASSERT();
-
-        _parent->swapBuffers();
-
         resize();
-        _pipeline.setScene(sceneEntity, sceneView);
+        _pipeline.setScene(_scene[0], _view[0]);
         unlock();
+
+        GL_ASSERT();
+        _parent->swapBuffers();
     }
 }
 
@@ -90,6 +66,8 @@ void MainRenderer::updateSize(uivec2 s)
     {
         _newSize = true;
         _currentSize = s;
+        for(int i=0 ; i<NB_SCENE ; ++i)
+            _view[i].camera.ratio = float(s.x()) / s.y();
     }
     unlock();
 }
@@ -100,9 +78,15 @@ void MainRenderer::resize()
     {
         openGL.resetStates();
         _pipeline.create(_currentSize, _renderingParameter);
-        //openGL.resetStates();
     }
     _newSize=false;
+}
+
+void MainRenderer::addEvent(std::function<void()> f)
+{
+    _eventMutex.lock();
+    _events.push(f);
+    _eventMutex.unlock();
 }
 
 }

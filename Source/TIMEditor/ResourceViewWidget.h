@@ -33,7 +33,11 @@ protected:
     QIcon getIcon(Element) const;
 
     void dropEvent(QDropEvent*) override;
+    void dragMoveEvent(QDragMoveEvent*) override;
     void dragEnterEvent(QDragEnterEvent*) override;
+
+    bool isTexture(QString) const;
+    bool isGeometry(QString) const;
 
 };
 

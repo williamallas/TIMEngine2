@@ -12,7 +12,6 @@
 
 ResourceViewWidget::ResourceViewWidget(QWidget* parent) : QListWidget(parent), _objIcon("objIcon.png"), _timIcon("timIcon")
 {
-    setAcceptDrops(true);
 }
 
 void ResourceViewWidget::addElement(Element e)
@@ -39,32 +38,34 @@ void ResourceViewWidget::addElement(Element e)
 void ResourceViewWidget::addDir(QString dirStr, bool rec)
 {
     QDirIterator it(dirStr, rec ? QDirIterator::Subdirectories:QDirIterator::NoIteratorFlags);
-    while (it.hasNext()) {
-        QString fileName = it.next();
-
-        if(fileName.endsWith(".jpg",Qt::CaseInsensitive) ||
-           fileName.endsWith(".png",Qt::CaseInsensitive) ||
-           fileName.endsWith(".bmp",Qt::CaseInsensitive) ||
-           fileName.endsWith(".gif",Qt::CaseInsensitive))
-            addElement({fileName, Element::Texture});
-        else if(fileName.endsWith(".obj",Qt::CaseInsensitive) ||
-                fileName.endsWith(".tim",Qt::CaseInsensitive))
-            addElement({fileName, Element::Geometry});
-    }
+    while (it.hasNext())
+        addFile(it.next());
 }
 
 void ResourceViewWidget::addFile(QString file)
+{
+    if(isTexture(file))
+        addElement({file, Element::Texture});
+    else if(isGeometry(file))
+        addElement({file, Element::Geometry});
+}
+
+bool ResourceViewWidget::isTexture(QString file) const
 {
     if(file.endsWith(".jpg",Qt::CaseInsensitive) ||
        file.endsWith(".png",Qt::CaseInsensitive) ||
        file.endsWith(".bmp",Qt::CaseInsensitive) ||
        file.endsWith(".gif",Qt::CaseInsensitive))
-        addElement({file, Element::Texture});
-    else if(file.endsWith(".obj",Qt::CaseInsensitive) ||
-            file.endsWith(".tim",Qt::CaseInsensitive))
-        addElement({file, Element::Geometry});
-    else QMessageBox::warning(this, "File extension not recognized", file + " is not a valid resource file.");
+        return true;
+    else return false;
+}
 
+bool ResourceViewWidget::isGeometry(QString file) const
+{
+    if(file.endsWith(".obj",Qt::CaseInsensitive) ||
+       file.endsWith(".tim",Qt::CaseInsensitive))
+        return true;
+    else return false;
 }
 
 QIcon ResourceViewWidget::getIcon(Element e) const
@@ -89,41 +90,39 @@ QIcon ResourceViewWidget::getIcon(Element e) const
 void ResourceViewWidget::dropEvent(QDropEvent* event)
 {
     const QMimeData* mimeData = event->mimeData();
+    event->acceptProposedAction();
+    event->accept();
 
-   if (mimeData->hasUrls())
+   if(mimeData->hasUrls())
    {
-     QStringList pathList;
-     QList<QUrl> urlList = mimeData->urls();
-
-     // extract the local paths of the files
-     for (int i = 0; i < urlList.size() && i < 32; ++i)
-     {
-         std::cout << urlList[i].toString().toStdString() << std::endl;
-       //pathList.append(urlList.at(i).toLocalFile());
-     }
-
-     // call a function to open the files
-     //openFiles(pathList);
+       QList<QUrl> urlList = event->mimeData()->urls();
+       for(QUrl& url : urlList)
+       {
+           addFile(url.toLocalFile());
+       }
    }
 }
 
 void ResourceViewWidget::dragEnterEvent(QDragEnterEvent* event)
 {
-    std::cout <<"Enter drag" << std::endl;
     if(event->mimeData()->hasUrls())
     {
-        QStringList pathList;
         QList<QUrl> urlList = event->mimeData()->urls();
 
-        // extract the local paths of the files
-        for (int i = 0; i < urlList.size() && i < 32; ++i)
+        for(QUrl& url : urlList)
         {
-            std::cout << urlList[i].toString().toStdString() << std::endl;
-          //pathList.append(urlList.at(i).toLocalFile());
+            if(isTexture(url.toLocalFile()) || isGeometry(url.toLocalFile()))
+            {
+                event->acceptProposedAction();
+                break;
+            }
         }
-
-
     }
+}
+
+void ResourceViewWidget::dragMoveEvent(QDragMoveEvent* event)
+{
+    event->accept();
 }
 
 

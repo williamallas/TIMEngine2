@@ -47,7 +47,7 @@ int MeshRenderer::draw(const vector<MeshBuffers*>& meshs, const vector<mat4>& mo
     if(meshs.empty() || models.size() != meshs.size() || (!materials.empty() && materials.size() < meshs.size())
        || (!extraUbo.empty() && extraUbo.size() < meshs.size()))
         return 0;
-
+std::cout << "DRAW:" << meshs.size() << std::endl;
 #ifdef USE_SSBO_MODELS
     if(_modelBuffer.size() < models.size())
         _modelBuffer.create(models.size(), &models[0], DrawMode::STREAM);

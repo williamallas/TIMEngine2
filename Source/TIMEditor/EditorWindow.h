@@ -17,7 +17,7 @@ public:
     ~EditorWindow();
 
 protected:
-    void dragEnterEvent(QDragEnterEvent*) override{std::cout << "Enter main\n";}
+
 private:
     Ui::EditorWindow *ui;
     RendererThread* _rendererThread;
