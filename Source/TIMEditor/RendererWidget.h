@@ -32,12 +32,29 @@ protected:
 
     virtual void closeEvent(QCloseEvent *event) override;
 
-    /*virtual void mousePressEvent(QMouseEvent * event) override {
+    virtual void mousePressEvent(QMouseEvent * event) override
+    {
+        if(event->button() == Qt::LeftButton){
+            _leftMouse = true;
+            _lastMousePos = event->pos();
+            event->accept();
+        }
 
-    }*/
-    /*virtual void mouseReleaseEvent() override;
-    virtual void mouseDoubleClickEvent() override;
-    virtual void mouseMoveEvent() override; */
+    }
+
+    virtual void mouseReleaseEvent(QMouseEvent *event) override
+    {
+        if(event->button() == Qt::LeftButton){
+            _leftMouse = false;
+            event->accept();
+        }
+    }
+
+    bool _leftMouse=false;
+    QPoint _lastMousePos;
+
+    virtual void mouseMoveEvent(QMouseEvent*) override;
+    virtual void wheelEvent(QWheelEvent*) override;
 
 signals:
 

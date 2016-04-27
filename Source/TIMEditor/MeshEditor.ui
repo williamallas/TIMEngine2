@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>253</width>
-    <height>450</height>
+    <height>546</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -42,6 +42,73 @@
      </property>
      <property name="selectionRectVisible">
       <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0">
+     <property name="sizeConstraint">
+      <enum>QLayout::SetDefaultConstraint</enum>
+     </property>
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="addElementButton">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>35</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset>
+         <normaloff>../../Data/icon/plus-icon.png</normaloff>../../Data/icon/plus-icon.png</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="removeElementButton">
+       <property name="minimumSize">
+        <size>
+         <width>35</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset>
+         <normaloff>../../Data/icon/minus-icon.png</normaloff>../../Data/icon/minus-icon.png</iconset>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="Line" name="line_4">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
      </property>
     </widget>
    </item>
@@ -375,5 +442,108 @@
   </layout>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>meshPartView</sender>
+   <signal>clicked(QModelIndex)</signal>
+   <receiver>MeshEditor</receiver>
+   <slot>itemSelectionChanged(QModelIndex)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>169</x>
+     <y>84</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>252</x>
+     <y>87</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>dm_colorR</sender>
+   <signal>editingFinished()</signal>
+   <receiver>MeshEditor</receiver>
+   <slot>updateMaterial()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>102</x>
+     <y>317</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>252</x>
+     <y>200</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>dm_colorG</sender>
+   <signal>editingFinished()</signal>
+   <receiver>MeshEditor</receiver>
+   <slot>updateMaterial()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>157</x>
+     <y>319</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>252</x>
+     <y>200</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>dm_colorB</sender>
+   <signal>editingFinished()</signal>
+   <receiver>MeshEditor</receiver>
+   <slot>updateMaterial()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>219</x>
+     <y>317</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>252</x>
+     <y>201</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>addElementButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MeshEditor</receiver>
+   <slot>selectGeometryFromResources()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>182</x>
+     <y>226</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>369</x>
+     <y>250</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>removeElementButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MeshEditor</receiver>
+   <slot>removeElement()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>228</x>
+     <y>228</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>349</x>
+     <y>241</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>itemSelectionChanged(QModelIndex)</slot>
+  <slot>updateMaterial()</slot>
+  <slot>selectGeometryFromResources()</slot>
+  <slot>removeElement()</slot>
+ </slots>
 </ui>

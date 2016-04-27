@@ -8,7 +8,7 @@
 #include "interface/pipeline/pipeline.h"
 
 #include <QMutex>
-#include <QStack>
+#include <QQueue>
 #include <functional>
 
 #include "RendererWidget.h"
@@ -28,6 +28,8 @@ public:
 
     void updateSize(uivec2);
 
+    void updateCamera_MeshEditor(int gradX, int gradY, int wheel);
+
     tim::interface::Pipeline::SceneView& getSceneView(int index) { return _view[index]; }
 
     tim::interface::Pipeline::SceneEntity<tim::interface::SimpleScene>&
@@ -40,6 +42,7 @@ public:
 private:
     RendererWidget* _parent;
     bool _running;
+    float _time = 0;
 
     bool _newSize=false;
     uivec2 _currentSize;
@@ -56,7 +59,7 @@ private:
     int _curScene=0;
 
     mutable QMutex _eventMutex;
-    QStack<std::function<void()>> _events;
+    QQueue<std::function<void()>> _events;
 
     void resize();
 };

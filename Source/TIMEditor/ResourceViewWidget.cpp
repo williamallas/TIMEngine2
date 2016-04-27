@@ -1,4 +1,5 @@
 #include "ResourceViewWidget.h"
+#include "SelectResourcesDialog.h"
 #include <iostream>
 #include <QMessageBox>
 #include <QHeaderView>
@@ -8,9 +9,12 @@
 #include <QDirIterator>
 #include <QDropEvent>
 #include <QMimeData>
+#include <QDialog>
+#include <QVBoxLayout>
+#include <QPushButton>
 #include "core/StringUtils.h"
 
-ResourceViewWidget::ResourceViewWidget(QWidget* parent) : QListWidget(parent), _objIcon("objIcon.png"), _timIcon("timIcon")
+ResourceViewWidget::ResourceViewWidget(QWidget* parent) : QListWidget(parent), _objIcon("icon/objIcon.png"), _timIcon("icon/timIcon")
 {
 }
 
@@ -33,6 +37,23 @@ void ResourceViewWidget::addElement(Element e)
     _items += {e, getIcon(e)};
     auto ol = new QListWidgetItem(_items.back().icon, name, this);
     ol->setSizeHint(QSize(100,100));
+}
+
+QList<QString> ResourceViewWidget::selectResources(int type, QWidget* parent)
+{
+    SelectResourcesDialog dialog(parent);
+
+    for(auto elem : _items)
+    {
+        if(elem.elem.type == type)
+        {
+            QListWidgetItem* item = new QListWidgetItem(elem.icon, QFileInfo(elem.elem.path).baseName(), dialog.listElement());
+            item->setSizeHint(QSize(100,100));
+            dialog.registerItem(item, elem.elem.path);
+        }
+    }
+    dialog.exec();
+    return dialog.selectedItems();
 }
 
 void ResourceViewWidget::addDir(QString dirStr, bool rec)

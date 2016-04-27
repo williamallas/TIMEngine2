@@ -21,6 +21,8 @@ public:
     void addDir(QString, bool rec=false);
     void addFile(QString);
 
+    QList<QString> selectResources(int type, QWidget*);
+
 protected:
     struct ItemElement
     {

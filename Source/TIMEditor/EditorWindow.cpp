@@ -35,8 +35,7 @@ EditorWindow::EditorWindow(QWidget *parent) :
 
     ui->glWidget->setMainRenderer(_rendererThread->mainRenderer());
     ui->meshEditorWidget->setMainRenderer(_rendererThread->mainRenderer());
-
-    ui->meshEditorWidget->addElement("tor.obj");
+    ui->meshEditorWidget->setResourceWidget(ui->resourceWidget);
 }
 
 EditorWindow::~EditorWindow()
