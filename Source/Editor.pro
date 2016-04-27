@@ -63,7 +63,8 @@ HEADERS += TIM_SDL/*.h TIMEngine2/core/*.h TIMEngine2/renderer/*.h TIMEngine2/re
     TIMEditor/FullPipeline.h \
     TIMEditor/MainRenderer.h \
     TIMEditor/ResourceViewWidget.h \
-    TIMEditor/FullScreenDock.h
+    TIMEditor/FullScreenDock.h \
+    TIMEditor/MeshEditorWidget.h
 
 SOURCES += mainEditor.cpp \
            TIM_SDL/SDLInputManager.cpp \
@@ -116,7 +117,9 @@ SOURCES += mainEditor.cpp \
     TIMEditor/FullPipeline.cpp \
     TIMEditor/MainRenderer.cpp \
     TIMEditor/ResourceViewWidget.cpp \
-    TIMEditor/FullScreenDock.cpp
+    TIMEditor/FullScreenDock.cpp \
+    TIMEditor/MeshEditorWidget.cpp
 
 FORMS += \
-    TIMEditor/EditorWindow.ui
+    TIMEditor/EditorWindow.ui \
+    TIMEditor/MeshEditor.ui
