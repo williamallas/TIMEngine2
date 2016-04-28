@@ -14,9 +14,6 @@ MeshEditorWidget::MeshEditorWidget(QWidget* parent) : QWidget(parent), ui(new Ui
     ui->setupUi(this);
     updateColorButton();
 
-    ui->addElementButton->setIcon(QIcon("icon/plus-icon.png"));
-    ui->removeElementButton->setIcon(QIcon("icon/minus-icon.png"));
-
     connect(ui->dm_roughnessSlider, SIGNAL(sliderMoved(int)), this, SLOT(dm_roughnessSlider_sliderMoved(int)));
     connect(ui->dm_metallicSlider, SIGNAL(sliderMoved(int)), this, SLOT(dm_metallicSlider_sliderMoved(int)));
     connect(ui->dm_specularSlider, SIGNAL(sliderMoved(int)), this, SLOT(dm_specularSlider_sliderMoved(int)));

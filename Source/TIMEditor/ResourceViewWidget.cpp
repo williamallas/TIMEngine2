@@ -14,7 +14,7 @@
 #include <QPushButton>
 #include "core/StringUtils.h"
 
-ResourceViewWidget::ResourceViewWidget(QWidget* parent) : QListWidget(parent), _objIcon("icon/objIcon.png"), _timIcon("icon/timIcon")
+ResourceViewWidget::ResourceViewWidget(QWidget* parent) : QListWidget(parent), _objIcon(":/icons/Icons/objIcon.png"), _timIcon(":/icons/Icons/timIcon")
 {
 }
 

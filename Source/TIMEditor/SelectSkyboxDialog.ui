@@ -31,7 +31,7 @@
         </size>
        </property>
        <property name="text">
-        <string>X</string>
+        <string/>
        </property>
        <property name="iconSize">
         <size>
@@ -59,7 +59,7 @@
         </size>
        </property>
        <property name="text">
-        <string>Negative Y</string>
+        <string/>
        </property>
        <property name="iconSize">
         <size>
@@ -87,7 +87,7 @@
         </size>
        </property>
        <property name="text">
-        <string>Y</string>
+        <string/>
        </property>
        <property name="iconSize">
         <size>
@@ -115,7 +115,7 @@
         </size>
        </property>
        <property name="text">
-        <string>Negative X</string>
+        <string/>
        </property>
        <property name="iconSize">
         <size>
@@ -143,7 +143,7 @@
         </size>
        </property>
        <property name="text">
-        <string>Z</string>
+        <string/>
        </property>
        <property name="iconSize">
         <size>
@@ -171,7 +171,7 @@
         </size>
        </property>
        <property name="text">
-        <string>Negative Z</string>
+        <string/>
        </property>
        <property name="iconSize">
         <size>

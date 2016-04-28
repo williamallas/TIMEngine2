@@ -81,8 +81,8 @@
         <string/>
        </property>
        <property name="icon">
-        <iconset>
-         <normaloff>../../Data/icon/plus-icon.png</normaloff>../../Data/icon/plus-icon.png</iconset>
+        <iconset resource="../../EditorResources.qrc">
+         <normaloff>:/icons/Icons/plus-icon.png</normaloff>:/icons/Icons/plus-icon.png</iconset>
        </property>
       </widget>
      </item>
@@ -98,8 +98,8 @@
         <string/>
        </property>
        <property name="icon">
-        <iconset>
-         <normaloff>../../Data/icon/minus-icon.png</normaloff>../../Data/icon/minus-icon.png</iconset>
+        <iconset resource="../../EditorResources.qrc">
+         <normaloff>:/icons/Icons/minus-icon.png</normaloff>:/icons/Icons/minus-icon.png</iconset>
        </property>
       </widget>
      </item>
@@ -441,7 +441,9 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../../EditorResources.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>meshPartView</sender>

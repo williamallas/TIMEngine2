@@ -1,0 +1,14 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file>Icons/minus-icon.png</file>
+        <file>Icons/objIcon.png</file>
+        <file>Icons/plus-icon.png</file>
+        <file>Icons/sb_nx.png</file>
+        <file>Icons/sb_ny.png</file>
+        <file>Icons/sb_nz.png</file>
+        <file>Icons/sb_x.png</file>
+        <file>Icons/sb_y.png</file>
+        <file>Icons/sb_z.png</file>
+        <file>Icons/timIcon.png</file>
+    </qresource>
+</RCC>
