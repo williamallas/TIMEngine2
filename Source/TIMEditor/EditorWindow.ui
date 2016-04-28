@@ -32,7 +32,7 @@
    <bool>false</bool>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>TIMEditor</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -72,8 +72,15 @@
     <addaction name="actionAdd_folder"/>
     <addaction name="actionAdd_folder_recursively"/>
    </widget>
+   <widget class="QMenu" name="menuScene">
+    <property name="title">
+     <string>Scene</string>
+    </property>
+    <addaction name="actionSet_skybox"/>
+   </widget>
    <addaction name="menuContext"/>
    <addaction name="menuResource"/>
+   <addaction name="menuScene"/>
   </widget>
   <widget class="FullScreenDock" name="viewDockWidget">
    <property name="sizePolicy">
@@ -328,6 +335,11 @@
   <action name="actionAdd_folder_recursively">
    <property name="text">
     <string>Add folder recursively</string>
+   </property>
+  </action>
+  <action name="actionSet_skybox">
+   <property name="text">
+    <string>Set skybox</string>
    </property>
   </action>
   <zorder>resourceDockWidget</zorder>

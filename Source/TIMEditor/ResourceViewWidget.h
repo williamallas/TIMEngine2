@@ -21,6 +21,8 @@ public:
     void addDir(QString, bool rec=false);
     void addFile(QString);
 
+    QIcon getResourceIconForPath(QString path);
+
     QList<QString> selectResources(int type, QWidget*);
 
 protected:

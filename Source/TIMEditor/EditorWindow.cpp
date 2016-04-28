@@ -3,6 +3,7 @@
 #include "QGLWidget"
 
 #include <QFileDialog>
+#include "SelectSkyboxDialog.h"
 
 EditorWindow::EditorWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -63,4 +64,10 @@ void EditorWindow::on_actionAdd_folder_triggered()
 void EditorWindow::on_actionAdd_folder_recursively_triggered()
 {
     addResourceFolderRec();
+}
+
+void EditorWindow::on_actionSet_skybox_triggered()
+{
+    SelectSkyboxDialog dialog(this, ui->resourceWidget);
+    dialog.exec();
 }

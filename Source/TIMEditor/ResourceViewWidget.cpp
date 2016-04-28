@@ -71,6 +71,16 @@ void ResourceViewWidget::addFile(QString file)
         addElement({file, Element::Geometry});
 }
 
+QIcon ResourceViewWidget::getResourceIconForPath(QString path)
+{
+    for (const auto& item : _items) {
+        if (item.elem.path == path) {
+            return item.icon;
+        }
+    }
+    return QIcon();
+}
+
 bool ResourceViewWidget::isTexture(QString file) const
 {
     if(file.endsWith(".jpg",Qt::CaseInsensitive) ||
