@@ -25,6 +25,10 @@ private:
 public slots:
     void addResourceFolder();
     void addResourceFolderRec();
+private slots:
+    void on_actionClose_Context_triggered();
+    void on_actionAdd_folder_triggered();
+    void on_actionAdd_folder_recursively_triggered();
 };
 
 #endif // EDITORWINDOW_H

@@ -59,6 +59,21 @@
      <height>21</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuContext">
+    <property name="title">
+     <string>Context</string>
+    </property>
+    <addaction name="actionClose_Context"/>
+   </widget>
+   <widget class="QMenu" name="menuResource">
+    <property name="title">
+     <string>Resource</string>
+    </property>
+    <addaction name="actionAdd_folder"/>
+    <addaction name="actionAdd_folder_recursively"/>
+   </widget>
+   <addaction name="menuContext"/>
+   <addaction name="menuResource"/>
   </widget>
   <widget class="FullScreenDock" name="viewDockWidget">
    <property name="sizePolicy">
@@ -300,6 +315,21 @@
     </layout>
    </widget>
   </widget>
+  <action name="actionClose_Context">
+   <property name="text">
+    <string>Close Context</string>
+   </property>
+  </action>
+  <action name="actionAdd_folder">
+   <property name="text">
+    <string>Add folder</string>
+   </property>
+  </action>
+  <action name="actionAdd_folder_recursively">
+   <property name="text">
+    <string>Add folder recursively</string>
+   </property>
+  </action>
   <zorder>resourceDockWidget</zorder>
   <zorder>dockMeshEditor</zorder>
  </widget>

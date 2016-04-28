@@ -13,19 +13,6 @@ EditorWindow::EditorWindow(QWidget *parent) :
 
     ui->resourceWidget->viewport()->setAcceptDrops(true);
 
-    QMenu* editorMenu = ui->menubar->addMenu("Editor");
-    QAction* actionCloseContext = new QAction("Close context", this);
-    editorMenu->addAction(actionCloseContext);
-    connect(actionCloseContext, SIGNAL(triggered()), ui->glWidget, SLOT(closeContext()));
-
-    QMenu* resourceMenu = ui->menubar->addMenu("Resource");
-    QAction* actionAddDir = new QAction("Add folder", this);
-    resourceMenu->addAction(actionAddDir);
-    connect(actionAddDir, SIGNAL(triggered()), this, SLOT(addResourceFolder()));
-    QAction* actionAddDirRec = new QAction("Add folder recursively", this);
-    resourceMenu->addAction(actionAddDirRec);
-    connect(actionAddDirRec, SIGNAL(triggered()), this, SLOT(addResourceFolderRec()));
-
     _rendererThread = new RendererThread(ui->glWidget);
     _rendererThread->start();
 
@@ -61,4 +48,19 @@ void EditorWindow::addResourceFolderRec()
                                                      QFileDialog::ShowDirsOnly
                                                      | QFileDialog::DontResolveSymlinks);
     ui->resourceWidget->addDir(dir, true);
+}
+
+void EditorWindow::on_actionClose_Context_triggered()
+{
+    ui->glWidget->closeContext();
+}
+
+void EditorWindow::on_actionAdd_folder_triggered()
+{
+    addResourceFolder();
+}
+
+void EditorWindow::on_actionAdd_folder_recursively_triggered()
+{
+    addResourceFolderRec();
 }
