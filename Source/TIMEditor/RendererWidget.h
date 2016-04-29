@@ -57,6 +57,7 @@ protected:
     virtual void wheelEvent(QWheelEvent*) override;
 
 signals:
+    void pressedMouseMoved(int, int);
 
 public slots:
     void closeContext();

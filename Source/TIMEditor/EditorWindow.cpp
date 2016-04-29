@@ -5,6 +5,8 @@
 #include <QFileDialog>
 #include "SelectSkyboxDialog.h"
 
+using namespace tim;
+
 EditorWindow::EditorWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::EditorWindow)
@@ -24,6 +26,10 @@ EditorWindow::EditorWindow(QWidget *parent) :
     ui->glWidget->setMainRenderer(_rendererThread->mainRenderer());
     ui->meshEditorWidget->setMainRenderer(_rendererThread->mainRenderer());
     ui->meshEditorWidget->setResourceWidget(ui->resourceWidget);
+
+    ui->resourceWidget->addDir(".");
+
+    connect(ui->glWidget, SIGNAL(pressedMouseMoved(int,int)), ui->meshEditorWidget, SLOT(rotateEditedMesh(int,int)));
 }
 
 EditorWindow::~EditorWindow()
@@ -70,4 +76,12 @@ void EditorWindow::on_actionSet_skybox_triggered()
 {
     SelectSkyboxDialog dialog(this, ui->resourceWidget);
     dialog.exec();
+
+    QList<QString> list = dialog.getSkydirPaths();
+
+    if(list.empty()) return;
+
+    _rendererThread->mainRenderer()->addEvent([=](){
+        _rendererThread->mainRenderer()->setSkybox(0, list);
+    });
 }

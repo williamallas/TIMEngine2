@@ -39,12 +39,12 @@ void RendererWidget::mouseMoveEvent(QMouseEvent *event)
         QPoint p = event->pos() - _lastMousePos;
         _lastMousePos = event->pos();
 
-        _renderer->updateCamera_MeshEditor(p.x(), p.y(),0);
+        emit pressedMouseMoved(p.x(), p.y());
     }
 }
 
 void RendererWidget::wheelEvent(QWheelEvent* event)
 {
     event->accept();
-    _renderer->updateCamera_MeshEditor(0,0,event->delta());
+    _renderer->updateCamera_MeshEditor(event->delta());
 }

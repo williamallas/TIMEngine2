@@ -4,6 +4,7 @@
 #include <QWidget>
 #include "MainRenderer.h"
 #include <QColor>
+#include <QIcon>
 #include <QModelindex>
 
 class ResourceViewWidget;
@@ -29,18 +30,23 @@ protected:
     tim::interface::MeshInstance* _editedMesh;
     ResourceViewWidget* _resourceWidget;
 
+    float _rz=0, _ry=0;
+
     struct Element
     {
         QString name;
         QString geometry;
         QColor color = QColor(255,255,255);
         vec3 material = {0.5, 0, 0.2};
+        QString textures[3];
+        QIcon texturesIcon[3];
     };
 
     QList<Element> _meshData;
     int _curElementIndex = -1;
 
     void updateColorButton();
+    void updateTexture(int);
 
 public slots:
     void dm_roughnessSlider_sliderMoved(int);
@@ -58,6 +64,13 @@ public slots:
 
     void selectGeometryFromResources();
     void removeElement();
+
+    void rotateEditedMesh(int, int);
+    void resetView();
+
+    void on_diffuseTex_clicked();
+    void on_normalTex_clicked();
+    void on_materialTex_clicked();
 };
 
 #endif // MESHEDITORWIDGET_H

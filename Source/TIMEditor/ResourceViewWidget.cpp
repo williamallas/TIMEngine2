@@ -39,9 +39,11 @@ void ResourceViewWidget::addElement(Element e)
     ol->setSizeHint(QSize(100,100));
 }
 
-QList<QString> ResourceViewWidget::selectResources(int type, QWidget* parent)
+QList<QString> ResourceViewWidget::selectResources(int type, QWidget* parent, bool singleSelection)
 {
     SelectResourcesDialog dialog(parent);
+    if(singleSelection)
+        dialog.singleSelection();
 
     for(auto elem : _items)
     {

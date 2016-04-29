@@ -33,6 +33,10 @@
        <property name="text">
         <string/>
        </property>
+       <property name="icon">
+        <iconset resource="../../EditorResources.qrc">
+         <normaloff>:/icons/Icons/sb_x.png</normaloff>:/icons/Icons/sb_x.png</iconset>
+       </property>
        <property name="iconSize">
         <size>
          <width>97</width>
@@ -60,6 +64,10 @@
        </property>
        <property name="text">
         <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="../../EditorResources.qrc">
+         <normaloff>:/icons/Icons/sb_ny.png</normaloff>:/icons/Icons/sb_ny.png</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -89,6 +97,10 @@
        <property name="text">
         <string/>
        </property>
+       <property name="icon">
+        <iconset resource="../../EditorResources.qrc">
+         <normaloff>:/icons/Icons/sb_y.png</normaloff>:/icons/Icons/sb_y.png</iconset>
+       </property>
        <property name="iconSize">
         <size>
          <width>97</width>
@@ -116,6 +128,10 @@
        </property>
        <property name="text">
         <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="../../EditorResources.qrc">
+         <normaloff>:/icons/Icons/sb_nx.png</normaloff>:/icons/Icons/sb_nx.png</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -145,6 +161,10 @@
        <property name="text">
         <string/>
        </property>
+       <property name="icon">
+        <iconset resource="../../EditorResources.qrc">
+         <normaloff>:/icons/Icons/sb_z.png</normaloff>:/icons/Icons/sb_z.png</iconset>
+       </property>
        <property name="iconSize">
         <size>
          <width>97</width>
@@ -172,6 +192,10 @@
        </property>
        <property name="text">
         <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="../../EditorResources.qrc">
+         <normaloff>:/icons/Icons/sb_nz.png</normaloff>:/icons/Icons/sb_nz.png</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -222,7 +246,9 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../../EditorResources.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>cancelButton</sender>

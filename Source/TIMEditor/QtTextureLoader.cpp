@@ -14,8 +14,8 @@ ubyte* QtTextureLoader::loadImage(const std::string& file, ImageFormat& format) 
         return nullptr;
 
     textureImg = QGLWidget::convertToGLFormat(textureImg);
-    ubyte* b = new ubyte[4*textureImg.byteCount()];
-    memcpy(b, textureImg.bits(), 4*textureImg.byteCount());
+    ubyte* b = new ubyte[textureImg.byteCount()];
+    memcpy(b, textureImg.bits(), textureImg.byteCount());
     format.size.x() = textureImg.size().width();
     format.size.y() = textureImg.size().height();
     format.nbComponent = 4;

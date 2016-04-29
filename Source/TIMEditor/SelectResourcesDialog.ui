@@ -17,12 +17,12 @@
    <item>
     <widget class="QListWidget" name="listWidget">
      <property name="selectionMode">
-      <enum>QAbstractItemView::ExtendedSelection</enum>
+      <enum>QAbstractItemView::MultiSelection</enum>
      </property>
      <property name="iconSize">
       <size>
-       <width>97</width>
-       <height>97</height>
+       <width>80</width>
+       <height>80</height>
       </size>
      </property>
      <property name="verticalScrollMode">

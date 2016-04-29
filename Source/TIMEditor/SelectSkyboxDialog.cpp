@@ -50,8 +50,9 @@ void SelectSkyboxDialog::on_nzButton_clicked()
 }
 
 void SelectSkyboxDialog::selectFileFor(QPushButton* button, int pathIndex) {
-    QList<QString> paths = _resourceWidget->selectResources(ResourceViewWidget::Element::Texture, this);
-    if (paths.size() > 0) {
+    QList<QString> paths = _resourceWidget->selectResources(ResourceViewWidget::Element::Texture, this, true);
+    if (paths.size() > 0)
+    {
         QString skydirPath = paths[0];
         _skydirpaths[pathIndex] = skydirPath;
         button->setIcon(_resourceWidget->getResourceIconForPath(skydirPath));
@@ -60,12 +61,15 @@ void SelectSkyboxDialog::selectFileFor(QPushButton* button, int pathIndex) {
 
 void SelectSkyboxDialog::on_okButton_clicked()
 {
-    for (size_t i = 0; i < 6; ++i) {
-        if (_skydirpaths[i].isEmpty() == 0) {
+    for (size_t i = 0; i < 6; ++i)
+    {
+        if (_skydirpaths[i].isEmpty())
+        {
             _returnPaths.clear();
             close();
+            return;
         }
-        _returnPaths << _skydirpaths[i];
+        _returnPaths += _skydirpaths[i];
     }
     close();
 }

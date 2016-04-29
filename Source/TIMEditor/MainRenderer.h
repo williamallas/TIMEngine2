@@ -20,6 +20,7 @@ class MainRenderer
 public:
     MainRenderer(RendererWidget*);
     void main();
+    float elapsedTime() const { return _time; }
 
     FullPipeline& pipeline() { return _pipeline; }
     void lock() const { _mutex.lock(); }
@@ -28,7 +29,7 @@ public:
 
     void updateSize(uivec2);
 
-    void updateCamera_MeshEditor(int gradX, int gradY, int wheel);
+    void updateCamera_MeshEditor(int wheel);
 
     tim::interface::Pipeline::SceneView& getSceneView(int index) { return _view[index]; }
 
@@ -38,6 +39,8 @@ public:
     void setCurSceneIndex(int index) { _curScene = index; }
 
     void addEvent(std::function<void()>);
+
+    void setSkybox(int sceneIndex, QList<QString>);
 
 private:
     RendererWidget* _parent;
@@ -56,6 +59,7 @@ private:
     const int NB_SCENE=2;
     tim::interface::Pipeline::SceneView _view[2];
     tim::interface::Pipeline::SceneEntity<tim::interface::SimpleScene> _scene[2];
+    //std::pair<Texture>
     int _curScene=0;
 
     mutable QMutex _eventMutex;

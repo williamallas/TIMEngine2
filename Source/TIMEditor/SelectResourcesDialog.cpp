@@ -7,6 +7,7 @@ SelectResourcesDialog::SelectResourcesDialog(QWidget *parent) :
     ui(new Ui::SelectResourcesDialog)
 {
     ui->setupUi(this);
+    connect(ui->listWidget, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(itemDoubleClicked(QListWidgetItem*)));
 }
 
 SelectResourcesDialog::~SelectResourcesDialog()
@@ -31,5 +32,16 @@ void SelectResourcesDialog::confirmSelection()
     {
         _selectedItems.push_back(_itemToPath[item]);
     }
+    close();
+}
+
+void SelectResourcesDialog::singleSelection()
+{
+    ui->listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+}
+
+void SelectResourcesDialog::itemDoubleClicked(QListWidgetItem * item)
+{
+    _selectedItems.push_back(_itemToPath[item]);
     close();
 }

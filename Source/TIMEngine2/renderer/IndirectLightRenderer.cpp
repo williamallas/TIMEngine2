@@ -78,8 +78,6 @@ IndirectLightRenderer::~IndirectLightRenderer()
 {
     delete _processCubeMap;
     delete _fullScreenPass;
-    delete _skybox;
-    delete _processedSkybox;
     delete _processedBrdf;
 }
 
@@ -159,8 +157,6 @@ Texture* IndirectLightRenderer::processSkybox(Texture* tex, Shader* shader)
     return processedSkybox;
 }
 
-
-
 vec3 importanceSampleGGX(vec2 Xi, float roughness, vec3 N)
 {
     float a = roughness * roughness;
@@ -232,9 +228,7 @@ float* IndirectLightRenderer::computeBrdf(uint size)
             res[(i*size+j)*3+1] = v.y();
             res[(i*size+j)*3+2] = 0;
             img.setPixel(ubvec3(v.x()*255, v.y()*255,0), {i,j});
-
         }
-        std::cout << i << std::endl;
     }
 
     img.exportBmp("brdf.bmp");

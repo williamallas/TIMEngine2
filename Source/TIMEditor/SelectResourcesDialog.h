@@ -19,6 +19,8 @@ public:
     explicit SelectResourcesDialog(QWidget *parent = 0);
     ~SelectResourcesDialog();
 
+    void singleSelection();
+
     QListWidget* listElement() const;
     QList<QString> selectedItems() const;
 
@@ -26,12 +28,14 @@ public:
 
 protected slots:
     void confirmSelection();
+    void itemDoubleClicked(QListWidgetItem * item);
 
 private:
     Ui::SelectResourcesDialog *ui;
     QList<QString> _selectedItems;
 
     QMap<QListWidgetItem*, QString> _itemToPath;
+
 };
 
 #endif // SELECTRESOURCESDIALOG_H
