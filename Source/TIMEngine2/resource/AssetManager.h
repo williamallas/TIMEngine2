@@ -24,19 +24,17 @@ namespace resource
         template <bool async, typename... Args>
         Option<T> load(Args... args)
         {
-            class StaticLoader : public Loader<Args...>, public AssetLoader<T>
-            {
-            public:
-                StaticLoader() : Loader<Args...>(), AssetLoader<T>() {}
-            };
+            static StaticLoader<Args...> in_loader;
 
-            static StaticLoader in_loader;
-
-            auto opt = in_loader.get(args...);
-            if(opt) return opt.value();
+			Option<T> opt = in_loader.get(args...);
+            if(opt) return opt;
             else
             {
-                auto opt_dat = in_loader.template operator()<async>(args...);
+#ifndef USE_VCPP
+				Option<T> opt_dat = in_loader.template operator()<async>(args...);
+#else
+				Option<T> opt_dat = in_loader.operator()<async>(args...);
+#endif
 
                 if(opt_dat)
                     in_loader.add(args..., opt_dat.value());
@@ -105,6 +103,13 @@ namespace resource
             boost::container::map<boost::tuple<Args...>, T> _assets;
             mutable SpinLock _lock;
         };
+
+		template <typename... Args>
+		class StaticLoader : public Loader<Args...>, public AssetLoader<T>
+		{
+		public:
+			StaticLoader() : Loader<Args...>(), AssetLoader<T>() {}
+		};
     };
 
 

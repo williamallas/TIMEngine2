@@ -203,7 +203,7 @@ Image& Image::seuilBW(float seuil, float ds)
             if(c[0] <= seuil-ds)
                 c = vec3();
             else if(c[0] >= seuil+ds)
-                c = vec3(1,1,1,1);
+                c = vec3(1,1,1);
             else
                 c = vec3::construct(interpolateCos(0.f,1.f, (c[0]-seuil+ds)/(2*ds)));
             setPixel(c, uivec2(i,j));

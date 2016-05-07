@@ -9,12 +9,12 @@ namespace tim
 {
 namespace core
 {
-    const float PI = 3.141592653589793238462643383279502884197169399375105820974944;
+    const float PI = 3.141592653589793238462643383279502884197169399375105820974944f;
 
     inline bool fcompar(float v1, float v2, float d) { return fabsf(v1-v2) <= d; }
 
-    inline float toRad(float deg) { return deg*PI/180.0; }
-    inline float toDeg(float rad) { return rad*180.0/PI; }
+    inline float toRad(float deg) { return deg*PI/180.f; }
+    inline float toDeg(float rad) { return rad*180.f/PI; }
     inline uint uipow(uint x, uint p) { uint r=1; for(uint i=0 ; i<p ; i++)r*=x; return r; }
 
     template<class T>

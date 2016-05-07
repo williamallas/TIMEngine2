@@ -26,8 +26,8 @@ namespace core
         static MemoryLogger& instance();
         static void freeInstance();
 
-        void* alloc(size_t, size_t, const std::string&, bool) throw(std::bad_alloc);
-        void dealloc(void*, bool) throw(BadDealloc);
+		void* alloc(size_t, size_t, const std::string&, bool) throw(std::bad_alloc);
+		void dealloc(void*, bool) throw(BadDealloc);
         void nextDealloc(size_t, const std::string&);
 
         bool exist(void*) const;

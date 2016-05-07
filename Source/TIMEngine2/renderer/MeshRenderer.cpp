@@ -7,7 +7,7 @@ namespace tim
 namespace renderer
 {
 
-MeshRenderer::MeshRenderer() : _maxUboMa4(openGL.hardward(GLState::Hardward::MAX_UNIFORM_BLOCK_SIZE) / (16*4))
+MeshRenderer::MeshRenderer() //: _maxUboMa4(/*openGL.hardward(GLState::Hardward::MAX_UNIFORM_BLOCK_SIZE*/1024)/* / (16*4)*/)
 {
 #ifdef USE_SSBO_MODELS
     int *tmp = new int[1<<25];
@@ -15,14 +15,14 @@ MeshRenderer::MeshRenderer() : _maxUboMa4(openGL.hardward(GLState::Hardward::MAX
     _drawIdBuffer.create(1<<25, tmp, VertexFormat::VEC1, DrawMode::STATIC, true);
     delete[] tmp;
 #else
-    int tmp[_maxUboMa4];
-    for(uint i=0 ; i<_maxUboMa4 ; ++i) tmp[i] = static_cast<int>(i);
-   _drawIdBuffer.create(_maxUboMa4, tmp, VertexFormat::VEC1, DrawMode::STATIC, true);
+    int tmp[_maxUboMat4];
+    for(uint i=0 ; i<_maxUboMat4 ; ++i) tmp[i] = static_cast<int>(i);
+   _drawIdBuffer.create(_maxUboMat4, tmp, VertexFormat::VEC1, DrawMode::STATIC, true);
 #endif
    _vao = new VAO(vertexBufferPool->buffer(), _drawIdBuffer);
 
-   _modelBuffer.create(_maxUboMa4, nullptr, DrawMode::STREAM);
-   _materialBuffer.create(_maxUboMa4, nullptr, DrawMode::STREAM);
+   _modelBuffer.create(_maxUboMat4, nullptr, DrawMode::STREAM);
+   _materialBuffer.create(_maxUboMat4, nullptr, DrawMode::STREAM);
 }
 
 MeshRenderer::~MeshRenderer()
@@ -61,27 +61,27 @@ int MeshRenderer::draw(const vector<MeshBuffers*>& meshs, const vector<mat4>& mo
     bind();
 
 #ifndef USE_SSBO_MODELS
-    uint nbLoop = models.size() / _maxUboMa4;
-    if(models.size()%_maxUboMa4 > 0) nbLoop++;
+    uint nbLoop = models.size() / _maxUboMat4;
+    if(models.size()%_maxUboMat4 > 0) nbLoop++;
 
-    IndirectDrawParmeter drawParam[_maxUboMa4];
+    IndirectDrawParmeter drawParam[_maxUboMat4];
     for(uint i=0 ; i<nbLoop ; ++i)
     {
-        uint innerLoop = std::min(_maxUboMa4,models.size() - i*_maxUboMa4);
-        _modelBuffer.flush(&models[_maxUboMa4*i], 0, innerLoop);
+        uint innerLoop = std::min(_maxUboMat4,models.size() - i*_maxUboMat4);
+        _modelBuffer.flush(&models[_maxUboMat4*i], 0, innerLoop);
 
         if(!materials.empty())
         {
-            _materialBuffer.flush(&materials[_maxUboMa4*i], 0, innerLoop);
+            _materialBuffer.flush(&materials[_maxUboMat4*i], 0, innerLoop);
         }
 
         for(uint j=0 ; j<innerLoop ; ++j)
         {
-            drawParam[j].count = meshs[_maxUboMa4*i+j]->ib()->size();
+            drawParam[j].count = meshs[_maxUboMat4*i+j]->ib()->size();
             drawParam[j].baseInstance = j;
-            drawParam[j].baseVertex = meshs[_maxUboMa4*i+j]->vb()->offset();
+            drawParam[j].baseVertex = meshs[_maxUboMat4*i+j]->vb()->offset();
             drawParam[j].instanceCount = 1;
-            drawParam[j].firstIndex = meshs[_maxUboMa4*i+j]->ib()->offset();
+            drawParam[j].firstIndex = meshs[_maxUboMat4*i+j]->ib()->offset();
         }
 
         if(useCameraUbo)

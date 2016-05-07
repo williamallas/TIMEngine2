@@ -8,6 +8,7 @@ Game::Game()
 
 }
 
+/*
 bool Game::rayCast(tim::BulletObject* obj, const Camera& camera, vec2 mousePos, BulletObject::CollisionPoint & collision)
 {
     mousePos.y() = 1-mousePos.y();
@@ -25,3 +26,4 @@ bool Game::rayCast(tim::BulletObject* obj, const Camera& camera, vec2 mousePos, 
     bool b = obj->rayCast(pos, pos+dir*camera.clipDist.y(), collision);
     return b;
 }
+*/

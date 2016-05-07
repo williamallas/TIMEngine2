@@ -37,8 +37,10 @@ MeshLoader::LoadedMeshData MeshLoader::importObj(const std::string& file, bool t
 
     meshData.nbVertex = nbVertex;
     meshData.vData = new LoadedMeshData::DataType[nbVertex];
-    for(auto it : mapIndex)
-        meshData.vData[it.second] = {it.first.v, it.first.n, it.first.c, vec3()};
+	for (auto it : mapIndex)
+	{
+		meshData.vData[it.second] = { it.first.v, it.first.n, it.first.c, vec3() };
+	}
 
     if(meshData.format == renderer::VertexFormat::VNCT)
         computeTangent(meshData);

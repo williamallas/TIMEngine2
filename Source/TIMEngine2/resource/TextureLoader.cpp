@@ -22,7 +22,7 @@ unsigned char* TextureLoader::toGLFormat(unsigned char* ptr, unsigned char* out_
                format.size.x()*format.nbComponent);
     }
 
-    delete[] ptr;
+    //delete[] ptr;
 
     return out_ptr;
 }
@@ -40,7 +40,7 @@ float* TextureLoader::toGLFormat(float* ptr, float* out_ptr, const ImageFormat& 
                format.nbComponent*sizeof(float));
     }
 
-    delete[] ptr;
+    //delete[] ptr;
     return out_ptr;
 }
 

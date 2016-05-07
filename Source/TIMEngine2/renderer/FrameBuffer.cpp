@@ -139,5 +139,23 @@ void FrameBuffer::setupDefferedFBO(FrameBuffer& fbo, vector<Texture*>& buffers)
     fbo.attachDepthTexture(buffers[3]);
 }
 
+void FrameBuffer::copyTo(FrameBuffer& recv) const
+{
+	if (recv.resolution() != _resolution)
+		return;
+
+	openGL.bindFrameBuffer(0);
+
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, _id);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, recv._id);
+
+	glBlitFramebuffer(0, 0, _resolution.x(), _resolution.y(), 0, 0, _resolution.x(), _resolution.y(),
+		GL_COLOR_BUFFER_BIT,
+		GL_LINEAR);
+
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+}
+
 }
 }

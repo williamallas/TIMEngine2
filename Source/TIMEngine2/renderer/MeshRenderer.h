@@ -30,7 +30,7 @@ namespace renderer
         const FrameParameter& frameState() const;
 
     private:
-        const uint _maxUboMa4;
+        static const uint _maxUboMat4 = 1024;
         DrawState _states;
         FrameParameter _parameter;
 

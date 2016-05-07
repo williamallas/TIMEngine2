@@ -19,7 +19,7 @@ namespace core
     public:
 
         Rand(uint seed) { _generator.seed(seed); }
-        float next_f() { return frand_range(_generator); }
+        float next_f() { return float(frand_range(_generator)); }
 
         float next_f(const vec2& range)
         {
@@ -27,14 +27,14 @@ namespace core
                 return range.x();
 
             boost::random::uniform_real_distribution<> dis(range.x(), range.y());
-            return dis(_generator);
+            return float(dis(_generator));
         }
 
         size_t next_i() { return _generator(); }
         void setSeed(uint seed) { _generator.seed(seed); }
 
         /* Static */
-        static float frand() { return frand_range(generator); }
+        static float frand() { return float(frand_range(generator)); }
 
         static float frand(const vec2& range)
         {
@@ -42,7 +42,7 @@ namespace core
                 return range.x();
 
             boost::random::uniform_real_distribution<> dis(range.x(), range.y());
-            return dis(generator);
+            return float(dis(generator));
         }
 
         static size_t rand() { return generator(); }

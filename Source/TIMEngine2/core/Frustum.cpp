@@ -8,7 +8,7 @@ namespace core
 
 void Frustum::buildCameraFrustum(const Camera& camera, size_t maskPlan)
 {
-    float tang = tan(toRad(camera.fov)*0.5) ;
+    float tang = tanf(toRad(camera.fov)*0.5) ;
     float nw = camera.clipDist.x() * tang;
     float nh = nw / camera.ratio;
     float fw = camera.clipDist.y()  * tang;

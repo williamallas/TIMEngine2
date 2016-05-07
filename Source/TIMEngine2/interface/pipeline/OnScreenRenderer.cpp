@@ -10,7 +10,7 @@ namespace interface
 namespace pipeline
 {
 
-OnScreenRenderer::OnScreenRenderer()
+OnScreenRenderer::OnScreenRenderer() : Pipeline::TerminalNode()
 {
     _stateDrawQuad.setCullFace(false);
     _stateDrawQuad.setDepthTest(false);
@@ -40,6 +40,7 @@ void OnScreenRenderer::render()
     }
 
     renderer::openGL.bindFrameBuffer(0);
+
     _stateDrawQuad.bind();
 
     for(uint i=0 ; i<_input.size() ; ++i)

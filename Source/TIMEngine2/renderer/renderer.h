@@ -1,7 +1,7 @@
 #ifndef RENDERER_H_INCLUDED
 #define RENDERER_H_INCLUDED
 
-#include "ThreadPool.h"
+#include "core/ThreadPool.h"
 #include "GLState.h"
 #include "BufferPool.h"
 #include "IndexBuffer.h"

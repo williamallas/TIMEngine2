@@ -1,7 +1,7 @@
 #ifndef VERTEXFORMAT_H_INCLUDED
 #define VERTEXFORMAT_H_INCLUDED
 
-#include "Vector.h"
+#include "core/Vector.h"
 
 #include "MemoryLoggerOn.h"
 namespace tim

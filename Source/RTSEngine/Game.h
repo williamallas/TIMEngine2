@@ -12,12 +12,12 @@ class Game
 public:
     Game();
 
-    static bool rayCast(tim::BulletObject*, const tim::core::Camera&, vec2 mousePos, tim::BulletObject::CollisionPoint&);
+    //static bool rayCast(tim::BulletObject*, const tim::core::Camera&, vec2 mousePos, tim::BulletObject::CollisionPoint&);
 protected:
 
 
     // Graphic
-    tim::BulletEngine _physic;
+    //tim::BulletEngine _physic;
 
     tim::interface::Pipeline::SceneView _camera;
     RTSCamera _cameraController;

@@ -1,7 +1,7 @@
 #ifndef DEBUGCAMERA_H_INCLUDED
 #define DEBUGCAMERA_H_INCLUDED
 
-#include "SDLInputManager.h"
+#include "TIM_SDL/SDLInputManager.h"
 #include "core\Camera.h"
 
 #include "MemoryLoggerOn.h"

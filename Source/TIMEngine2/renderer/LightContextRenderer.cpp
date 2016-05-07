@@ -27,6 +27,12 @@ LightContextRenderer::~LightContextRenderer()
     delete _buffer;
 }
 
+void LightContextRenderer::clear() const
+{
+	_fbo.bind();
+	openGL.clearColor(vec4::construct(0));
+}
+
 }
 }
 

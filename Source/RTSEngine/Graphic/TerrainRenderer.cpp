@@ -97,7 +97,7 @@ void TerrainRenderer::Patch::generateHeightmap()
     elem.copyUserDefinedMaterial(mat);
 
     Mesh mesh(elem);
-    mesh.setInitialVolume(Sphere({0,0,10}, 20));
+    //mesh.setInitialVolume(Sphere({0,0,10}, 20));
 
     for(uint x=0 ; x<_param.cellResolution ; ++x)
         for(uint y=0 ; y<_param.cellResolution ; ++y)

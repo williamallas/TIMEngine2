@@ -282,7 +282,7 @@ namespace interface
 
         renderer::MeshRenderer& meshRenderer();
 
-        DeferredRendererEntity& genDeferredRendererEntity(const uivec2&, bool useLightRenderer, bool useReflexionRenderer);
+        DeferredRendererEntity& genDeferredRendererEntity(const uivec2&, bool useLightRenderer, bool useReflexionRenderer, int entityId=0);
 
         template <class T>
         typename std::enable_if<std::is_default_constructible<T>::value, T>::type& createNode()
@@ -316,7 +316,7 @@ namespace interface
     private:
         renderer::MeshRenderer _meshRenderer;
 
-        boost::container::map<boost::tuple<uivec2,bool,bool>, std::unique_ptr<DeferredRendererEntity>> _deferredRendererEntity;
+        boost::container::map<boost::tuple<uivec2,bool,bool,int>, std::unique_ptr<DeferredRendererEntity>> _deferredRendererEntity;
 
         vector<ProcessNode*> _allProcessNodes;
         TerminalNode* _outputNode = nullptr;

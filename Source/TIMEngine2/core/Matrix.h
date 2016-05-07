@@ -155,7 +155,7 @@ namespace core
         Matrix inverted() const
         {
             Matrix inv;
-            T invDet = 1.0/determinant();
+            T invDet = 1.0f/determinant();
             for(size_t i=0 ; i<N ; ++i)
                 for(size_t j=0 ; j<N ; ++j)
                     inv.get(j*N+i) = sub({i,j}).determinant() * (1-(int(i+j)%2)*2) * invDet;

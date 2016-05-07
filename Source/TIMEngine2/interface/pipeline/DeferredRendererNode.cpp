@@ -72,7 +72,7 @@ void DeferredRendererNode::render()
     _rendererEntity->deferredRenderer().frameBuffer().bind();
 
     renderer::openGL.clearDepth();
-    renderer::openGL.clearColor(vec4(0));
+    renderer::openGL.clearColor(vec4::construct(0));
 
     if(!_toDraw.empty())
     {
@@ -115,8 +115,10 @@ void DeferredRendererNode::render()
     for(uint i=0 ; i<lights.size() ; ++i)
         lights[i] = _culledLight[i].get().get();
 
-    if(_rendererEntity->lightRenderer())
-        _rendererEntity->lightRenderer()->draw(lights);
+	if (_rendererEntity->lightRenderer())
+		_rendererEntity->lightRenderer()->draw(lights);
+	else
+		_rendererEntity->lightContext()->clear();
 
     if(_globalLightInfo)
     {

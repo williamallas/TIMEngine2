@@ -32,6 +32,8 @@ namespace renderer
 
         void enableAllAttachment() const;
 
+		void copyTo(FrameBuffer&) const;
+
     private: 
         uint _id=0;
         uivec2 _resolution;

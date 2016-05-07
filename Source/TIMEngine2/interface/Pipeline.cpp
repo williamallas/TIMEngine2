@@ -7,15 +7,15 @@ namespace tim
 namespace interface
 {
 
-Pipeline::DeferredRendererEntity& Pipeline::genDeferredRendererEntity(const uivec2& res, bool useLightRenderer, bool useReflexionRenderer)
+Pipeline::DeferredRendererEntity& Pipeline::genDeferredRendererEntity(const uivec2& res, bool useLightRenderer, bool useReflexionRenderer, int entityId)
 {
-    auto it = _deferredRendererEntity.find(boost::make_tuple(res, useLightRenderer, useReflexionRenderer));
+    auto it = _deferredRendererEntity.find(boost::make_tuple(res, useLightRenderer, useReflexionRenderer, entityId));
     if(it != _deferredRendererEntity.end())
         return *(it->second.get());
     else
     {
         DeferredRendererEntity* entity = new DeferredRendererEntity(res, _meshRenderer.frameState(), useLightRenderer, useReflexionRenderer);
-        _deferredRendererEntity[boost::make_tuple(res, useLightRenderer, useReflexionRenderer)]
+        _deferredRendererEntity[boost::make_tuple(res, useLightRenderer, useReflexionRenderer, entityId)]
                 = std::unique_ptr<DeferredRendererEntity>(entity);
 
         return *entity;

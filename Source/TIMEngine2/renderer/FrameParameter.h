@@ -23,11 +23,23 @@ namespace renderer
 
         FrameParameter& setCamera(const Camera& camera)
         {
-            _parameter.proj = mat4::Projection(camera.fov, camera.ratio, camera.clipDist.x(), camera.clipDist.y());
-            _parameter.view = mat4::View(camera.pos, camera.dir, camera.up);
-            _parameter.cameraPos = vec4(camera.pos,0);
-            _parameter.cameraDir = vec4(camera.dir,0);
-            _parameter.cameraUp = vec4(camera.up,0);
+			if (!camera.useRawMat)
+			{
+				_parameter.proj = mat4::Projection(camera.fov, camera.ratio, camera.clipDist.x(), camera.clipDist.y());
+				_parameter.view = mat4::View(camera.pos, camera.dir, camera.up);
+				_parameter.cameraPos = vec4(camera.pos, 0);
+				_parameter.cameraDir = vec4(camera.dir, 0);
+				_parameter.cameraUp = vec4(camera.up, 0);
+			}
+			else
+			{
+				_parameter.proj = camera.raw_proj;
+				_parameter.view = camera.raw_view;
+				_parameter.cameraPos = vec4(camera.pos, 0);
+				_parameter.cameraDir = vec4(camera.dir, 0);
+				_parameter.cameraUp = vec4(camera.up, 0);
+			}
+            
             _hasChanged = true;
             return *this;
         }
