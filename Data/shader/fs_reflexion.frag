@@ -218,8 +218,8 @@ float dist(vec4 plan, vec3 p)
 vec4 raytraceCamSpace(vec3 rayPos, vec3 rayDir, sampler2D ZBuffer, vec3 n)
 {
 	vec4 backColor=vec4(0,0,0,0);//texture(texture3, mat3(invView)*rayDir);
-	const float maxDist = 5;
-	const float maxStep = 50.0;
+	const float maxDist = 2;
+	const float maxStep = 20.0;
 	
 	//float d_e = dist(computePlan(rayPos, n), rayPos+rayDir);
 	
