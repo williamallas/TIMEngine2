@@ -10,5 +10,7 @@
         <file>Icons/sb_y.png</file>
         <file>Icons/sb_z.png</file>
         <file>Icons/timIcon.png</file>
+		<file>Icons/save.png</file>
+		<file>Icons/mesh.png</file>
     </qresource>
 </RCC>

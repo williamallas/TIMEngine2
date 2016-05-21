@@ -27,9 +27,12 @@ EditorWindow::EditorWindow(QWidget *parent) :
     ui->meshEditorWidget->setMainRenderer(_rendererThread->mainRenderer());
     ui->meshEditorWidget->setResourceWidget(ui->resourceWidget);
 
+    ui->assetViewWidget->setMeshEditorWidget(ui->meshEditorWidget);
+
     ui->resourceWidget->addDir(".");
 
     connect(ui->glWidget, SIGNAL(pressedMouseMoved(int,int)), ui->meshEditorWidget, SLOT(rotateEditedMesh(int,int)));
+    connect(ui->meshEditorWidget, SIGNAL(saveMeshClicked()), this, SLOT(addMeshToAsset()));
 }
 
 EditorWindow::~EditorWindow()
@@ -84,4 +87,36 @@ void EditorWindow::on_actionSet_skybox_triggered()
     _rendererThread->mainRenderer()->addEvent([=](){
         _rendererThread->mainRenderer()->setSkybox(0, list);
     });
+}
+
+void EditorWindow::addMeshToAsset()
+{
+
+    if(ui->meshEditorWidget->currentMeshName().isEmpty())
+    {
+        QMessageBox::warning(ui->meshEditorWidget, "Mesh name is empty", "We can't save the mesh without a valid name.");
+        return;
+    }
+
+    if(ui->meshEditorWidget->currentMesh().isEmpty())
+    {
+        QMessageBox::warning(ui->meshEditorWidget, "The mesh is empty", "The active mesh is empty.");
+        return;
+    }
+
+    AssetViewWidget::Element elem;
+    elem.materials = ui->meshEditorWidget->currentMesh();
+    elem.name = ui->meshEditorWidget->currentMeshName();
+    elem.type = AssetViewWidget::Element::MESH;
+
+    ui->assetViewWidget->addElement(elem);
+}
+
+void EditorWindow::on_actionMesh_assets_triggered()
+{
+    QString file = QFileDialog::getSaveFileName(this, "Save mesh asset", ".");
+    if(file.isEmpty())
+        return;
+
+    ui->assetViewWidget->exportMesh(file, "./");
 }

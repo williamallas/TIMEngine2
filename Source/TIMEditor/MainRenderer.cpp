@@ -114,7 +114,7 @@ void MainRenderer::updateCamera_MeshEditor(int wheel)
     lock();
     if(_curScene == 0)
     {
-        _view[0].camera.pos.y() -= 0.3 * float(wheel) *
+        _view[0].camera.pos.y() -= 0.05 * float(wheel) *
                                 (std::max(_time, 0.001f) * fabs(_view[0].camera.pos.y()));
         _view[0].camera.pos.y() = _view[0].camera.pos.y() > -1 ? -1 : _view[0].camera.pos.y();
         _view[0].camera.pos.y() = _view[0].camera.pos.y() < -100 ? -100 : _view[0].camera.pos.y();

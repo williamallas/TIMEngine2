@@ -1,7 +1,7 @@
 #ifndef MAINRENDERER_H
 #define MAINRENDERER_H
 
-#include "FullPipeline.h"
+#include "interface/FullPipeline.h"
 #include "interface/ShaderPool.h"
 #include "resource/MeshLoader.h"
 #include "resource/AssetManager.h"
@@ -22,7 +22,7 @@ public:
     void main();
     float elapsedTime() const { return _time; }
 
-    FullPipeline& pipeline() { return _pipeline; }
+    interface::FullPipeline& pipeline() { return _pipeline; }
     void lock() const { _mutex.lock(); }
     void unlock() const { _mutex.unlock(); }
     void stop() { _running=false; }
@@ -50,8 +50,8 @@ private:
     bool _newSize=false;
     uivec2 _currentSize;
 
-    FullPipeline::Parameter _renderingParameter;
-    FullPipeline _pipeline;
+    interface::FullPipeline::Parameter _renderingParameter;
+    interface::FullPipeline _pipeline;
     mutable QMutex _mutex;
 
 

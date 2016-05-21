@@ -69,8 +69,16 @@
     <property name="title">
      <string>Resource</string>
     </property>
+    <widget class="QMenu" name="menuExport_mesh_assets">
+     <property name="title">
+      <string>Export mesh assets</string>
+     </property>
+     <addaction name="actionMesh_assets"/>
+    </widget>
     <addaction name="actionAdd_folder"/>
     <addaction name="actionAdd_folder_recursively"/>
+    <addaction name="separator"/>
+    <addaction name="menuExport_mesh_assets"/>
    </widget>
    <widget class="QMenu" name="menuScene">
     <property name="title">
@@ -322,6 +330,97 @@
     </layout>
    </widget>
   </widget>
+  <widget class="QDockWidget" name="assetDockWidget">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+     <horstretch>4</horstretch>
+     <verstretch>1</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>79</width>
+     <height>96</height>
+    </size>
+   </property>
+   <property name="features">
+    <set>QDockWidget::DockWidgetMovable</set>
+   </property>
+   <property name="windowTitle">
+    <string>Asset</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_2">
+    <layout class="QVBoxLayout" name="verticalLayout_3">
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>1</number>
+     </property>
+     <item>
+      <widget class="AssetViewWidget" name="assetViewWidget">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Ignored">
+         <horstretch>4</horstretch>
+         <verstretch>1</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="lineWidth">
+        <number>0</number>
+       </property>
+       <property name="showDropIndicator" stdset="0">
+        <bool>false</bool>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>97</width>
+         <height>97</height>
+        </size>
+       </property>
+       <property name="verticalScrollMode">
+        <enum>QAbstractItemView::ScrollPerPixel</enum>
+       </property>
+       <property name="horizontalScrollMode">
+        <enum>QAbstractItemView::ScrollPerItem</enum>
+       </property>
+       <property name="movement">
+        <enum>QListView::Static</enum>
+       </property>
+       <property name="flow">
+        <enum>QListView::LeftToRight</enum>
+       </property>
+       <property name="isWrapping" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="resizeMode">
+        <enum>QListView::Adjust</enum>
+       </property>
+       <property name="viewMode">
+        <enum>QListView::IconMode</enum>
+       </property>
+       <property name="uniformItemSizes">
+        <bool>true</bool>
+       </property>
+       <property name="selectionRectVisible">
+        <bool>false</bool>
+       </property>
+       <property name="sortingEnabled">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
   <action name="actionClose_Context">
    <property name="text">
     <string>Close Context</string>
@@ -342,8 +441,14 @@
     <string>Set skybox</string>
    </property>
   </action>
+  <action name="actionMesh_assets">
+   <property name="text">
+    <string>mesh assets</string>
+   </property>
+  </action>
   <zorder>resourceDockWidget</zorder>
   <zorder>dockMeshEditor</zorder>
+  <zorder>assetDockWidget</zorder>
  </widget>
  <customwidgets>
   <customwidget>
@@ -366,8 +471,13 @@
   <customwidget>
    <class>MeshEditorWidget</class>
    <extends>QWidget</extends>
-   <header location="global">TIMEditor/MeshEditorWidget.h</header>
+   <header>TIMEditor/MeshEditorWidget.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>AssetViewWidget</class>
+   <extends>QListWidget</extends>
+   <header location="global">TIMEditor/AssetViewWidget.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

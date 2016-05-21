@@ -18,12 +18,18 @@ MeshEditorWidget::MeshEditorWidget(QWidget* parent) : QWidget(parent), ui(new Ui
     connect(ui->dm_roughnessSlider, SIGNAL(sliderMoved(int)), this, SLOT(dm_roughnessSlider_sliderMoved(int)));
     connect(ui->dm_metallicSlider, SIGNAL(sliderMoved(int)), this, SLOT(dm_metallicSlider_sliderMoved(int)));
     connect(ui->dm_specularSlider, SIGNAL(sliderMoved(int)), this, SLOT(dm_specularSlider_sliderMoved(int)));
+    connect(ui->dm_emissiveSlider, SIGNAL(sliderMoved(int)), this, SLOT(dm_emissiveSlider_sliderMoved(int)));
 
     connect(ui->dm_roughnessVal, SIGNAL(valueChanged(double)), this, SLOT(dm_roughnessVal_valueChanged(double)));
     connect(ui->dm_metallicVal, SIGNAL(valueChanged(double)), this, SLOT(dm_metallicVal_valueChanged(double)));
-    connect(ui->dm_specularVal, SIGNAL(valueChanged(double)), this, SLOT(dm_specularVal_valueChanged(double)));
+    connect(ui->dm_emissiveVal, SIGNAL(valueChanged(double)), this, SLOT(dm_emissiveVal_valueChanged(double)));
 
     connect(ui->dmSelectColor, SIGNAL(pressed()), this, SLOT(dmSelectColor_clicked()));
+}
+
+QString MeshEditorWidget::currentMeshName() const
+{
+    return ui->meshName->text();
 }
 
 void MeshEditorWidget::setMainRenderer(tim::MainRenderer* r)
@@ -41,10 +47,10 @@ void MeshEditorWidget::addElement(QString geometry)
 {
     Element elem;
     elem.geometry = geometry;
-    elem.name = QFileInfo(geometry).baseName();
+    //elem.name = QFileInfo(geometry).baseName();
     _meshData += elem;
 
-    QListWidgetItem* item = new QListWidgetItem(elem.name + " (" +
+    QListWidgetItem* item = new QListWidgetItem(QFileInfo(geometry).baseName() + " (" +
                                                 QFileInfo(geometry).fileName() + ")");
     item->setSizeHint(QSize(0, 40));
     item->setFont(QFont("Franklin Gothic Medium", 16));
@@ -140,6 +146,13 @@ void MeshEditorWidget::dm_specularSlider_sliderMoved(int n)
     updateMaterial();
 }
 
+void MeshEditorWidget::dm_emissiveSlider_sliderMoved(int n)
+{
+    ui->dm_emissiveVal->setValue(double(n) / ui->dm_emissiveSlider->maximum());
+    updateMaterial();
+}
+
+
 void MeshEditorWidget::dm_roughnessVal_valueChanged(double n)
 {
     ui->dm_roughnessSlider->setValue(int(n*ui->dm_roughnessSlider->maximum()));
@@ -158,6 +171,12 @@ void MeshEditorWidget::dm_specularVal_valueChanged(double n)
     updateMaterial();
 }
 
+void MeshEditorWidget::dm_emissiveVal_valueChanged(double n)
+{
+    ui->dm_emissiveSlider->setValue(int(n*ui->dm_emissiveSlider->maximum()));
+    updateMaterial();
+}
+
 void MeshEditorWidget::dmSelectColor_clicked()
 {
     QColor c = QColorDialog::getColor(QColor(ui->dm_colorR->value(), ui->dm_colorG->value(), ui->dm_colorB->value()),
@@ -173,10 +192,11 @@ void MeshEditorWidget::updateMaterial()
     if(_curElementIndex < 0)
         return;
 
-    vec3 material;
+    vec4 material;
     material[0] = ui->dm_roughnessVal->value();
     material[1] = ui->dm_metallicVal->value();
     material[2] = ui->dm_specularVal->value();
+    material[3] = ui->dm_emissiveVal->value();
 
     _meshData[_curElementIndex].material = material;
     _meshData[_curElementIndex].color = QColor(ui->dm_colorR->value(), ui->dm_colorG->value(), ui->dm_colorB->value());
@@ -196,6 +216,7 @@ void MeshEditorWidget::updateMaterial()
         mesh.element(index).setRougness(material.x());
         mesh.element(index).setMetallic(material.y());
         mesh.element(index).setSpecular(material.z());
+        mesh.element(index).setEmissive(material.w());
         mesh.element(index).setColor(color);
         editedMesh->setMesh(mesh);
     });
@@ -221,9 +242,11 @@ void MeshEditorWidget::itemSelectionChanged(int row)
     ui->dm_roughnessVal->blockSignals(true);
     ui->dm_metallicVal->blockSignals(true);
     ui->dm_specularVal->blockSignals(true);
+    ui->dm_emissiveVal->blockSignals(true);
     ui->dm_roughnessSlider->blockSignals(true);
     ui->dm_metallicSlider->blockSignals(true);
     ui->dm_specularSlider->blockSignals(true);
+    ui->dm_emissiveSlider->blockSignals(true);
 
     ui->dm_colorR->setValue(_meshData[_curElementIndex].color.red());
     ui->dm_colorG->setValue(_meshData[_curElementIndex].color.green());
@@ -233,16 +256,18 @@ void MeshEditorWidget::itemSelectionChanged(int row)
     ui->dm_roughnessVal->setValue(_meshData[_curElementIndex].material.x());
     ui->dm_metallicVal->setValue(_meshData[_curElementIndex].material.y());
     ui->dm_specularVal->setValue(_meshData[_curElementIndex].material.z());
+    ui->dm_emissiveVal->setValue(_meshData[_curElementIndex].material.w());
 
     ui->dm_roughnessSlider->setValue(int(_meshData[_curElementIndex].material.x()*ui->dm_roughnessSlider->maximum()));
     ui->dm_metallicSlider->setValue(int(_meshData[_curElementIndex].material.y()*ui->dm_metallicSlider->maximum()));
     ui->dm_specularSlider->setValue(int(_meshData[_curElementIndex].material.z()*ui->dm_specularSlider->maximum()));
+    ui->dm_emissiveSlider->setValue(int(_meshData[_curElementIndex].material.w()*ui->dm_emissiveSlider->maximum()));
 
     ui->diffuseTex->setIcon(_meshData[_curElementIndex].texturesIcon[0]);
     ui->normalTex->setIcon(_meshData[_curElementIndex].texturesIcon[1]);
     ui->materialTex->setIcon(_meshData[_curElementIndex].texturesIcon[2]);
 
-    vec3 material = _meshData[_curElementIndex].material;
+    vec4 material = _meshData[_curElementIndex].material;
 
     vec4 color = vec4(_meshData[_curElementIndex].color.red(),
                       _meshData[_curElementIndex].color.green(),
@@ -284,9 +309,11 @@ void MeshEditorWidget::itemSelectionChanged(int row)
     ui->dm_roughnessVal->blockSignals(false);
     ui->dm_metallicVal->blockSignals(false);
     ui->dm_specularVal->blockSignals(false);
+    ui->dm_emissiveVal->blockSignals(false);
     ui->dm_roughnessSlider->blockSignals(false);
     ui->dm_metallicSlider->blockSignals(false);
     ui->dm_specularSlider->blockSignals(false);
+    ui->dm_emissiveSlider->blockSignals(false);
 }
 
 void MeshEditorWidget::selectGeometryFromResources()
@@ -335,11 +362,11 @@ void MeshEditorWidget::rotateEditedMesh(int dx, int dy)
 {
     _renderer->lock();
 
-    _rz += 5*dx * _renderer->elapsedTime();
-    _ry += 5*dy * _renderer->elapsedTime();
+    _rz += dx * _renderer->elapsedTime();
+    _ry += dy * _renderer->elapsedTime();
 
     mat4 m = _editedMesh->matrix();
-    m = mat4::RotationX(5*dy * _renderer->elapsedTime()) * mat4::RotationZ(5*dx * _renderer->elapsedTime())*m;
+    m = mat4::RotationX(dy * _renderer->elapsedTime()) * mat4::RotationZ(dx * _renderer->elapsedTime())*m;
     _editedMesh->setMatrix(m);
 
     _renderer->unlock();
@@ -369,4 +396,9 @@ void MeshEditorWidget::on_normalTex_clicked()
 void MeshEditorWidget::on_materialTex_clicked()
 {
     updateTexture(2);
+}
+
+void MeshEditorWidget::on_saveMeshButton_pressed()
+{
+    emit saveMeshClicked();
 }
