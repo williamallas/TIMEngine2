@@ -30,7 +30,7 @@ namespace renderer
 
     using VertexType = VNCT_Vertex;
 
-    struct TextureMode { enum : int { NoFilter=0, Filtered, FilteredNoRepeat, DepthMap, Last }; };
+    struct TextureMode { enum : int { NoFilter=0, Filtered, FilteredNoRepeat, OnlyLinearNoRepeat, DepthMap, Last }; };
     extern uint textureSampler[TextureMode::Last];
 
     struct IndirectDrawParmeter

@@ -13,9 +13,9 @@ namespace resource
 /** OBJ loader **/
 /****************/
 
-MeshLoader::LoadedMeshData MeshLoader::importObj(const std::string& file, bool tangent)
+renderer::MeshData MeshLoader::importObj(const std::string& file, bool tangent)
 {
-    LoadedMeshData meshData;
+    renderer::MeshData meshData;
     meshData.name = file;
 
     ObjBuffer buf;
@@ -36,7 +36,7 @@ MeshLoader::LoadedMeshData MeshLoader::importObj(const std::string& file, bool t
             meshData.format = renderer::VertexFormat::V;
 
     meshData.nbVertex = nbVertex;
-    meshData.vData = new LoadedMeshData::DataType[nbVertex];
+    meshData.vData = new renderer::MeshData::DataType[nbVertex];
 	for (auto it : mapIndex)
 	{
 		meshData.vData[it.second] = { it.first.v, it.first.n, it.first.c, vec3() };
@@ -49,7 +49,7 @@ MeshLoader::LoadedMeshData MeshLoader::importObj(const std::string& file, bool t
     return meshData;
 }
 
-renderer::MeshBuffers* MeshLoader::createMeshBuffers(LoadedMeshData& data, renderer::VertexBufferPoolType* vpool, renderer::IndexBufferPoolType* ipool)
+renderer::MeshBuffers* MeshLoader::createMeshBuffers(renderer::MeshData& data, renderer::VertexBufferPoolType* vpool, renderer::IndexBufferPoolType* ipool)
 {
     if(data.nbIndex > 0 && data.nbVertex > 0)
     {
@@ -206,7 +206,7 @@ bool MeshLoader::loadObjData(const std::string& file, ObjBuffer& buffer)
     return true;
 }
 
-size_t MeshLoader::computeObjVertexMap(ObjBuffer& buf, LoadedMeshData& meshData,
+size_t MeshLoader::computeObjVertexMap(ObjBuffer& buf, renderer::MeshData& meshData,
                                        boost::container::map<renderer::VNC_Vertex, size_t>& mapIndex)
 {
     size_t curIndex=0;
@@ -273,7 +273,7 @@ uivec3 MeshLoader::parseObjIndex(const std::string& str, bool& ok, int nbSlash)
     return res;
 }
 
-void MeshLoader::computeTangent(LoadedMeshData& meshData)
+void MeshLoader::computeTangent(renderer::MeshData& meshData)
 {
     if(meshData.format != renderer::VertexFormat::VNCT || meshData.indexData == nullptr || meshData.vData == nullptr)
         return;
@@ -281,7 +281,7 @@ void MeshLoader::computeTangent(LoadedMeshData& meshData)
     uivec3* triangles = reinterpret_cast<uivec3*>(meshData.indexData);
     uint trianglesCount = meshData.nbIndex/3;
 
-    LoadedMeshData::DataType* vbuffer = meshData.vData;
+    renderer::MeshData::DataType* vbuffer = meshData.vData;
     uint vertexCount = meshData.nbVertex;
 
     vec3* tan1 = new vec3[vertexCount*2]();
@@ -348,9 +348,9 @@ void MeshLoader::computeTangent(LoadedMeshData& meshData)
 ///** TIM loader **/
 ///****************/
 
-MeshLoader::LoadedMeshData MeshLoader::importTim(const std::string& file)
+renderer::MeshData MeshLoader::importTim(const std::string& file)
 {
-    MeshLoader::LoadedMeshData data;
+    renderer::MeshData data;
 
     std::ifstream fs(file, std::ios_base::binary);
     if(!fs)
@@ -365,16 +365,16 @@ MeshLoader::LoadedMeshData MeshLoader::importTim(const std::string& file)
     read(fs, data.nbVertex);
     read(fs, data.nbIndex);
 
-    data.vData = new LoadedMeshData::DataType[data.nbVertex];
+    data.vData = new renderer::MeshData::DataType[data.nbVertex];
     data.indexData = new uint[data.nbIndex];
 
-    fs.read(reinterpret_cast<char*>(data.vData), sizeof(LoadedMeshData::DataType)*data.nbVertex);
+    fs.read(reinterpret_cast<char*>(data.vData), sizeof(renderer::MeshData::DataType)*data.nbVertex);
     fs.read(reinterpret_cast<char*>(data.indexData), sizeof(uint)*data.nbIndex);
 
     return data;
 }
 
-void MeshLoader::exportTim(const LoadedMeshData& data, const std::string& file)
+void MeshLoader::exportTim(const renderer::MeshData& data, const std::string& file)
 {
     std::ofstream fs(file, std::ios_base::binary);
     if(!fs || !data.nbVertex || !data.nbIndex)
@@ -387,7 +387,7 @@ void MeshLoader::exportTim(const LoadedMeshData& data, const std::string& file)
     write(fs, data.nbVertex);
     write(fs, data.nbIndex);
 
-    fs.write(reinterpret_cast<char*>(data.vData), sizeof(LoadedMeshData::DataType)*data.nbVertex);
+    fs.write(reinterpret_cast<char*>(data.vData), sizeof(renderer::MeshData::DataType)*data.nbVertex);
     fs.write(reinterpret_cast<char*>(data.indexData), sizeof(uint)*data.nbIndex);
 }
 

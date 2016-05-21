@@ -14,7 +14,7 @@ DirLightShadowNode::DirLightShadowNode(renderer::MeshRenderer& meshDrawer)
     : Pipeline::DepthMapRendererNode(), _meshDrawer(meshDrawer)
 {
     _defaultDrawState.setShader(renderer::depthPassShader);
-    _defaultDrawState.setCullBackFace(false);
+    _defaultDrawState.setCullBackFace(true);
 
     const float arr[3] = {50,150,500};
     for(uint i=0 ; i<3 ; ++i)

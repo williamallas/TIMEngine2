@@ -30,7 +30,13 @@ namespace renderer
         const FrameParameter& frameState() const;
 
     private:
+
+#ifdef USE_VCPP
         static const uint _maxUboMat4 = 1024;
+#else
+        const uint _maxUboMat4;
+#endif
+
         DrawState _states;
         FrameParameter _parameter;
 

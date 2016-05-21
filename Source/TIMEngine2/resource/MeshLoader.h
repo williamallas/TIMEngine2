@@ -17,35 +17,12 @@ namespace resource
     class MeshLoader
     {
     public:
-        struct LoadedMeshData
-        {
-            using DataType = renderer::VNCT_Vertex;
-            std::string name;
+        static renderer::MeshData importObj(const std::string&, bool tangent=true);
 
-            uint nbIndex = 0;
-            uint* indexData = nullptr;
+        static renderer::MeshBuffers* createMeshBuffers(renderer::MeshData&, renderer::VertexBufferPoolType*, renderer::IndexBufferPoolType*);
 
-            renderer::VertexFormat format = renderer::VertexFormat::VNCT;
-            uint nbVertex = 0;
-            DataType* vData = nullptr;
-
-            void clear()
-            {
-                nbIndex=0;
-                nbVertex=0;
-                delete[] indexData;
-                delete[] vData;
-                indexData=nullptr;
-                vData=nullptr;
-            }
-        };
-
-        static LoadedMeshData importObj(const std::string&, bool tangent=true);
-
-        static renderer::MeshBuffers* createMeshBuffers(LoadedMeshData&, renderer::VertexBufferPoolType*, renderer::IndexBufferPoolType*);
-
-        static LoadedMeshData importTim(const std::string&);
-        static void exportTim(const LoadedMeshData&, const std::string&);
+        static renderer::MeshData importTim(const std::string&);
+        static void exportTim(const renderer::MeshData&, const std::string&);
 
 ////        static void exportSkeleton(Skeleton*, const vector<SkeletonAnimation*>&, const std::string&);
 ////        static Skeleton* importSkeleton(const std::string&, vector<SkeletonAnimation*>&);
@@ -53,7 +30,7 @@ namespace resource
 ////        static renderer::MeshBuffers* genGrid(const vec2&, uint, float virtualZ=0);
 ////        static renderer::MeshBuffers* genGrid(const vec3&, Image*, renderer::VertexFormat);
 
-        static void computeTangent(LoadedMeshData&);
+        static void computeTangent(renderer::MeshData&);
 
     private:
         MeshLoader() = default;
@@ -78,7 +55,7 @@ namespace resource
         };
 
         static bool loadObjData(const std::string&, ObjBuffer&);
-        static size_t computeObjVertexMap(ObjBuffer&, LoadedMeshData&, boost::container::map<renderer::VNC_Vertex, size_t>&);
+        static size_t computeObjVertexMap(ObjBuffer&, renderer::MeshData&, boost::container::map<renderer::VNC_Vertex, size_t>&);
         static uivec3 parseObjIndex(const std::string&, bool&, int);
 
 ////        static SkeletonAnimation* readSkeletonAnimation(std::istream&);

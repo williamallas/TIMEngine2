@@ -15,33 +15,46 @@ namespace resource
     {
     public:
         template<bool async>
-        Option<interface::Geometry> operator()(std::string file)
+        Option<interface::Geometry> operator()(std::string file, bool keepData = false)
         {
             if(!async)
             {
-                MeshLoader::LoadedMeshData data;
+                renderer::MeshData* data = new renderer::MeshData;
 
                 if(StringUtils(file).extension() == "obj")
-                    data = MeshLoader::importObj(file);
+                    *data = MeshLoader::importObj(file);
                 else
-                    data = MeshLoader::importTim(file);
+                    *data = MeshLoader::importTim(file);
 
-                if(data.nbIndex > 0 && data.nbVertex > 0)
+                if(data->nbIndex > 0 && data->nbVertex > 0)
                 {
-                    renderer::VBuffer* vb = renderer::vertexBufferPool->alloc(data.nbVertex);
-                    renderer::IBuffer* ib = renderer::indexBufferPool->alloc(data.nbIndex);
-                    vb->flush(reinterpret_cast<float*>(data.vData), 0, data.nbVertex);
-                    ib->flush(data.indexData, 0, data.nbIndex);
-                    renderer::MeshBuffers* mb = new renderer::MeshBuffers(vb, ib, Sphere::computeSphere(reinterpret_cast<real*>(data.vData), data.nbVertex,
-                                                                          sizeof(renderer::VNC_Vertex)/sizeof(float)));
+                    renderer::VBuffer* vb = renderer::vertexBufferPool->alloc(data->nbVertex);
+                    renderer::IBuffer* ib = renderer::indexBufferPool->alloc(data->nbIndex);
+                    vb->flush(reinterpret_cast<float*>(data->vData), 0, data->nbVertex);
+                    ib->flush(data->indexData, 0, data->nbIndex);
 
-                    data.clear();
+                    renderer::MeshBuffers* mb = nullptr;
+                    if(keepData)
+                    {
+                        mb = new renderer::MeshBuffers(vb, ib, Sphere::computeSphere(reinterpret_cast<real*>(data->vData), data->nbVertex,
+                                                       sizeof(renderer::VNC_Vertex)/sizeof(float)), data);
+                    }
+                    else
+                    {
+                        mb = new renderer::MeshBuffers(vb, ib, Sphere::computeSphere(reinterpret_cast<real*>(data->vData), data->nbVertex,
+                                                       sizeof(renderer::VNC_Vertex)/sizeof(float)));
+
+                        data->clear();
+                        delete data;
+                    }
+
                     return Option<interface::Geometry>(interface::Geometry(mb));
                 }
                 else
                 {
                     LOG_EXT("Failed to load Geometry: ", file);
-                    data.clear();
+                    data->clear();
+                    delete data;
                     return Option<interface::Geometry>();
                 }
             }
@@ -51,36 +64,42 @@ namespace resource
                 interface::Geometry geom(emptyBuf);
 
                 auto asyncLoad = [=](){
-                    MeshLoader::LoadedMeshData data;
+                    renderer::MeshData* data = new renderer::MeshData;
 
                     if(StringUtils(file).extension() == "obj")
-                        data = MeshLoader::importObj(file);
+                        *data = MeshLoader::importObj(file);
                     else
-                        data = MeshLoader::importTim(file);
+                        *data = MeshLoader::importTim(file);
 
-                    if(data.nbIndex > 0 && data.nbVertex > 0)
+                    if(data->nbIndex > 0 && data->nbVertex > 0)
                     {
                         interface::Geometry copyGeom = geom;
-                        renderer::VBuffer* vb = renderer::vertexBufferPool->alloc(data.nbVertex);
-                        renderer::IBuffer* ib = renderer::indexBufferPool->alloc(data.nbIndex);
+                        renderer::VBuffer* vb = renderer::vertexBufferPool->alloc(data->nbVertex);
+                        renderer::IBuffer* ib = renderer::indexBufferPool->alloc(data->nbIndex);
+
+                        renderer::MeshBuffers* mb = new renderer::MeshBuffers(vb, ib, Sphere::computeSphere(reinterpret_cast<real*>(data->vData), data->nbVertex,
+                                                                              sizeof(renderer::VNC_Vertex)/sizeof(float)), keepData ? data : nullptr);
+                        emptyBuf->swap(*mb);
 
                         renderer::openGL.pushGLTask([=](){
                             interface::Geometry copyGeom2 = copyGeom;
-                            vb->flush(reinterpret_cast<float*>(data.vData), 0, data.nbVertex);
-                            ib->flush(data.indexData, 0, data.nbIndex);
-                            delete[] data.indexData;
-                            delete[] data.vData;
+                            vb->flush(reinterpret_cast<float*>(data->vData), 0, data->nbVertex);
+                            ib->flush(data->indexData, 0, data->nbIndex);
+
+                            if(!keepData)
+                            {
+                                data->clear();
+                                delete data;
+                            }
                         });
 
-                        renderer::MeshBuffers* mb = new renderer::MeshBuffers(vb, ib, Sphere::computeSphere(reinterpret_cast<real*>(data.vData), data.nbVertex,
-                                                                              sizeof(renderer::VNC_Vertex)/sizeof(float)));
-                        emptyBuf->swap(*mb);
                         delete mb;
                     }
                     else
                     {
                         LOG_EXT("Failed to load Geometry: ", file);
-                        data.clear();
+                        data->clear();
+                        delete data;
                     }
                 };
                 renderer::globalThreadPool.schedule(asyncLoad);

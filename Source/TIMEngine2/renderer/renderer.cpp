@@ -58,6 +58,7 @@ bool init()
     textureSampler[TextureMode::NoFilter] = Texture::genTextureSampler(false,false,false,false);
     textureSampler[TextureMode::Filtered] = Texture::genTextureSampler(true,true,true,false);
     textureSampler[TextureMode::FilteredNoRepeat] = Texture::genTextureSampler(false,true,true,false);
+    textureSampler[TextureMode::OnlyLinearNoRepeat] = Texture::genTextureSampler(false,true,false,false);
     textureSampler[TextureMode::DepthMap] = Texture::genTextureSampler(false,true,false,true);
 
     ShaderCompiler vDrawQuad(ShaderCompiler::VERTEX_SHADER);
@@ -103,7 +104,11 @@ bool init()
     if(openGL.hardward(GLState::Hardward::MAJOR_VERSION) > 4 ||
        (openGL.hardward(GLState::Hardward::MAJOR_VERSION)==4 && openGL.hardward(GLState::Hardward::MINOR_VERSION)>=3))
     {
-        hasBeenInit = true;
+        if(glewGetExtension("GL_ARB_bindless_texture")!=GL_TRUE)
+        {
+            LOG("You don't support GL_ARB_bindless_texture, you can't run TIMEngine sorry.");
+            return false;
+        }
         return true;
     }
     else

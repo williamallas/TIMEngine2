@@ -30,11 +30,13 @@ namespace interface
             void setRougness(float r) { _mat.parameter[0] = r; }
             void setMetallic(float m) { _mat.parameter[1] = m; }
             void setSpecular(float s) { _mat.parameter[2] = s; }
+            void setEmissive(float e) { _mat.parameter[3] = e; }
             void setColor(const vec4& c) { _mat.color = c; }
 
             float roughness() const { return _mat.parameter[0]; }
             float metallic() const { return _mat.parameter[1]; }
             float specular() const { return _mat.parameter[2]; }
+            float emissive() const { return _mat.parameter[3]; }
             vec4 color() const { return _mat.color; }
 
             template <class T>

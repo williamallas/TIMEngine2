@@ -11,13 +11,39 @@ namespace tim
     using namespace core;
 namespace renderer
 {
+    struct MeshData
+    {
+        using DataType = renderer::VNCT_Vertex;
+        static const int DATA_ID = renderer::VNCT;
+        std::string name;
+
+        uint nbIndex = 0;
+        uint* indexData = nullptr;
+
+        renderer::VertexFormat format = renderer::VertexFormat::VNCT;
+        uint nbVertex = 0;
+        DataType* vData = nullptr;
+
+        void clear()
+        {
+            nbIndex=0;
+            nbVertex=0;
+            delete[] indexData;
+            delete[] vData;
+            indexData=nullptr;
+            vData=nullptr;
+        }
+    };
+
     class MeshBuffers : boost::noncopyable
     {
     public:
-        MeshBuffers(VBuffer* vb, IBuffer* ib, const Sphere& s = Sphere()) : _vb(vb), _ib(ib), _volume(s) {}
+        MeshBuffers(VBuffer* vb, IBuffer* ib, const Sphere& s = Sphere(), MeshData* cpuData=nullptr)
+            : _vb(vb), _ib(ib), _volume(s), _cpuData(cpuData) {}
 
         ~MeshBuffers()
         {
+            freeCpuData();
             delete _vb;
             delete _ib;
         }
@@ -51,6 +77,18 @@ namespace renderer
             std::swap(_vb, buf._vb);
             std::swap(_ib, buf._ib);
             std::swap(_volume, buf._volume);
+            std::swap(_cpuData, buf._cpuData);
+        }
+
+        MeshData* cpuData() const { return _cpuData; }
+        void freeCpuData()
+        {
+            if(_cpuData)
+            {
+                _cpuData->clear();
+                delete _cpuData;
+                _cpuData = nullptr;
+            }
         }
 
     private:
@@ -58,6 +96,7 @@ namespace renderer
         IBuffer* _ib;
 
         Sphere _volume;
+        MeshData* _cpuData = nullptr; // optional, use to keep track of the initial data, can be freed at any moment
     };
 }
 }

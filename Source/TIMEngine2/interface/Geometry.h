@@ -41,6 +41,8 @@ namespace interface
 
         bool isEmpty() const { if(!buffers()) return true; return _ptr->isNull(); }
 
+        const renderer::MeshData* meshData() const { return _ptr->cpuData(); }
+
     protected:
         renderer::MeshBuffers* buffers() const { return _ptr.get(); }
     };

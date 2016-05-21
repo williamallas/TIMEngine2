@@ -12,6 +12,7 @@ Mesh::Element::Element(const Geometry& g, float roughness, float metallic, const
     setRougness(roughness);
     setMetallic(metallic);
     setSpecular(specular);
+    setEmissive(0);
     setColor(color);
 }
 
@@ -54,10 +55,11 @@ void Mesh::Element::setDefault()
     for(int i=0 ; i<3 ; ++i)
         setTexture(Texture(), i);
 
-    setRougness(1);
+    setRougness(0.8);
     setMetallic(0);
-    setSpecular(0.5);
-    setColor(vec4::construct(0.5));
+    setSpecular(0.1);
+    setEmissive(0);
+    setColor(vec4::construct(0.7));
 }
 
 void Mesh::Element::flushMat()

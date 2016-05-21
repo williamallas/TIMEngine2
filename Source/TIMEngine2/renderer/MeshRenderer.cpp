@@ -7,7 +7,11 @@ namespace tim
 namespace renderer
 {
 
-MeshRenderer::MeshRenderer() //: _maxUboMa4(/*openGL.hardward(GLState::Hardward::MAX_UNIFORM_BLOCK_SIZE*/1024)/* / (16*4)*/)
+
+MeshRenderer::MeshRenderer()
+#ifndef USE_VCPP
+    : _maxUboMat4(openGL.hardward(GLState::Hardward::MAX_UNIFORM_BLOCK_SIZE) / (16*4))
+#endif
 {
 #ifdef USE_SSBO_MODELS
     int *tmp = new int[1<<25];

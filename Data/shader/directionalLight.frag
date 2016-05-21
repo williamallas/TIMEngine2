@@ -60,7 +60,7 @@ float F_shlick(float F0, float dotVH)
 	return F0+(1-F0)*pow((1-dotVH),5);
 }
 
-const float BIAS[] = {0.0001, 0.00015, 0.00025, 0.0004};
+
 float textureShadow3x3(sampler2DArrayShadow t, vec4 c, vec2 s);
 
 void main()
@@ -72,7 +72,7 @@ void main()
 		return;
 
 	vec4 normal_frag = texture(texture1, coord);
-	vec4 material = texture(texture2, coord); // roughness, metal like, specular 
+	vec4 material = texture(texture2, coord); // roughness, metal like, specular, emissive
 	vec3 color = texture(texture0, coord).xyz;
 	vec3 normal = normalize(normal_frag.xyz*2-1);
 	vec3 frag_pos = computeFragPos(depth, coord);
@@ -82,6 +82,8 @@ void main()
 	
 	float metalic = material.y;
 	float roughness = material.x;
+	
+	outColor += vec4(color * material.w * 5,0);
 	
 	for(int i=0 ; i<nbLights ; ++i)
 	{
@@ -131,12 +133,15 @@ void main()
 	}
 }
 
+const float BIAS[] = {0.015 / 1000, 0.04 / 1000, 0.16 / 1000, 0.5 / 1000};
+//const float BIAS[4] = {0.001, 0.004, 0.01, 0.03};
+
 float textureShadow3x3(sampler2DArrayShadow tex, vec4 coord, vec2 sizeTex)
 {
-	//coord.w -= BIAS[int(coord.z+0.5)];
+	coord.w -= BIAS[int(coord.z+0.5)];
 	float res = texture(tex, coord);
-	const float o_clamp = 1.f/sizeTex.x;
-	const float o = 1.f/sizeTex.y;
+	const float o_clamp = 1.5f/sizeTex.x;
+	const float o = 1.5f/sizeTex.y;
 	
 	vec2 dx = vec2(clamp(coord.x+o,o_clamp,1.f-o_clamp), clamp(coord.x-o,o_clamp,1.f-o_clamp));
 	vec2 dy = vec2(clamp(coord.y+o,o_clamp,1.f-o_clamp), clamp(coord.y-o,o_clamp,1.f-o_clamp));

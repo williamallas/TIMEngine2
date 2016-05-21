@@ -15,7 +15,7 @@ namespace resource
     public:
         using Type = AssetType;
 
-        Asset() = default;
+        Asset() : _ptr(nullptr) {}
         Asset(AssetType* ptr) : _ptr(ptr) {}
         Asset(const Asset&) = default;
         Asset(Asset&& asset) : _ptr(std::move(asset._ptr)) {}
