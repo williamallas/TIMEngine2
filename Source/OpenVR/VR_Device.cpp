@@ -106,14 +106,28 @@ void VR_Device::update()
 
 	_compositor->WaitGetPoses(_vrTrackedDevicePose, vr::k_unMaxTrackedDeviceCount, NULL, 0);
 
+    int controllerFound=0;
+    _isControllerConnected[0] = false;
+    _isControllerConnected[1] = false;
+
 	for (int nDevice = 0 ; nDevice < vr::k_unMaxTrackedDeviceCount ; ++nDevice)
 	{
 		if (_vrTrackedDevicePose[nDevice].bPoseIsValid)
 		{
 			_devicePose[nDevice] = convertToMat4(_vrTrackedDevicePose[nDevice].mDeviceToAbsoluteTracking);
+            _deviceVel[nDevice] = convertToVec3(_vrTrackedDevicePose[nDevice].vVelocity);
 			std::swap(_devicePose[nDevice][1], _devicePose[nDevice][2]);
 			_devicePose[nDevice][1] *= -1;
 		}
+
+        if(nDevice > vr::k_unTrackedDeviceIndex_Hmd && controllerFound < 2)
+        {
+            if(_hmd->GetTrackedDeviceClass(nDevice) == vr::TrackedDeviceClass_Controller && _hmd->IsTrackedDeviceConnected(nDevice))
+            {
+                _controller[controllerFound] = nDevice;
+                _isControllerConnected[controllerFound++] = true;
+            }
+        }
 	}
 
 	if (_vrTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].bPoseIsValid)
@@ -125,6 +139,7 @@ void VR_Device::update()
 		_hmdCamera._eyeView[LEFT] = _hmdCamera._hmdToEye[LEFT] * _hmdCamera._hmdMatrix;
 		_hmdCamera._eyeView[RIGHT] = _hmdCamera._hmdToEye[RIGHT] * _hmdCamera._hmdMatrix;
 	}
+
 }
 
 }

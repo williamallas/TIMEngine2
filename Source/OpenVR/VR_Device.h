@@ -41,14 +41,21 @@ namespace tim {
 		void update();
 		HmdCamera& camera() { return _hmdCamera;  }
 
+        const core::mat4& controllerPose(int id) const { return _devicePose[_controller[id]]; }
+        const core::vec3& controllerVel(int id) const { return _deviceVel[_controller[id]]; }
+        bool isControllerConnected(int id) const { return _isControllerConnected[id]; }
+
 	protected:
 		vr::IVRSystem* _hmd = nullptr;
 		vr::IVRCompositor* _compositor = nullptr;
 
 		core::mat4 _devicePose[vr::k_unMaxTrackedDeviceCount];
+        core::vec3 _deviceVel[vr::k_unMaxTrackedDeviceCount];
 		vr::TrackedDevicePose_t _vrTrackedDevicePose[vr::k_unMaxTrackedDeviceCount];
 
 		HmdCamera _hmdCamera;
+        uint _controller[2];
+        bool _isControllerConnected[2] = {false, false};
 	};
 }
 

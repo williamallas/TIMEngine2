@@ -1,6 +1,6 @@
 #include "OnHmdRenderer.h"
 #include "core/core.h"
-#undef interface; 
+#undef interface
 
 namespace tim
 {
