@@ -33,9 +33,9 @@ namespace tim
                 cam.pos-=cam.dir*time*boostv;
 
             if(_input->keyState(SDLK_a).pressed)
-                cam.pos-=cam.dir.cross(cam.up).normalized()*time*boostv;
+                cam.pos-=cam.dir.cross(cam.up).normalized()*time*boostv*0.3;
             else if(_input->keyState(SDLK_d).pressed)
-                cam.pos+=cam.dir.cross(cam.up).normalized()*time*boostv;
+                cam.pos+=cam.dir.cross(cam.up).normalized()*time*boostv*0.3;
 
             cam.dir += cam.pos;
         }
