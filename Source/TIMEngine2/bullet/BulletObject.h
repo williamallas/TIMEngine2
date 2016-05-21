@@ -14,7 +14,7 @@ using namespace core;
         friend struct BulletEngine;
     public:
         BulletObject(btMotionState*, btCollisionShape*, float mass = 0);
-        BulletObject(const mat4&, btCollisionShape*, float mass = 0);
+        BulletObject(mat4, btCollisionShape*, float mass = 0);
         virtual ~BulletObject();
 
         btRigidBody* body() { return _body; }

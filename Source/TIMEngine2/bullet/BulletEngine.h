@@ -26,8 +26,9 @@ namespace tim
               dispatcher(new btCollisionDispatcher(collisionConfiguration)), solver(new btSequentialImpulseConstraintSolver),
               dynamicsWorld(new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration))
         {
-            dynamicsWorld->setGravity(btVector3(0, 0, -9.84));
+            dynamicsWorld->setGravity(btVector3(0, 0, -9.87));
             dynamicsWorld->setInternalTickCallback(tickCallback, static_cast<void *>(this), true);
+			gContactBreakingThreshold = 0.005;
             //dynamicsWorld->getDispatchInfo().m_allowedCcdPenetration=0.0001f;
         }
 

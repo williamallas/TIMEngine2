@@ -2,25 +2,22 @@
 #define GEOMETRYSHAPE_H
 
 #include "core.h"
-
-#include "btBulletDynamicsCommon.h"
+#include "interface/Geometry.h"
+#include <btBulletDynamicsCommon.h>
 
 namespace tim
 {
 
-//    class GeometryShape
-//    {
-//    public:
-//        struct MeshInstance
-//        {
-//            renderer::MeshBuffers* mesh;
-//            mat4 mat;
-//        };
-//        static btBvhTriangleMeshShape* genStaticGeometryShape(const vector<MeshInstance>&);
-
-//        static btBvhTriangleMeshShape* genStaticGeometryShape(const resource::assimpMeshLoader&,
-//                                                              const boost::container::set<std::string>& ignore={});
-//    };
+    class GeometryShape
+    {
+    public:
+        struct MeshInstance
+        {
+            interface::Geometry mesh;
+            mat4 mat;
+        };
+        static btBvhTriangleMeshShape* genStaticGeometryShape(const vector<MeshInstance>&);
+    };
 }
 
 #endif // GEOMETRYSHAPE_H

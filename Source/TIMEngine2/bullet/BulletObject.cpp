@@ -1,4 +1,5 @@
 #include "BulletObject.h"
+#include "BulletEngine.h"
 
 namespace tim
 {
@@ -15,7 +16,7 @@ BulletObject::BulletObject(btMotionState* ms, btCollisionShape* shape, float mas
     _body = new btRigidBody(rigidBodyCI);
 }
 
-BulletObject::BulletObject(const mat4& m, btCollisionShape* shape, float mass)
+BulletObject::BulletObject(mat4 m, btCollisionShape* shape, float mass)
 {
     btTransform worldTrans;
     worldTrans.setBasis(btMatrix3x3(m[0][0],m[0][1],m[0][2],
