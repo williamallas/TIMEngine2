@@ -4,6 +4,8 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QDir>
+#include <QDrag>
+#include <QMimeData>
 
 AssetViewWidget::AssetViewWidget(QWidget* parent) : QListWidget(parent), _meshIcon(":/icons/Icons/mesh.png")
 {
@@ -23,6 +25,19 @@ void AssetViewWidget::addElement(const Element& e)
     _items += {e, getIcon(e)};
     auto ol = new QListWidgetItem(getIcon(e), e.name, this);
     ol->setSizeHint(QSize(100,100));
+}
+
+bool AssetViewWidget::getElement(QString name, Element* elemptr) const
+{
+    for(const ItemElement& elem : _items)
+    {
+        if(elem.elem.name == name)
+        {
+            *elemptr = elem.elem;
+            return true;
+        }
+    }
+    return false;
 }
 
 QIcon AssetViewWidget::getIcon(const Element& elem) const
@@ -67,6 +82,65 @@ void AssetViewWidget::exportMesh(QString filePath, QString relativeSource)
             }
         }
     }
+}
+
+void AssetViewWidget::onItemDoubleClicked(QListWidgetItem* item)
+{
+    for(ItemElement& elem : _items)
+    {
+        if(elem.elem.name == item->text())
+        {
+            QList<Material> meshEditorElem;
+            for(Material m : elem.elem.materials)
+            {
+                Material subMesh;
+                subMesh.color = m.color;
+                subMesh.geometry = m.geometry;
+                subMesh.material = m.material;
+
+                for(int i=0 ; i<MeshElement::NB_TEXTURES ; ++i)
+                {
+                    subMesh.textures[i] = m.textures[i];
+                    subMesh.texturesIcon[i] = m.texturesIcon[i];
+                }
+
+                meshEditorElem.push_back(subMesh);
+            }
+            _meshEditor->setMesh(elem.elem.name, meshEditorElem);
+            return;
+        }
+    }
+}
+
+void AssetViewWidget::confirmAssetDrop(QString asset, QDragEnterEvent* event)
+{
+    for(ItemElement& elem : _items)
+    {
+        if(elem.elem.name == asset)
+        {
+            event->acceptProposedAction();
+            return;
+        }
+    }
+}
+
+void AssetViewWidget::mouseMoveEvent(QMouseEvent *event)
+{
+    if (!(event->buttons() & Qt::LeftButton))
+        return;
+
+    if (currentItem() == NULL)
+        return;
+
+    QDrag *drag = new QDrag(this);
+    QMimeData *mimeData = new QMimeData;
+
+    QList<QUrl> list;
+    list.append(QUrl(currentItem()->text()));
+    mimeData->setUrls(list);
+    drag->setMimeData(mimeData);
+
+    drag->start(Qt::CopyAction | Qt::MoveAction);
 }
 
 //void ResourceViewWidget::dropEvent(QDropEvent* event)

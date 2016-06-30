@@ -38,42 +38,164 @@ void MeshEditorWidget::setMainRenderer(tim::MainRenderer* r)
     _renderer = r;
 
     _renderer->lock();
-    _editedMesh = &r->getScene(0).scene.add<MeshInstance>(mat4::IDENTITY());
+    _meshEditorNode = &r->getScene(0).scene.add<MeshInstance>(mat4::IDENTITY());
     r->getScene(0).globalLight.dirLights.push_back({vec3(1,1,-1), vec4::construct(1), true});
     _renderer->unlock();
+
+    activeEditMode();
+}
+
+void MeshEditorWidget::activeEditMode()
+{
+    _editedMaterials = &_meshEditorMaterials;
+    _editedMesh = _meshEditorNode;
+    _highlightedMesh = nullptr;
+}
+
+void MeshEditorWidget::setEditedMesh(MeshInstance* node, MeshInstance* highlighted, QList<MeshElement>* materials, QString model)
+{
+    if(node == nullptr || materials == nullptr)
+    {
+        _editedMesh = nullptr;
+        _highlightedMesh = nullptr;
+        _editedMaterials = nullptr;
+        _curElementIndex = -1;
+
+        ui->meshPartView->clear();
+        ui->meshName->setText("");
+
+        return;
+    }
+
+    _editedMesh = node;
+    _highlightedMesh = highlighted;
+    _editedMaterials = materials;
+    _curElementIndex = 0;
+
+    ui->meshPartView->clear();
+    ui->meshName->setText(model);
+
+    for(int i=0 ; i<materials->size() ; ++i)
+    {
+        addUiElement((*materials)[i]);
+    }
+
+    itemSelectionChanged(_curElementIndex);
 }
 
 void MeshEditorWidget::addElement(QString geometry)
 {
-    Element elem;
+    MeshElement elem;
     elem.geometry = geometry;
-    //elem.name = QFileInfo(geometry).baseName();
-    _meshData += elem;
 
-    QListWidgetItem* item = new QListWidgetItem(QFileInfo(geometry).baseName() + " (" +
-                                                QFileInfo(geometry).fileName() + ")");
+    addElement(elem);
+}
+
+void MeshEditorWidget::addElement(MeshElement elem)
+{
+    if(!_editedMaterials || !_editedMesh)
+        return;
+
+    (*_editedMaterials) += elem;
+    _curElementIndex = (*_editedMaterials).size()-1;
+
+    addUiElement(elem);
+
+    _renderer->addEvent([=](){
+        Mesh mesh  = _editedMesh->mesh();
+
+        Mesh::Element melem = constructMeshElement(elem);
+        mesh.addElement(melem);
+
+        _editedMesh->setMesh(mesh);
+
+        if(_highlightedMesh)
+        {
+            _highlightedMesh->setMesh(highlightMesh(mesh));
+        }
+    });
+
+
+    itemSelectionChanged(_curElementIndex);
+}
+
+void MeshEditorWidget::addUiElement(const MeshElement& elem)
+{
+    QListWidgetItem* item = new QListWidgetItem(QFileInfo(elem.geometry).baseName() + " (" +
+                                                QFileInfo(elem.geometry).fileName() + ")");
     item->setSizeHint(QSize(0, 40));
     item->setFont(QFont("Franklin Gothic Medium", 16));
     item->setBackgroundColor(elem.color);
-    _curElementIndex = _meshData.size()-1;
 
     ui->meshPartView->addItem(item);
     item->setSelected(true);
+}
 
-    std::string geomFile = geometry.toStdString();
+Mesh::Element MeshEditorWidget::constructMeshElement(const MeshElement& elem)
+{
+    Mesh::Element melem;
+    melem.setGeometry(resource::AssetManager<Geometry>::instance().load<false>(elem.geometry.toStdString()).value());
+
     vec4 color = vec4(elem.color.red(), elem.color.green(), elem.color.blue(), 255) / vec4::construct(255);
+    melem.setColor(color);
 
-    _renderer->addEvent([=](){
-        Mesh mesh = _editedMesh->mesh();
-        Mesh::Element elem;
-        elem.setGeometry(resource::AssetManager<Geometry>::instance().load<false>(geomFile).value());
-        elem.setColor(color);
-        elem.drawState().setShader(ShaderPool::instance().get("gPass"));
-        mesh.addElement(elem);
-        _editedMesh->setMesh(mesh);
-    });
+    melem.setEmissive(elem.material.w());
+    melem.setRoughness(elem.material.x());
+    melem.setMetallic(elem.material.y());
+    melem.setSpecular(elem.material.z());
 
-    itemSelectionChanged(_curElementIndex);
+    for(int i=0 ; i<MeshElement::NB_TEXTURES ; ++i)
+    {
+        if(elem.textures[i].isEmpty()) continue;
+
+        renderer::Texture::GenTexParam param;
+        param.linear = true;
+        param.repeat = true;
+        param.trilinear = true;
+        param.anisotropy = 4;
+        param.nbLevels = -1;
+        Texture tex = resource::AssetManager<Texture>::instance().load<false>(elem.textures[i].toStdString(), param).value();
+        melem.setTexture(tex, i);
+    }
+
+    melem.drawState().setShader(ShaderPool::instance().get("gPass"));
+    return melem;
+}
+
+interface::Mesh MeshEditorWidget::highlightMesh(const interface::Mesh& mesh)
+{
+    Mesh m = mesh;
+    for(uint i=0 ; i<m.nbElements() ; ++i)
+    {
+        m.element(i).setTexture(Texture(), 0);
+        m.element(i).setTexture(Texture(), 1);
+        m.element(i).setTexture(Texture(), 2);
+        m.element(i).drawState().setCullBackFace(false);
+        m.element(i).drawState().setShader(ShaderPool::instance().get("highlighted"));
+    }
+    return m;
+}
+
+void MeshEditorWidget::setMesh(QString name, const QList<MeshElement>& elements)
+{
+    if(!_editedMaterials || !_editedMesh)
+        return;
+
+    _curElementIndex = -1;
+    (*_editedMaterials).clear();
+    ui->meshPartView->clear();
+
+    _renderer->lock();
+    _editedMesh->setMesh(Mesh());
+    if(_highlightedMesh) _highlightedMesh->setMesh(Mesh());
+    _renderer->unlock();
+
+    ui->meshName->setText(name);
+
+    for(int i=0 ; i<elements.size() ; ++i)
+    {
+        addElement(elements[i]);
+    }
 }
 
 void MeshEditorWidget::updateColorButton()
@@ -98,18 +220,18 @@ void MeshEditorWidget::updateTexture(int texId)
     if(list.empty())
         return;
 
-    _meshData[_curElementIndex].textures[texId] = list[0];
-    _meshData[_curElementIndex].texturesIcon[texId] = _resourceWidget->getResourceIconForPath(list[0]);
+    (*_editedMaterials)[_curElementIndex].textures[texId] = list[0];
+    (*_editedMaterials)[_curElementIndex].texturesIcon[texId] = _resourceWidget->getResourceIconForPath(list[0]);
 
    switch(texId)
    {
-   case 0: ui->diffuseTex->setIcon(_meshData[_curElementIndex].texturesIcon[texId]);
+   case 0: ui->diffuseTex->setIcon((*_editedMaterials)[_curElementIndex].texturesIcon[texId]);
        break;
 
-   case 1: ui->normalTex->setIcon(_meshData[_curElementIndex].texturesIcon[texId]);
+   case 1: ui->normalTex->setIcon((*_editedMaterials)[_curElementIndex].texturesIcon[texId]);
        break;
 
-   case 2: ui->materialTex->setIcon(_meshData[_curElementIndex].texturesIcon[texId]);
+   case 2: ui->materialTex->setIcon((*_editedMaterials)[_curElementIndex].texturesIcon[texId]);
        break;
    }
 
@@ -117,10 +239,11 @@ void MeshEditorWidget::updateTexture(int texId)
     _renderer->addEvent([=](){
         Mesh mesh = _editedMesh->mesh();
         renderer::Texture::GenTexParam param;
-        param.linear = 0;
         param.linear = true;
         param.repeat = true;
         param.trilinear = true;
+        param.nbLevels = -1;
+        param.anisotropy = 4;
         Texture tex = resource::AssetManager<Texture>::instance().load<false>(texFile, param).value();
         mesh.element(_curElementIndex).setTexture(tex, texId);
         _editedMesh->setMesh(mesh);
@@ -198,27 +321,30 @@ void MeshEditorWidget::updateMaterial()
     material[2] = ui->dm_specularVal->value();
     material[3] = ui->dm_emissiveVal->value();
 
-    _meshData[_curElementIndex].material = material;
-    _meshData[_curElementIndex].color = QColor(ui->dm_colorR->value(), ui->dm_colorG->value(), ui->dm_colorB->value());
+    (*_editedMaterials)[_curElementIndex].material = material;
+    (*_editedMaterials)[_curElementIndex].color = QColor(ui->dm_colorR->value(), ui->dm_colorG->value(), ui->dm_colorB->value());
 
-    vec4 color = vec4(_meshData[_curElementIndex].color.red(),
-                      _meshData[_curElementIndex].color.green(),
-                      _meshData[_curElementIndex].color.blue(), 255) / vec4::construct(255);
+    vec4 color = vec4((*_editedMaterials)[_curElementIndex].color.red(),
+                      (*_editedMaterials)[_curElementIndex].color.green(),
+                      (*_editedMaterials)[_curElementIndex].color.blue(), 255) / vec4::construct(255);
 
     int index = _curElementIndex;
     MeshInstance* editedMesh = _editedMesh;
+    MeshInstance* hMesh = _highlightedMesh;
 
     _renderer->addEvent([=](){
         Mesh mesh = editedMesh->mesh();
         if(int(mesh.nbElements()) <= index)
             return;
 
-        mesh.element(index).setRougness(material.x());
+        mesh.element(index).setRoughness(material.x());
         mesh.element(index).setMetallic(material.y());
         mesh.element(index).setSpecular(material.z());
         mesh.element(index).setEmissive(material.w());
         mesh.element(index).setColor(color);
         editedMesh->setMesh(mesh);
+
+        if(hMesh) hMesh->setMesh(highlightMesh(mesh));
     });
 
     updateColorButton();
@@ -231,7 +357,7 @@ void MeshEditorWidget::itemSelectionChanged(QModelIndex index)
 
 void MeshEditorWidget::itemSelectionChanged(int row)
 {
-    if(row >= _meshData.size())
+    if(row >= (*_editedMaterials).size())
         return;
 
     _curElementIndex = row;
@@ -248,60 +374,24 @@ void MeshEditorWidget::itemSelectionChanged(int row)
     ui->dm_specularSlider->blockSignals(true);
     ui->dm_emissiveSlider->blockSignals(true);
 
-    ui->dm_colorR->setValue(_meshData[_curElementIndex].color.red());
-    ui->dm_colorG->setValue(_meshData[_curElementIndex].color.green());
-    ui->dm_colorB->setValue(_meshData[_curElementIndex].color.blue());
+    ui->dm_colorR->setValue((*_editedMaterials)[_curElementIndex].color.red());
+    ui->dm_colorG->setValue((*_editedMaterials)[_curElementIndex].color.green());
+    ui->dm_colorB->setValue((*_editedMaterials)[_curElementIndex].color.blue());
     updateColorButton();
 
-    ui->dm_roughnessVal->setValue(_meshData[_curElementIndex].material.x());
-    ui->dm_metallicVal->setValue(_meshData[_curElementIndex].material.y());
-    ui->dm_specularVal->setValue(_meshData[_curElementIndex].material.z());
-    ui->dm_emissiveVal->setValue(_meshData[_curElementIndex].material.w());
+    ui->dm_roughnessVal->setValue((*_editedMaterials)[_curElementIndex].material.x());
+    ui->dm_metallicVal->setValue((*_editedMaterials)[_curElementIndex].material.y());
+    ui->dm_specularVal->setValue((*_editedMaterials)[_curElementIndex].material.z());
+    ui->dm_emissiveVal->setValue((*_editedMaterials)[_curElementIndex].material.w());
 
-    ui->dm_roughnessSlider->setValue(int(_meshData[_curElementIndex].material.x()*ui->dm_roughnessSlider->maximum()));
-    ui->dm_metallicSlider->setValue(int(_meshData[_curElementIndex].material.y()*ui->dm_metallicSlider->maximum()));
-    ui->dm_specularSlider->setValue(int(_meshData[_curElementIndex].material.z()*ui->dm_specularSlider->maximum()));
-    ui->dm_emissiveSlider->setValue(int(_meshData[_curElementIndex].material.w()*ui->dm_emissiveSlider->maximum()));
+    ui->dm_roughnessSlider->setValue(int((*_editedMaterials)[_curElementIndex].material.x()*ui->dm_roughnessSlider->maximum()));
+    ui->dm_metallicSlider->setValue(int((*_editedMaterials)[_curElementIndex].material.y()*ui->dm_metallicSlider->maximum()));
+    ui->dm_specularSlider->setValue(int((*_editedMaterials)[_curElementIndex].material.z()*ui->dm_specularSlider->maximum()));
+    ui->dm_emissiveSlider->setValue(int((*_editedMaterials)[_curElementIndex].material.w()*ui->dm_emissiveSlider->maximum()));
 
-    ui->diffuseTex->setIcon(_meshData[_curElementIndex].texturesIcon[0]);
-    ui->normalTex->setIcon(_meshData[_curElementIndex].texturesIcon[1]);
-    ui->materialTex->setIcon(_meshData[_curElementIndex].texturesIcon[2]);
-
-    vec4 material = _meshData[_curElementIndex].material;
-
-    vec4 color = vec4(_meshData[_curElementIndex].color.red(),
-                      _meshData[_curElementIndex].color.green(),
-                      _meshData[_curElementIndex].color.blue(), 255) / vec4::construct(255);
-
-    int elem = _curElementIndex;
-    MeshInstance* editedMesh = _editedMesh;
-
-    /*_renderer->addEvent([=](){
-        Mesh mesh = editedMesh->mesh();
-        if(int(mesh.nbElements()) <= elem)
-            return;
-
-        renderer::Texture::GenTexParam param;
-        param.linear = 0;
-        param.linear = true;
-        param.repeat = true;
-        param.trilinear = true;
-
-        mesh.element(curElementIndex).setTexture(
-                     resource::AssetManager<Texture>::instance().load<false>(_meshData[_curElementIndex].textures[0], param).value(), 0);
-
-        mesh.element(curElementIndex).setTexture(
-                     resource::AssetManager<Texture>::instance().load<false>(_meshData[_curElementIndex].textures[1], param).value(), 1);
-
-        mesh.element(curElementIndex).setTexture(
-                     resource::AssetManager<Texture>::instance().load<false>(_meshData[_curElementIndex].textures[2], param).value(), 2);
-
-        mesh.element(elem).setRougness(material.x());
-        mesh.element(elem).setMetallic(material.y());
-        mesh.element(elem).setSpecular(material.z());
-        mesh.element(elem).setColor(color);
-        editedMesh->setMesh(mesh);
-    });*/
+    ui->diffuseTex->setIcon((*_editedMaterials)[_curElementIndex].texturesIcon[0]);
+    ui->normalTex->setIcon((*_editedMaterials)[_curElementIndex].texturesIcon[1]);
+    ui->materialTex->setIcon((*_editedMaterials)[_curElementIndex].texturesIcon[2]);
 
     ui->dm_colorR->blockSignals(false);
     ui->dm_colorG->blockSignals(false);
@@ -330,11 +420,12 @@ void MeshEditorWidget::removeElement()
     if(_curElementIndex < 0)
         return;
 
-    _meshData.removeAt(_curElementIndex);
+    (*_editedMaterials).removeAt(_curElementIndex);
     delete ui->meshPartView->takeItem(_curElementIndex);
 
     int elemToRemove = _curElementIndex;
     MeshInstance* editedMesh = _editedMesh;
+    MeshInstance* hMesh = _highlightedMesh;
 
     _renderer->addEvent([=](){
         Mesh mesh;
@@ -346,9 +437,10 @@ void MeshEditorWidget::removeElement()
                 mesh.addElement(editedMesh->mesh().element(i-1));
         }
         editedMesh->setMesh(mesh);
+        if(hMesh) hMesh->setMesh(highlightMesh(mesh));
     });
 
-    if(_meshData.size() <= _curElementIndex)
+    if((*_editedMaterials).size() <= _curElementIndex)
         _curElementIndex--;
 
     if(_curElementIndex < 0)
@@ -360,6 +452,9 @@ void MeshEditorWidget::removeElement()
 
 void MeshEditorWidget::rotateEditedMesh(int dx, int dy)
 {
+    if(!_editedMaterials || !_editedMesh)
+        return;
+
     _renderer->lock();
 
     _rz += dx * _renderer->elapsedTime();

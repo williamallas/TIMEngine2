@@ -71,20 +71,40 @@
     </property>
     <widget class="QMenu" name="menuExport_mesh_assets">
      <property name="title">
-      <string>Export mesh assets</string>
+      <string>Export</string>
      </property>
      <addaction name="actionMesh_assets"/>
+    </widget>
+    <widget class="QMenu" name="menuImport">
+     <property name="title">
+      <string>Import</string>
+     </property>
+     <addaction name="actionMesh_assets_import"/>
     </widget>
     <addaction name="actionAdd_folder"/>
     <addaction name="actionAdd_folder_recursively"/>
     <addaction name="separator"/>
     <addaction name="menuExport_mesh_assets"/>
+    <addaction name="menuImport"/>
    </widget>
    <widget class="QMenu" name="menuScene">
     <property name="title">
      <string>Scene</string>
     </property>
+    <widget class="QMenu" name="menuSelect">
+     <property name="title">
+      <string>Select</string>
+     </property>
+     <addaction name="action_selectAE"/>
+     <addaction name="actionScene_1"/>
+     <addaction name="actionScene_2"/>
+     <addaction name="actionScene_3"/>
+     <addaction name="actionScene_4"/>
+    </widget>
     <addaction name="actionSet_skybox"/>
+    <addaction name="actionLoad_collada"/>
+    <addaction name="separator"/>
+    <addaction name="menuSelect"/>
    </widget>
    <addaction name="menuContext"/>
    <addaction name="menuResource"/>
@@ -99,7 +119,7 @@
    </property>
    <property name="minimumSize">
     <size>
-     <width>60</width>
+     <width>66</width>
      <height>62</height>
     </size>
    </property>
@@ -121,13 +141,13 @@
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_6">
      <property name="leftMargin">
-      <number>0</number>
+      <number>3</number>
      </property>
      <property name="topMargin">
       <number>0</number>
      </property>
      <property name="rightMargin">
-      <number>0</number>
+      <number>3</number>
      </property>
      <property name="bottomMargin">
       <number>0</number>
@@ -155,12 +175,18 @@
          <height>16777215</height>
         </size>
        </property>
+       <property name="mouseTracking">
+        <bool>true</bool>
+       </property>
+       <property name="acceptDrops">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="dockMeshEditor">
+  <widget class="QDockWidget" name="meshDockWidget">
    <property name="sizePolicy">
     <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
      <horstretch>1</horstretch>
@@ -169,7 +195,7 @@
    </property>
    <property name="minimumSize">
     <size>
-     <width>200</width>
+     <width>300</width>
      <height>400</height>
     </size>
    </property>
@@ -185,8 +211,11 @@
      <height>0</height>
     </size>
    </property>
+   <property name="floating">
+    <bool>false</bool>
+   </property>
    <property name="features">
-    <set>QDockWidget::DockWidgetMovable</set>
+    <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
    </property>
    <property name="windowTitle">
     <string>Mesh</string>
@@ -380,6 +409,12 @@
        <property name="showDropIndicator" stdset="0">
         <bool>false</bool>
        </property>
+       <property name="dragEnabled">
+        <bool>true</bool>
+       </property>
+       <property name="dragDropMode">
+        <enum>QAbstractItemView::NoDragDrop</enum>
+       </property>
        <property name="iconSize">
         <size>
          <width>97</width>
@@ -421,6 +456,18 @@
     </layout>
    </widget>
   </widget>
+  <widget class="QDockWidget" name="sceneDockWidget">
+   <property name="features">
+    <set>QDockWidget::NoDockWidgetFeatures</set>
+   </property>
+   <property name="windowTitle">
+    <string>Scene</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="SceneEditorWidget" name="sceneEditorWidget"/>
+  </widget>
   <action name="actionClose_Context">
    <property name="text">
     <string>Close Context</string>
@@ -443,12 +490,48 @@
   </action>
   <action name="actionMesh_assets">
    <property name="text">
-    <string>mesh assets</string>
+    <string>Mesh assets</string>
+   </property>
+  </action>
+  <action name="actionMesh_assets_import">
+   <property name="text">
+    <string>Mesh assets</string>
+   </property>
+  </action>
+  <action name="actionLoad_collada">
+   <property name="text">
+    <string>Load collada</string>
+   </property>
+  </action>
+  <action name="action_selectAE">
+   <property name="text">
+    <string>Asset Editor</string>
+   </property>
+  </action>
+  <action name="actionScene_1">
+   <property name="text">
+    <string>Scene 1</string>
+   </property>
+  </action>
+  <action name="actionScene_2">
+   <property name="text">
+    <string>Scene 2</string>
+   </property>
+  </action>
+  <action name="actionScene_3">
+   <property name="text">
+    <string>Scene 3</string>
+   </property>
+  </action>
+  <action name="actionScene_4">
+   <property name="text">
+    <string>Scene 4</string>
    </property>
   </action>
   <zorder>resourceDockWidget</zorder>
-  <zorder>dockMeshEditor</zorder>
+  <zorder>meshDockWidget</zorder>
   <zorder>assetDockWidget</zorder>
+  <zorder>sceneDockWidget</zorder>
  </widget>
  <customwidgets>
   <customwidget>
@@ -477,9 +560,35 @@
   <customwidget>
    <class>AssetViewWidget</class>
    <extends>QListWidget</extends>
-   <header location="global">TIMEditor/AssetViewWidget.h</header>
+   <header>TIMEditor/AssetViewWidget.h</header>
+   <slots>
+    <slot>onItemDoubleClicked(QListWidgetItem*)</slot>
+   </slots>
+  </customwidget>
+  <customwidget>
+   <class>SceneEditorWidget</class>
+   <extends>QWidget</extends>
+   <header location="global">TIMEditor/SceneEditorWidget.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>assetViewWidget</sender>
+   <signal>itemDoubleClicked(QListWidgetItem*)</signal>
+   <receiver>assetViewWidget</receiver>
+   <slot>onItemDoubleClicked(QListWidgetItem*)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>96</x>
+     <y>388</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>138</x>
+     <y>389</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

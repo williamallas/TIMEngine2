@@ -8,9 +8,12 @@
 
 class AssetViewWidget : public QListWidget
 {
-    using Material = MeshEditorWidget::Element;
+    Q_OBJECT
 public:
+    using Material = MeshElement;
+
     AssetViewWidget(QWidget* parent);
+    ~AssetViewWidget() = default;
 
     void setMeshEditorWidget(MeshEditorWidget* w) { _meshEditor = w; }
 
@@ -24,6 +27,7 @@ public:
     };
 
     void addElement(const Element&);
+    bool getElement(QString name, Element*) const;
 
     void exportMesh(QString file, QString relativeSource);
 
@@ -39,9 +43,11 @@ protected:
 
     QIcon getIcon(const Element&) const;
 
-//    void dropEvent(QDropEvent*) override;
-//    void dragMoveEvent(QDragMoveEvent*) override;
-//    void dragEnterEvent(QDragEnterEvent*) override;
+protected slots:
+    void onItemDoubleClicked(QListWidgetItem*);
+    void confirmAssetDrop(QString, QDragEnterEvent*);
+
+    void mouseMoveEvent(QMouseEvent *event) override;
 
 };
 

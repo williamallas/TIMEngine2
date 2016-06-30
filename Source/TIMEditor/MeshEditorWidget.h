@@ -3,9 +3,11 @@
 
 #include <QWidget>
 #include "MainRenderer.h"
+#include "MeshElement.h"
+
 #include <QColor>
-#include <QIcon>
 #include <QModelindex>
+#include <functional>
 
 class ResourceViewWidget;
 
@@ -19,37 +21,43 @@ class MeshEditorWidget : public QWidget
 
 public:
 
-    struct Element
-    {
-        QString geometry;
-        QColor color = QColor(255,255,255);
-        vec4 material = {0.5, 0, 0.2, 0};
-        QString textures[3];
-        QIcon texturesIcon[3];
-    };
-
     MeshEditorWidget(QWidget* parent = nullptr);
 
     void setMainRenderer(tim::MainRenderer* r);
     void setResourceWidget(ResourceViewWidget* ptr) { _resourceWidget=ptr; }
     void addElement(QString geometry);
+    void addElement(MeshElement);
 
     QString currentMeshName() const;
-    const QList<Element>& currentMesh() const { return _meshData; }
+    const QList<MeshElement>& currentMesh() const { return *_editedMaterials; }
+
+    void setMesh(QString, const QList<MeshElement>&);
+    void setEditedMesh(tim::interface::MeshInstance*, tim::interface::MeshInstance*, QList<MeshElement>*, QString);
+    void activeEditMode();
+
+    static tim::interface::Mesh::Element constructMeshElement(const MeshElement&);
+    static tim::interface::Mesh highlightMesh(const tim::interface::Mesh&);
 
 protected:
     Ui::MeshEditor *ui;
     tim::MainRenderer* _renderer;
-    tim::interface::MeshInstance* _editedMesh;
+
     ResourceViewWidget* _resourceWidget;
 
-    float _rz=0, _ry=0;
-
-    QList<Element> _meshData;
+    tim::interface::MeshInstance* _editedMesh = nullptr;
+    tim::interface::MeshInstance* _highlightedMesh = nullptr;
+    QList<MeshElement>* _editedMaterials = nullptr;
     int _curElementIndex = -1;
+
+    /* Mesh editor scene part */
+    tim::interface::MeshInstance* _meshEditorNode;
+    QList<MeshElement> _meshEditorMaterials;
+    float _rz=0, _ry=0;
 
     void updateColorButton();
     void updateTexture(int);
+
+    void addUiElement(const MeshElement&);
 
 public slots:
     void dm_roughnessSlider_sliderMoved(int);
