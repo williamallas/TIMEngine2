@@ -27,7 +27,7 @@ namespace interface
             Element(const Element& e) { *this = e; }
             Element& operator=(const Element&);
 
-            void setRougness(float r) { _mat.parameter[0] = r; }
+            void setRoughness(float r) { _mat.parameter[0] = r; }
             void setMetallic(float m) { _mat.parameter[1] = m; }
             void setSpecular(float s) { _mat.parameter[2] = s; }
             void setEmissive(float e) { _mat.parameter[3] = e; }

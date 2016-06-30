@@ -24,7 +24,7 @@ namespace interface
 
         bool operator()(const scene::Transformable& t) const
         {
-            return frustum.collide(t.volume()) != Intersection::OUTSIDE;
+            return t.enabled() && frustum.collide(t.volume()) != Intersection::OUTSIDE;
         }
     };
     
@@ -35,7 +35,19 @@ namespace interface
 
         bool operator()(const scene::Transformable& t) const
         {
-            return frustum.collide(t.volume()) != Intersection::OUTSIDE;
+            return t.enabled() && frustum.collide(t.volume()) != Intersection::OUTSIDE;
+        }
+    };
+
+    struct RayCast
+    {
+        RayCast(const vec3& in_pos, const vec3& in_dir) : pos(in_pos), dir(in_dir.normalized()) {}
+        vec3 pos, dir;
+
+        bool operator()(const scene::Transformable& t) const
+        {
+            vec3 tmp;
+            return t.enabled() && t.volume().collide(pos, dir, tmp);
         }
     };
 }

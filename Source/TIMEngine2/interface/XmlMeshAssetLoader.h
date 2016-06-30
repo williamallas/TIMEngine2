@@ -15,12 +15,6 @@ namespace interface
     class XmlMeshAssetLoader
     {
     public:
-        XmlMeshAssetLoader();
-
-        bool load(std::string);
-        interface::Mesh getMesh(std::string, const renderer::Texture::GenTexParam&) const;
-
-    protected:
         struct MeshElementModel
         {
             int type = 0;
@@ -31,6 +25,16 @@ namespace interface
             std::string textures[3];
             std::string geometry;
         };
+
+        XmlMeshAssetLoader();
+
+        void addModel(std::string, const vector<MeshElementModel>&);
+        bool load(std::string);
+        interface::Mesh getMesh(std::string, const renderer::Texture::GenTexParam&) const;
+
+        const boost::container::map<std::string, vector<MeshElementModel>>& allAssets() const { return _models; }
+
+    protected:
 
         boost::container::map<std::string, vector<MeshElementModel>> _models;
 

@@ -60,7 +60,12 @@ void FullPipeline::create(uivec2 res, const Parameter& param)
 
     rendererNode->addMeshInstanceCollector(*meshCuller);
     if(param.usePointLight) rendererNode->addLightInstanceCollector(*lightCuller);
-    onScreen->setBufferOutputNode(rendererNode->outputNode(0),0);
+
+    antialiasingFilter[0] = &pipeline->createNode<pipeline::SimpleFilter>();
+    antialiasingFilter[0]->setShader(ShaderPool::instance().get("fxaa"));
+    antialiasingFilter[0]->setBufferOutputNode(rendererNode->outputNode(0),0);
+
+    onScreen->setBufferOutputNode(antialiasingFilter[0],0);
 }
 
 void FullPipeline::setScene(interface::Scene& scene, interface::View& view)

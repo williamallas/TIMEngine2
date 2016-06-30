@@ -33,6 +33,11 @@ bool XmlMeshAssetLoader::load(std::string filename)
     return true;
 }
 
+void XmlMeshAssetLoader::addModel(std::string name, const vector<MeshElementModel>& model)
+{
+    _models[name] = model;
+}
+
 Mesh XmlMeshAssetLoader::getMesh(std::string name, const renderer::Texture::GenTexParam& texParam) const
 {
     auto it = _models.find(name);
@@ -48,7 +53,7 @@ Mesh XmlMeshAssetLoader::getMesh(std::string name, const renderer::Texture::GenT
         if(model[i].type==0)
         {
             elem.setColor(vec4(model[i].color,1));
-            elem.setRougness(model[i].material[0]);
+            elem.setRoughness(model[i].material[0]);
             elem.setMetallic(model[i].material[1]);
             elem.setSpecular(model[i].material[2]);
             elem.setEmissive(model[i].material[3]);

@@ -37,12 +37,12 @@ namespace resource
                     if(keepData)
                     {
                         mb = new renderer::MeshBuffers(vb, ib, Sphere::computeSphere(reinterpret_cast<real*>(data->vData), data->nbVertex,
-                                                       sizeof(renderer::VNC_Vertex)/sizeof(float)), data);
+                                                       sizeof(renderer::MeshData::DataType)/sizeof(float)), data);
                     }
                     else
                     {
                         mb = new renderer::MeshBuffers(vb, ib, Sphere::computeSphere(reinterpret_cast<real*>(data->vData), data->nbVertex,
-                                                       sizeof(renderer::VNC_Vertex)/sizeof(float)));
+                                                       sizeof(renderer::MeshData::DataType)/sizeof(float)));
 
                         data->clear();
                         delete data;

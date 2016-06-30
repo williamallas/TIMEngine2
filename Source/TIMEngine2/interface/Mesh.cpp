@@ -9,7 +9,7 @@ namespace interface
 
 Mesh::Element::Element(const Geometry& g, float roughness, float metallic, const vec4& color, float specular) : _geometry(g)
 {
-    setRougness(roughness);
+    setRoughness(roughness);
     setMetallic(metallic);
     setSpecular(specular);
     setEmissive(0);
@@ -55,7 +55,7 @@ void Mesh::Element::setDefault()
     for(int i=0 ; i<3 ; ++i)
         setTexture(Texture(), i);
 
-    setRougness(0.8);
+    setRoughness(0.8);
     setMetallic(0);
     setSpecular(0.1);
     setEmissive(0);
