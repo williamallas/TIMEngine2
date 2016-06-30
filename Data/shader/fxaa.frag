@@ -7,6 +7,7 @@ smooth in vec4 posPos;
 
 layout(location=0) out vec4 outColor0;
 
+// http://www.geeks3d.com/20110405/fxaa-fast-approximate-anti-aliasing-demo-glsl-opengl-test-radeon-geforce/
 uniform float FXAA_SPAN_MAX = 8.0;
 uniform float FXAA_REDUCE_MUL = 1.0/16.0;
 #define FXAA_REDUCE_MIN   (1.0/128.0)
