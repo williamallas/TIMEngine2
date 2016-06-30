@@ -17,9 +17,10 @@ INCLUDEPATH += TIM_SDL\
 INCLUDEPATH += TIMEngine2\core\
 INCLUDEPATH += ../Lib/boost
 INCLUDEPATH += ../Lib/glew-1.10.0/include/
-#INCLUDEPATH += ../Lib/assimp-3.1.1/include/
+INCLUDEPATH += ../Lib/assimp-3.1.1/include/
 INCLUDEPATH += ../Lib/SDL2-2.0.3/include/
 INCLUDEPATH += ../Lib/bullet/include/
+INCLUDEPATH += ../Lib/tinyxml/
 
 LIBS += -L./../Lib/lib/
 LIBS += -lboost_thread-mgw47-mt-1_55.dll
@@ -29,7 +30,7 @@ LIBS += -lboost_timer-mgw47-mt-1_55.dll
 LIBS += -lopengl32
 LIBS += -lmingw32
 LIBS += -lzlib
-#LIBS += -lassimp.dll
+LIBS += -lassimp.dll
 LIBS += -lSDL2main
 LIBS += -lSDL2.dll
 LIBS += -lSDL2_image.dll
@@ -55,6 +56,7 @@ debug: DEFINES += TIM_DEBUG
 HEADERS += TIM_SDL/*.h TIMEngine2/core/*.h TIMEngine2/renderer/*.h TIMEngine2/resource/*.h TIMEngine2/interface/*.h TIMEngine2/interface/pipeline/*.h TIMEngine2/scene/*.h \
     TIMEditor/*.h \
     DebugCamera.h \
+    AssimpLoader.h\
     TIMEngine2/bullet/*.h \
     TIMEditor/EditorWindow.h \
     TIMEditor/RendererThread.h \
@@ -63,10 +65,13 @@ HEADERS += TIM_SDL/*.h TIMEngine2/core/*.h TIMEngine2/renderer/*.h TIMEngine2/re
     TIMEditor/FullPipeline.h \
     TIMEditor/MainRenderer.h \
     TIMEditor/ResourceViewWidget.h \
+    TIMEditor/AssetViewWidget.h \
     TIMEditor/FullScreenDock.h \
     TIMEditor/MeshEditorWidget.h \
+    TIMEditor/SceneEditorWidget.h \
     TIMEditor/SelectResourcesDialog.h \
     TIMEditor/SelectSkyboxDialog.h
+    TIMEditor/MeshElement.h
 
 SOURCES += mainEditor.cpp \
            TIM_SDL/SDLInputManager.cpp \
@@ -76,6 +81,7 @@ SOURCES += mainEditor.cpp \
            ../Lib/tinyxml/tinyxmlerror.cpp \
            ../Lib/tinyxml/tinyxmlparser.cpp \
            ../Lib/glew-1.10.0/src/glew.c \
+            AssimpLoader.cpp\
     TIMEngine2/renderer/GLState.cpp \
     TIMEngine2/renderer/IndexBuffer.cpp \
     TIMEngine2/renderer/renderer.cpp \
@@ -104,11 +110,14 @@ SOURCES += mainEditor.cpp \
     TIMEngine2/interface/Mesh.cpp \
     TIMEngine2/interface/MeshInstance.cpp \
     TIMEngine2/interface/ShaderPool.cpp \
+    TIMEngine2/interface/FullPipeline.cpp \
+    TIMEngine2/interface/XmlMeshAssetLoader.cpp \
     TIMEngine2/interface/Pipeline.cpp \
     TIMEngine2/interface/pipeline/DeferredRendererNode.cpp \
     TIMEngine2/interface/pipeline/OnScreenRenderer.cpp \
     TIMEngine2/interface/pipeline/BloomNode.cpp \
     TIMEngine2/interface/pipeline/DirLightShadowNode.cpp \
+    TIMEngine2/interface/pipeline/SimpleFilter.cpp \
     TIMEngine2/bullet/BulletEngine.cpp \
     TIMEngine2/bullet/BulletObject.cpp \
     TIMEngine2/bullet/GeometryShape.cpp \
@@ -116,17 +125,19 @@ SOURCES += mainEditor.cpp \
     TIMEditor/RendererThread.cpp \
     TIMEditor/RendererWidget.cpp \
     TIMEditor/QtTextureLoader.cpp \
-    TIMEditor/FullPipeline.cpp \
     TIMEditor/MainRenderer.cpp \
     TIMEditor/ResourceViewWidget.cpp \
+    TIMEditor/AssetViewWidget.cpp \
     TIMEditor/FullScreenDock.cpp \
     TIMEditor/MeshEditorWidget.cpp \
+    TIMEditor/SceneEditorWidget.cpp \
     TIMEditor/SelectResourcesDialog.cpp \
     TIMEditor/SelectSkyboxDialog.cpp
 
 FORMS += \
     TIMEditor/EditorWindow.ui \
     TIMEditor/MeshEditor.ui \
+    TIMEditor/SceneEditor.ui \
     TIMEditor/SelectResourcesDialog.ui \
     TIMEditor/SelectSkyboxDialog.ui
 

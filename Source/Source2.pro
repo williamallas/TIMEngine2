@@ -16,9 +16,11 @@ INCLUDEPATH += TIMEngine2\core\
 INCLUDEPATH += ../Lib/boost
 #INCLUDEPATH += ../Lib/bullet/src
 INCLUDEPATH += ../Lib/glew-1.10.0/include/
-#INCLUDEPATH += ../Lib/assimp-3.1.1/include/
+INCLUDEPATH += ../Lib/assimp-3.1.1/include/
 INCLUDEPATH += ../Lib/SDL2-2.0.3/include/
 INCLUDEPATH += ../Lib/bullet/include/
+INCLUDEPATH += ../../openvr/headers/
+INCLUDEPATH += ../Lib/tinyxml/
 
 LIBS += -L./../Lib/lib/
 LIBS += -lboost_thread-mgw47-mt-1_55.dll
@@ -28,12 +30,13 @@ LIBS += -lboost_timer-mgw47-mt-1_55.dll
 LIBS += -lopengl32
 LIBS += -lmingw32
 LIBS += -lzlib
-#LIBS += -lassimp.dll
+LIBS += -lassimp.dll
 LIBS += -lSDL2main
 LIBS += -lSDL2.dll
 LIBS += -lSDL2_image.dll
 LIBS += -lBulletDynamics
 LIBS += -lBulletCollision -lLinearMath
+LIBS += -lopenvr_api
 
 QMAKE_CXXFLAGS_RELEASE -= -O
 QMAKE_CXXFLAGS_RELEASE -= -O1
@@ -62,7 +65,11 @@ HEADERS += TIM_SDL/*.h TIMEngine2/core/*.h TIMEngine2/renderer/*.h TIMEngine2/re
     TIMEngine2/interface/ShaderPool.h \
     TIMEngine2/interface/ResourceManager.h \
     RTSEngine/Graphic/RTSCamera.h \
-    RTSEngine/Game.h
+    RTSEngine/Game.h \
+    OpenVR/VR_Device.h \
+    SpaceBounce.h \
+    AssimpLoader.h \
+    TIMEngine2/interface/XmlMeshAssetLoader.h \
 
 SOURCES += main2.cpp \
            TIM_SDL/SDLInputManager.cpp \
@@ -105,6 +112,7 @@ SOURCES += main2.cpp \
     TIMEngine2/interface/pipeline/OnScreenRenderer.cpp \
     TIMEngine2/interface/pipeline/BloomNode.cpp \
     TIMEngine2/interface/pipeline/DirLightShadowNode.cpp \
+    TIMEngine2/interface/pipeline/SimpleFilter.cpp \
     TIMEngine2/bullet/BulletEngine.cpp \
     TIMEngine2/bullet/BulletObject.cpp \
     TIMEngine2/bullet/GeometryShape.cpp \
@@ -113,7 +121,12 @@ SOURCES += main2.cpp \
     RTSEngine/Graphic/TerrainRenderer.cpp \
     TIMEngine2/interface/ShaderPool.cpp \
     TIMEngine2/interface/ResourceManager.cpp \
+    TIMEngine2/interface/FullPipeline.cpp \
     RTSEngine/Graphic/RTSCamera.cpp \
-    RTSEngine/Game.cpp
+    RTSEngine/Game.cpp \
+    OpenVR/VR_Device.cpp OpenVR/OnHmdRenderer.cpp \
+    SpaceBounce.cpp \
+    AssimpLoader.cpp \
+    TIMEngine2/interface/XmlMeshAssetLoader.cpp \
 
 
