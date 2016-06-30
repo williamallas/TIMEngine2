@@ -42,6 +42,8 @@ namespace core
 
         template<class T> Intersection collide(const T&) const;
 
+        bool collide(const vec3&, const vec3&, vec3&) const;
+
         void transform(const mat4&);
 
         /* out */
@@ -73,13 +75,6 @@ namespace core
         else return INTERSECT;
     }
 
-    inline void Sphere::transform(const mat4& m)
-    {
-        _center = m*_center;
-        mat3 m3 = m.down<1>();
-        _radius = std::max(std::max((m3*vec3(_radius,0,0)).length(), (m3*vec3(0,_radius,0)).length()),
-                                    (m3*vec3(0,0, _radius)).length());
-    }
 
     inline Sphere Sphere::max(const Sphere& s) const
     {

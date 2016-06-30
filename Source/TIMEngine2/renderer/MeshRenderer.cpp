@@ -102,13 +102,13 @@ int MeshRenderer::draw(const vector<MeshBuffers*>& meshs, const vector<mat4>& mo
         if(!materials.empty())
             openGL.bindUniformBuffer(_materialBuffer.id(), 2);
 
-        glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, drawParam, innerLoop, 0);
+        glMultiDrawElementsIndirect(DrawState::toGLPrimitive(_states.primitive()), GL_UNSIGNED_INT, drawParam, innerLoop, 0);
     }
 #else
     openGL.bindUniformBuffer(_uboParameter.id(), 0);
     openGL.bindShaderStorageBuffer(_modelBuffer.id(), 1);
 
-    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, drawParam, 1, 0);
+    glMultiDrawElementsIndirect(DrawState::toGLPrimitive(_states.primitive()), GL_UNSIGNED_INT, drawParam, 1, 0);
 #endif
 
     return 0;

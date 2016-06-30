@@ -58,7 +58,7 @@ renderer::MeshBuffers* MeshLoader::createMeshBuffers(renderer::MeshData& data, r
         vb->flush(reinterpret_cast<float*>(data.vData), 0, data.nbVertex);
         ib->flush(data.indexData, 0, data.nbIndex);
         return new renderer::MeshBuffers(vb, ib, Sphere::computeSphere(reinterpret_cast<real*>(data.vData), data.nbVertex,
-                                                                       sizeof(renderer::VNC_Vertex)/sizeof(float)));
+                                                                       sizeof(renderer::MeshData::DataType)/sizeof(float)));
     }
     else return nullptr;
 

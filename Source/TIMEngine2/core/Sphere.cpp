@@ -21,6 +21,15 @@ Box Sphere::toBox() const
                              vec2(_center.z()-_radius, _center.z()+_radius)));
 }
 
+void Sphere::transform(const mat4& m)
+{
+    _center = m*_center;
+    mat3 m3 = m.down<1>();
+    _radius = std::max(std::max((m3*vec3(_radius,0,0)).length(), (m3*vec3(0,_radius,0)).length()),
+                                (m3*vec3(0,0, _radius)).length());
+}
+
+
 /* AABB */
 bool Sphere::inside(const Box& box) const
 {
@@ -76,6 +85,7 @@ Sphere Sphere::computeSphere(const real* ptr, uint size, uint stride)
     }
 
     vec3 center = (minV+maxV) / 2;
+    center = {0,0,0};
 
     float minD = 0;
     for(uint i=0 ; i<size ; ++i)
@@ -85,6 +95,30 @@ Sphere Sphere::computeSphere(const real* ptr, uint size, uint stride)
     }
 
     return Sphere(center, minD);
+}
+
+bool Sphere::collide(const vec3& o, const vec3& l, vec3& res) const
+{
+
+    vec3 diff = o - _center;
+    float dotLD = l.dot(diff);
+
+    float toSqrt = dotLD*dotLD - diff.length2() + _radius*_radius;
+
+    if(toSqrt < 0)
+        return false;
+
+    float d = -dotLD - sqrtf(toSqrt);
+
+    if(d < 0)
+    {
+        d = -dotLD + sqrtf(toSqrt);
+        if(d < 0)
+            return false;
+    }
+
+    res = o + l*d;
+    return true;
 }
 
 }

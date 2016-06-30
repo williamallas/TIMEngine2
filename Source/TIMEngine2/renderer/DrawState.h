@@ -3,7 +3,7 @@
 
 #include "GLState.h"
 #include "Shader.h"
-#include <bitset>
+#include <cstdint>
 
 #include "MemoryLoggerOn.h"
 namespace tim
@@ -24,7 +24,7 @@ namespace renderer
             GREATER,
             GEQUAL,
             EQUAL,
-            ALWAYS,
+            ALWAYS
         };
 
         enum BlendFunc : uint
@@ -54,14 +54,23 @@ namespace renderer
             MAX,
         };
 
+        enum Primitive : uint
+        {
+            TRIANGLES=0,
+            TRIANGLE_STRIP,
+            LINES,
+            LINE_STRIP,
+            POINTS
+        };
+
         static uint toGLBlendFunc(BlendFunc);
         static uint toGLComparFunc(CompareFunc);
         static uint toGLBlendEquation(BlendEquation);
+        static uint toGLPrimitive(Primitive);
 
         DrawState()
         {
-           setAlwaysFirst(false);
-           setAlwaysLast(false);
+           setPriority(128);
            setBlend(false);
            setCullBackFace(true);
            setCullFace(true);
@@ -70,87 +79,61 @@ namespace renderer
            setDepthFunc(LESS);
            setBlendEquation(ADD);
            setBlendFunc({SRC_ALPHA, ONE_MINUS_SRC_ALPHA});
+           setPrimitive(TRIANGLES);
         }
 
         ~DrawState() = default;
 
         void setShader(Shader* shader) { _shader = shader; }
 
-        void setAlwaysFirst(bool b)  { _states[Offset::AFIRST] = !b; }
-        void setAlwaysLast(bool b)   { _states[Offset::ALAST] = b; }
-        void setBlend(bool b)        { _states[Offset::BLEND] = b; }
-        void setWriteDepth(bool b)   { _states[Offset::WDEPTH] = b; }
-        void setDepthTest(bool b)    { _states[Offset::DEPTHT] = b; }
+        void setPriority(ubyte p)     { _data.priority = p; }
+        void setBlend(bool b)        { _data.blend = b; }
+        void setWriteDepth(bool b)   { _data.writeDepth = b; }
+        void setDepthTest(bool b)    { _data.depthTest = b; }
 
-        void setCullFace(bool b)     { _states[Offset::CULLF] = b; }
-        void setCullBackFace(bool b) { _states[Offset::CULLBF] = b; }
+        void setCullFace(bool b)     { _data.cullFace = b; }
+        void setCullBackFace(bool b) { _data.cullBackFace = b; }
 
-        void setDepthFunc(CompareFunc c)
-        {
-            for(uint i=0 ; i<3 ; ++i)
-                _states[Offset::DEPTHF+i] = (c>>i)%2;
-        }
-
-        void setBlendEquation(BlendEquation be)
-        {
-            for(uint i=0 ; i<4 ; ++i)
-                _states[Offset::BLENDE+i] = (be>>i)%2;
-        }
+        void setDepthFunc(CompareFunc c) { _data.depthFunc = c; }
+        void setBlendEquation(BlendEquation be) { _data.blendEqu = be; }
 
         void setBlendFunc(const Vector2<BlendFunc>& funcs)
         {
-            for(uint i=0 ; i<4 ; ++i) _states[Offset::BLENDF1+i] = (funcs[0]>>i)%2;
-            for(uint i=0 ; i<4 ; ++i) _states[Offset::BLENDF2+i] = (funcs[1]>>i)%2;
+            _data.blendFunc1 = funcs[0];
+            _data.blendFunc2 = funcs[1];
         }
+
+        void setPrimitive(Primitive p) { _data.primitive = p; }
 
         Shader* shader() const { return _shader; }
 
-        bool alwaysFirst()  const { return  !_states[Offset::AFIRST]; }
-        bool alwaysLast()   const { return  _states[Offset::ALAST]; }
-        bool blend()        const { return  _states[Offset::BLEND]; }
-        bool writeDepth()   const { return  _states[Offset::WDEPTH]; }
-        bool depthTest()    const { return  _states[Offset::DEPTHT]; }
-        bool cullFace()     const { return  _states[Offset::CULLF]; }
-        bool cullBackFace() const { return  _states[Offset::CULLBF]; }
+        ubyte priority()    const { return _data.priority; }
+        bool blend()        const { return  _data.blend; }
+        bool writeDepth()   const { return  _data.writeDepth; }
+        bool depthTest()    const { return  _data.depthTest; }
+        bool cullFace()     const { return  _data.cullFace; }
+        bool cullBackFace() const { return  _data.cullBackFace; }
 
-        CompareFunc depthFunc() const
-        {
-            uint n=0;
-            for(uint i=0 ; i<3;  ++i)
-                n += _states[Offset::DEPTHF+i] << i;
-            return static_cast<CompareFunc>(n);
-        }
-
-         BlendEquation blendEquation() const
-        {
-            uint n=0;
-            for(uint i=0 ; i<4;  ++i)
-                n += _states[Offset::BLENDE+i] << i;
-            return static_cast<BlendEquation>(n);
-        }
+        CompareFunc depthFunc() const { return static_cast<CompareFunc>(_data.depthFunc); }
+        BlendEquation blendEquation() const { return static_cast<BlendEquation>(_data.blendEqu); }
 
         Vector2<BlendFunc> blendFunc() const
         {
-            uint n1=0;
-            for(uint i=0 ; i<4;  ++i)
-                n1 += _states[Offset::BLENDF1+i] << i;
-
-            uint n2=0;
-            for(uint i=0 ; i<4;  ++i)
-                n2 += _states[Offset::BLENDF2+i] << i;
-
-            return {static_cast<BlendFunc>(n1),static_cast<BlendFunc>(n2)};
+            return Vector2<BlendFunc>(static_cast<BlendFunc>(_data.blendFunc1),
+                                      static_cast<BlendFunc>(_data.blendFunc2));
         }
+
+        Primitive primitive() const { return static_cast<Primitive>(_data.primitive); }
 
         bool operator<(const DrawState& state) const
         {
-            if(_states != state._states) return _states.to_ulong() < state._states.to_ulong();
+            if(_packed != state._packed) return _packed < state._packed;
             else return _shader < state._shader;
         }
 
         bool operator==(const DrawState& state) const
         {
-            return _states==state._states && _shader == state._shader;
+            return _packed==state._packed && _shader == state._shader;
         }
 
         bool operator!=(const DrawState& state) const { return !(*this==state); }
@@ -178,19 +161,37 @@ namespace renderer
                    << "cullFace : " << cullFace() << "\n"
                    << "backFace : " << cullBackFace() << "\n"
                    << "blend    : " << blend() << "\n"
-                   << "first    : " << alwaysFirst() << "\n"
-                   << "last     : " << alwaysLast() << "\n"
-                   << "binary: " << _states.to_string('0') << "\n";
+                   << "primitive: " << primitive() << "\n"
+                   << "priority : " << priority() << "\n"
+                   << "byte     : " << _packed << "\n";
         }
 
     private:
-        Shader* _shader = nullptr;
-        std::bitset<22> _states;
 
-        struct Offset { enum : uint {
-                AFIRST=21, ALAST=20, BLEND=19, WDEPTH=18, DEPTHT=17,
-                CULLF=0, CULLBF=1, DEPTHF=2, BLENDE=5, BLENDF1=9, BLENDF2=13
-            };};
+        struct BitField
+        {
+            unsigned priority      : 8;
+            unsigned blend         : 1;
+            unsigned primitive     : 3;
+            unsigned writeDepth    : 1;
+            unsigned depthTest     : 1;
+            unsigned cullFace      : 1;
+            unsigned cullBackFace  : 1;
+            unsigned depthFunc     : 3;
+            unsigned garbage       : 1;
+            unsigned blendEqu      : 4;
+            unsigned blendFunc1    : 4;
+            unsigned blendFunc2    : 4;
+        }__attribute__((packed));
+
+        union
+        {
+            BitField _data;
+            uint32_t _packed;
+        };
+
+        Shader* _shader = nullptr;
+
     };
 
     inline uint DrawState::toGLBlendFunc(BlendFunc f)
@@ -242,6 +243,19 @@ namespace renderer
             case BlendEquation::MAX:return GL_MAX;
         }
         return GL_FUNC_ADD;
+    }
+
+    inline uint DrawState::toGLPrimitive(Primitive e)
+    {
+        switch(e)
+        {
+            case Primitive::TRIANGLES:return GL_TRIANGLES;
+            case Primitive::TRIANGLE_STRIP:return GL_TRIANGLE_STRIP;
+            case Primitive::LINES:return GL_LINES;
+            case Primitive::LINE_STRIP:return GL_LINE_STRIP;
+            case Primitive::POINTS:return GL_POINTS;
+        }
+        return GL_TRIANGLES;
     }
 }
 }

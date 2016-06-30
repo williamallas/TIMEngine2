@@ -18,6 +18,9 @@ namespace scene
     public:
         const Sphere& volume() const { return _volume; }
 
+        void setEnable(bool b) { _enable=b; }
+        bool enabled() const { return _enable; }
+
     protected:
         void setVolume(const Sphere& s) { _volume = s; }
 
@@ -26,6 +29,7 @@ namespace scene
 
     private:
         Sphere _volume;
+        bool _enable = true;
 
         mutable BasicScene<Transformable>::TransformableInfo _containerInfo;
     };

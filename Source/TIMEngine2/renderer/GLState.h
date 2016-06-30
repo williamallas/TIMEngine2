@@ -81,6 +81,7 @@ namespace renderer
         void scissorParam(const uivec2&, const uivec2&);
         void logicColor(bool);
         void logicOp(uint);
+        void lineWidth(float);
 
         enum Hardward
         {
@@ -157,6 +158,7 @@ namespace renderer
         float _alphaThreshold;
         Vector4<bool> _colorMask;
         uivec2 _scissorCoord, _scissorSize;
+        float _lineWidth;
 
         uint _uboBinded[MAX_BUFFER_ATTACHEMENT];
         uint _ssboBinded[MAX_BUFFER_ATTACHEMENT];
@@ -607,6 +609,15 @@ namespace renderer
             _scissorCoord=coord;
             _scissorSize=size;
             glScissor(coord.x(), coord.y(), size.x(), size.y());
+        }
+    }
+
+    inline void GLState::lineWidth(float w)
+    {
+        if(_lineWidth != w)
+        {
+            _lineWidth = w;
+            glLineWidth(w);
         }
     }
 
