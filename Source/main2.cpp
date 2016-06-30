@@ -6,17 +6,17 @@
 
 #include "Rand.h"
 #include "interface/ShaderPool.h"
-#include "resource/MeshLoader.h"
 #include "resource/AssetManager.h"
 
 #include "interface/FullPipeline.h"
 
-#include "RTSEngine/Graphic/TerrainRenderer.h"
-#include "RTSEngine/Graphic/RTSCamera.h"
+#include "bullet/BulletEngine.h"
 
 #include "OpenVR\OnHmdRenderer.h"
 
-#undef interface;
+#include "SpaceBounce.h"
+
+#undef interface
 using namespace tim::core;
 using namespace tim::renderer;
 using namespace tim::resource;
@@ -31,7 +31,7 @@ void delContextSDL();
 const uint WIN_RES_X = 1600;
 const uint WIN_RES_Y = 900;
 
-template <int I, int N = 50>
+template <int I, int N = 100>
 float countTime(float time)
 {
 	static uint counter = 0;
@@ -51,6 +51,7 @@ float countTime(float time)
 	return -fps;
 }
 
+
 int main(int, char**)
 {
 	uint RES_X = 1600;
@@ -66,31 +67,13 @@ int main(int, char**)
 		{
 			VR_Device hmdDevice;
 
-			Geometry geometry[3];
-			geometry[0] = AssetManager<Geometry>::instance().load<false>("m2.obj").value();
-			geometry[1] = AssetManager<Geometry>::instance().load<false>("sphere.tim").value();
-			geometry[2] = AssetManager<Geometry>::instance().load<false>("cube_uv.obj").value();
-
-			renderer::Texture::GenTexParam texParam;
-			texParam.format = renderer::Texture::Format::RGBA8;
-			texParam.nbLevels = -1;
-			texParam.repeat = true; texParam.linear = true; texParam.trilinear = true;
-
-			interface::Texture solTexture = AssetManager<interface::Texture>::instance().load<false>("grass_pure.png", texParam).value();
-			interface::Texture solNrmTexture = AssetManager<interface::Texture>::instance().load<false>("grass_pure_NRM.png", texParam).value();
-
-			interface::Texture m2Tex = AssetManager<interface::Texture>::instance().load<false>("M2AO.png", texParam).value();
-
-			Shader* gPass = ShaderPool::instance().add("gPass", "shader/gBufferPass.vert", "shader/gBufferPass.frag").value();
-			ShaderPool::instance().add("terrain", "shader/terrain.vert", "shader/terrain.frag");
+            ShaderPool::instance().add("gPass", "shader/gBufferPass.vert", "shader/gBufferPass.frag").value();
+            ShaderPool::instance().add("fxaa", "shader/fxaa.vert", "shader/fxaa.frag");
 
 			SDLInputManager input;
 			float timeElapsed = 0, totalTime = 0;
 
 			DebugCamera freeFly(&input);
-			RTSCamera rtsCamera;
-			rtsCamera.setResolution({ int(RES_X), int(RES_Y) });
-			bool chooseCamera = false;
 
 			if (hmdDevice.isInit())
 			{
@@ -104,14 +87,14 @@ int main(int, char**)
 			FullPipeline::Parameter pipelineParam;
 			pipelineParam.useShadow = true;
 			pipelineParam.usePointLight = true;
-			pipelineParam.shadowCascad = vector<float>({ 5, 40, 300});
-			pipelineParam.shadowResolution = 2048;
+            pipelineParam.shadowCascad = vector<float>({ 4, 15, 100});
+            pipelineParam.shadowResolution = 2048;
+            pipelineParam.useSSReflexion = true;
 
 			pipeline.createForHmd<OnHmdRenderer>({ uint(RES_X), uint(RES_Y) }, pipelineParam);
 			OnHmdRenderer* hmdNode = reinterpret_cast<OnHmdRenderer*>(pipeline.hmdNode);
 			hmdNode->setVRDevice(&hmdDevice);
-			//pipeline.rendererEntity->envLightRenderer().setEnableGI(false);
-			//pipeline.rendererEntity->envLightRenderer().setGlobalAmbient(vec4::construct(0.3));
+			//hmdNode->setDrawOnScreen(false);
 
 			Pipeline::SceneEntity<SimpleScene> sceneEntity;
 			sceneEntity.globalLight.dirLights.push_back({ vec3(1,1,-2), vec4::construct(1), true });
@@ -119,7 +102,7 @@ int main(int, char**)
 			Pipeline::SceneView sceneViewCulling;
 			Pipeline::SceneView sceneViewEye[2];
 			sceneViewCulling.camera.ratio = float(RES_X) / RES_Y;
-			sceneViewCulling.camera.fov = 110;
+            sceneViewCulling.camera.fov = 140;
 			sceneViewCulling.camera.clipDist = { .1f,1000.f };
 
 			for (int i = 0; i < 2; ++i)
@@ -129,6 +112,7 @@ int main(int, char**)
 				pipeline.hmdEyeRendererNode[i]->setSceneView(sceneViewEye[i]);
 				pipeline.hmdEyeRendererNode[i]->setGlobalLight(sceneEntity.globalLight);
 				sceneViewEye[i].camera.pos = vec3(0, 0, 0);
+                sceneViewEye[i].camera.fov = 120;
 			}
 
 			Pipeline::SceneView lightDirView;
@@ -137,106 +121,69 @@ int main(int, char**)
 			pipeline.setDirLightView(lightDirView);
 
 			/* Load skybox */
-			vector<renderer::Texture*> skyboxes(4);
-			vector<renderer::Texture*> processedSky(skyboxes.size());
-			{
-				TextureLoader::ImageFormat formatTex;
+			std::pair<renderer::Texture*, renderer::Texture*> skyboxs;
+			TextureLoader::ImageFormat formatTex;
 
-				for (size_t i = 0; i<skyboxes.size(); ++i)
-				{
-					vector<std::string> imgSkybox(6);
-					std::string pre = "skybox/simple" + StringUtils(i + 1).str() + "/";
-					imgSkybox[0] = pre + "x.png";
-					imgSkybox[1] = pre + "nx.png";
-					imgSkybox[2] = pre + "y.png";
-					imgSkybox[3] = pre + "ny.png";
-					imgSkybox[4] = pre + "z.png";
-					imgSkybox[5] = pre + "nz.png";
-					vector<ubyte*> dataSkybox = SDLTextureLoader().loadImageCube(imgSkybox, formatTex);
+			vector<std::string> imgSkybox(6);
+			std::string pre = "skybox/";
+			imgSkybox[0] = pre + "x.png";
+			imgSkybox[1] = pre + "nx.png";
+			imgSkybox[2] = pre + "y.png";
+			imgSkybox[3] = pre + "ny.png";
+			imgSkybox[4] = pre + "z.png";
+			imgSkybox[5] = pre + "nz.png";
+			vector<ubyte*> dataSkybox = SDLTextureLoader().loadImageCube(imgSkybox, formatTex);
 
-					renderer::Texture::GenTexParam skyboxParam;
-					skyboxParam.format = renderer::Texture::RGBA8;
-					skyboxParam.nbLevels = 1;
-					skyboxParam.size = uivec3(formatTex.size, 0);
-					skyboxes[i] = renderer::Texture::genTextureCube(skyboxParam, dataSkybox, 4);
-					processedSky[i] = IndirectLightRenderer::processSkybox(skyboxes[i],
-						pipeline.rendererEntity->envLightRenderer().processSkyboxShader());
-					for (uint j = 0; j<dataSkybox.size(); ++j)
-						delete[] dataSkybox[j];
-				}
-			}
+			renderer::Texture::GenTexParam skyboxParam;
+			skyboxParam.format = renderer::Texture::RGBA8;
+			skyboxParam.nbLevels = 1;
+			skyboxParam.size = uivec3(formatTex.size, 0);
+			skyboxs.first = renderer::Texture::genTextureCube(skyboxParam, dataSkybox, 4);
+			skyboxs.second = IndirectLightRenderer::processSkybox(skyboxs.first, pipeline.rendererEntity->envLightRenderer().processSkyboxShader());
+			for (uint j = 0; j<dataSkybox.size(); ++j)
+				delete[] dataSkybox[j];
+			
+			sceneEntity.globalLight.skybox = { skyboxs.first, skyboxs.second };
 
-			sceneEntity.globalLight.skybox = { skyboxes[3], processedSky[3] };
+            BulletEngine physEngine;
 
-			const float TERRAIN_SIZE = 128;
-			const float TERRAIN_H = 50;
-			//TerrainRenderer terrain(TERRAIN_SIZE, TERRAIN_H, sceneEntity.scene);
-			//ImageAlgorithm<float> physicHM = terrain.patch()->heightData().map([](vec3 v) -> float { return v.z(); });
-			//btHeightfieldTerrainShape* heightFieldShape = tim::createHeightFieldShape(vec3(TERRAIN_SIZE, TERRAIN_SIZE, TERRAIN_H), physicHM);
-			//BulletObject objHM(mat4::Translation({ 0,0,TERRAIN_H*0.5 }), heightFieldShape);
-			//physEngine.addObject(&objHM);
-			//objHM.body()->setFriction(10);
+            ThreadPool threadPool(1);
+            SpaceBounce demoVR(sceneEntity, physEngine, hmdDevice);
 
-			Mesh::Element elem;
-			elem.setGeometry(geometry[0]);
-			elem.setTexture(m2Tex, 0);
-			elem.setRougness(0.7);
-			elem.setMetallic(0);
-			elem.setColor(vec4::construct(1));
-			elem.drawState().setShader(gPass);
-			MeshInstance& m2Mesh = sceneEntity.scene.add<MeshInstance>(Mesh(elem), mat4::Scale(vec3(.7f,.7f,.7f)));
-			bool isRunning = false;
-
-			elem.setTexture(interface::Texture(), 0);
-			elem.setColor(vec4::construct(0.7));
-			elem.setRougness(0.5);
-			elem.setMetallic(0);
-			elem.setGeometry(geometry[2]);
-
-			for(int i=-4 ; i<100 ; ++i)for (int j = 1; j<6; ++j)for (int k = -4; k<6; ++k)
-				sceneEntity.scene.add<MeshInstance>(Mesh(elem), mat4::Translation(vec3(i,j,k)*3));
-
-			vec3 pos;
-			int indexSkybox = 0;
 			while (!input.keyState(SDLK_ESCAPE).pressed)
 			{
 				SDLTimer timer;
+                threadPool.wait();	
 				input.getEvent();
+
+				demoVR.update(timeElapsed);
+
+				threadPool.schedule([&physEngine, timeElapsed]() { physEngine.dynamicsWorld->stepSimulation(timeElapsed, 5, 1 / 200.f); });
 
 				if (hmdDevice.isInit())
 				{
-					float z = 0;// terrain.patch()->height(vec2(0, 0));
 					sceneViewEye[VR_Device::LEFT].camera.useRawMat = true;
 					sceneViewEye[VR_Device::RIGHT].camera.useRawMat = true;
 					sceneViewEye[VR_Device::LEFT].camera.raw_proj = hmdDevice.camera().eyeProjection(VR_Device::LEFT);
-					sceneViewEye[VR_Device::LEFT].camera.raw_view = hmdDevice.camera().eyeView(VR_Device::LEFT) * mat4::Translation(-vec3(pos));
+                    sceneViewEye[VR_Device::LEFT].camera.raw_view = hmdDevice.camera().eyeView(VR_Device::LEFT) * mat4::Translation(-demoVR.basePosition());
 					sceneViewEye[VR_Device::RIGHT].camera.raw_proj = hmdDevice.camera().eyeProjection(VR_Device::RIGHT);
-					sceneViewEye[VR_Device::RIGHT].camera.raw_view = hmdDevice.camera().eyeView(VR_Device::RIGHT) * mat4::Translation(-vec3(pos));
+                    sceneViewEye[VR_Device::RIGHT].camera.raw_view = hmdDevice.camera().eyeView(VR_Device::RIGHT) * mat4::Translation(-demoVR.basePosition());
 
-					sceneViewCulling.camera.pos = hmdDevice.camera().hmdView().inverted() * vec3(0, 0, 0);
-					sceneViewEye[VR_Device::RIGHT].camera.pos = sceneViewEye[VR_Device::RIGHT].camera.raw_view.inverted() * vec3(0, 0, 0);
-					sceneViewEye[VR_Device::LEFT].camera.pos = sceneViewEye[VR_Device::LEFT].camera.raw_view.inverted() * vec3(0, 0, 0);
-					
-					//sceneViewEye[VR_Device::RIGHT].camera.pos = camPos;
-					//sceneViewEye[VR_Device::RIGHT].camera.dir = camDir;
+					mat4 matInv = hmdDevice.camera().hmdView().inverted();
+                    sceneViewCulling.camera.pos = matInv.translation() + demoVR.basePosition();
+                    sceneViewEye[VR_Device::RIGHT].camera.pos = sceneViewEye[VR_Device::RIGHT].camera.raw_view.inverted().translation() + demoVR.basePosition();
+                    sceneViewEye[VR_Device::LEFT].camera.pos = sceneViewEye[VR_Device::LEFT].camera.raw_view.inverted().translation() + demoVR.basePosition();
 
-					//invView = sceneViewEye[VR_Device::RIGHT].camera.raw_view.inverted();
-					//camPos = invView*vec3(0, 0, 0);
-					//camDir = invView*vec3(0, 0, -1);
-					//sceneViewEye[VR_Device::LEFT].camera.pos = camPos;
-					//sceneViewEye[VR_Device::LEFT].camera.dir = camDir;
-
-					
-					//sceneViewCulling.camera.dir = camDir;
+					sceneViewCulling.camera.dir = sceneViewCulling.camera.pos + matInv * vec3(0, 0, -5);
+					lightDirView.dirLightView.camPos = sceneViewCulling.camera.pos;
 				}
 				else
-				{
-					freeFly.update(timeElapsed, sceneViewCulling.camera);
-					//sceneViewCulling.camera.pos.z() = terrain.patch()->height(sceneViewCulling.camera.pos.to<2>()) + 2;
+				{ 
+					freeFly.update(timeElapsed, sceneViewCulling.camera); 
 
-					mat4 proj = mat4::Projection(90, float(RES_X) / RES_Y, 0.1f, 1000);
+                    mat4 proj = mat4::Projection(120, float(RES_X) / RES_Y, 0.1f, 1000);
 					mat4 view = mat4::View(sceneViewCulling.camera.pos, sceneViewCulling.camera.dir, sceneViewCulling.camera.up);
-					sceneViewEye[VR_Device::LEFT].camera.useRawMat = true;
+					sceneViewEye[VR_Device::LEFT].camera.useRawMat = true; 
 					sceneViewEye[VR_Device::RIGHT].camera.useRawMat = true;
 					sceneViewEye[VR_Device::RIGHT].camera.raw_proj = proj;
 					sceneViewEye[VR_Device::LEFT].camera.raw_proj = proj;
@@ -246,42 +193,8 @@ int main(int, char**)
 					lightDirView.dirLightView.camPos = sceneViewCulling.camera.pos;
 					sceneViewEye[VR_Device::LEFT].camera.pos = sceneViewCulling.camera.pos;
 					sceneViewEye[VR_Device::RIGHT].camera.pos = sceneViewCulling.camera.pos;
-
+					demoVR.setPosDir(sceneViewCulling.camera.pos, sceneViewCulling.camera.dir);
 				}
-
-				if (input.keyState(SDLK_SPACE).firstPress)
-				{
-					isRunning = true;
-				}
-				if (isRunning)
-				{	
-					mat4 m = mat4::Scale(vec3::construct(0.7f));
-					m.setTranslation(pos);
-					m2Mesh.setMatrix(m);
-					if (pos.x() > 280)
-						pos.x() = 0;
-
-					pos.x() += 0.3 * timeElapsed;
-				}
-
-			
-
-				//if (chooseCamera)
-				//{
-				//	freeFly.update(timeElapsed, sceneView1.camera);
-
-				//	sceneView1.camera.pos.z() = terrain.patch()->height(sceneView1.camera.pos.to<2>()) + 2;
-				//}
-				//else
-				//{
-				//	rtsCamera.setMouseParameter(input.mousePos(), input.mouseWheel().y());
-				//	rtsCamera.update(timeElapsed, sceneView2.camera);
-				//}
-
-				//if (input.keyState(SDLK_c).firstPress)
-				//	chooseCamera = !chooseCamera;
-
-
 
 
 				pipeline.pipeline->prepare();
@@ -290,15 +203,18 @@ int main(int, char**)
 				SDL_GL_SwapWindow(pWindow);
 				GL_ASSERT();
 
-				openGL.clearColor({ 0,0,0,0 });
-
 				hmdDevice.update();
 
-				if (input.keyState(SDLK_RIGHT).firstPress)
-				{
-					indexSkybox = (indexSkybox + 1) % skyboxes.size();
-					sceneEntity.globalLight.skybox = { skyboxes[indexSkybox], processedSky[indexSkybox] };
-				}
+                if(input.keyState(SDLK_o).firstPress)
+                {
+                    demoVR.initBall(sceneViewCulling.camera.pos);
+                }
+
+                if(input.keyState(SDLK_k).firstPress)
+                {
+                    demoVR.restartRoom();
+                }
+
 
 				//if (input.keyState(SDLK_1).pressed)
 				//	pipeline.onScreen->setBufferOutputNode(pipeline.rendererNode->outputNode(1), 0);
@@ -313,19 +229,15 @@ int main(int, char**)
 				totalTime += timeElapsed;
 				{
 					float fps = countTime<0>(timeElapsed);
-					if (fps>0)
-					{
+                   
+                    if (fps > 0)
 						std::cout << "Fps:" << 1.f / fps << "  Ms:" << 1000 * fps << std::endl;
-					}
+                   
 				}
 			}
 
 			/** Close context **/
-			for (uint i = 0; i<processedSky.size(); ++i)
-			{
-				delete processedSky[i];
-				delete skyboxes[i];
-			}
+			threadPool.wait();
 
 			AssetManager<Geometry>::freeInstance();
 			AssetManager<interface::Texture>::freeInstance();
@@ -364,8 +276,8 @@ void initContextSDL()
 	contexteOpenGL = SDL_GL_CreateContext(pWindow);
 
 	//SDL_ShowCursor(SDL_DISABLE);
-	//SDL_SetWindowGrab(pWindow, SDL_TRUE);
-	//SDL_SetRelativeMouseMode(SDL_TRUE);
+    SDL_SetWindowGrab(pWindow, SDL_TRUE);
+    SDL_SetRelativeMouseMode(SDL_TRUE);
 
 	if (contexteOpenGL == 0)
 	{
