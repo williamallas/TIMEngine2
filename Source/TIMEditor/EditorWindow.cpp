@@ -1,7 +1,9 @@
 #include "EditorWindow.h"
 #include "ui_EditorWindow.h"
 #include "QGLWidget"
+#include <QDateTime>
 
+#include <QMessageBox>
 #include <QFileDialog>
 #include "SelectSkyboxDialog.h"
 #include "AssimpLoader.h"
@@ -17,6 +19,8 @@ EditorWindow::EditorWindow(QWidget *parent) :
 
     this->tabifyDockWidget(ui->assetDockWidget, ui->resourceDockWidget);
     this->tabifyDockWidget(ui->sceneDockWidget, ui->meshDockWidget);
+
+    this->setWindowTitle("TIMEditor - Scene 1");
 
     ui->resourceWidget->viewport()->setAcceptDrops(true);
 
@@ -38,22 +42,43 @@ EditorWindow::EditorWindow(QWidget *parent) :
 
     ui->resourceWidget->addDir(".");
 
+    ui->statusBar->showMessage("Welcome !", 10000);
+
+    connect(ui->glWidget, SIGNAL(F11_pressed()), ui->viewDockWidget, SLOT(switchFullScreen()));
     connect(ui->glWidget, SIGNAL(pressedMouseMoved(int,int)), ui->meshEditorWidget, SLOT(rotateEditedMesh(int,int)));
-    connect(ui->meshEditorWidget, SIGNAL(saveMeshClicked()), this, SLOT(addMeshToAsset()));
-    connect(ui->glWidget, SIGNAL(dropEnterAsset(QString,QDragEnterEvent*)), ui->assetViewWidget, SLOT(confirmAssetDrop(QString,QDragEnterEvent*)));
-    connect(ui->glWidget, SIGNAL(addAssetToScene(QString)), this, SLOT(addAssetToScene(QString)));
     connect(ui->glWidget, SIGNAL(clickInEditor(vec3,vec3)), ui->sceneEditorWidget, SLOT(selectSceneObject(vec3,vec3)));
     connect(ui->glWidget, SIGNAL(translateMouse(float,float,int)), ui->sceneEditorWidget, SLOT(translateMouse(float,float,int)));
+    connect(ui->glWidget, SIGNAL(escapePressed()), ui->sceneEditorWidget, SLOT(cancelSelection()));
+    connect(ui->glWidget, SIGNAL(deleteCurrent()), ui->sceneEditorWidget, SLOT(deleteCurrentObject()));
+
+    connect(ui->meshEditorWidget, SIGNAL(saveMeshClicked()), this, SLOT(addMeshToAsset()));
+
+    connect(ui->glWidget, SIGNAL(addAssetToScene(QString)), this, SLOT(addAssetToScene(QString)));
+    connect(ui->glWidget, SIGNAL(addGeometryToScene(QString,QString)), this, SLOT(addGeometryToScene(QString,QString)));
+
     connect(ui->glWidget, SIGNAL(startEdit()), ui->sceneEditorWidget, SLOT(saveCurMeshTrans()));
     connect(ui->glWidget, SIGNAL(cancelEdit()), ui->sceneEditorWidget, SLOT(restoreCurMeshTrans()));
     connect(ui->glWidget, SIGNAL(stateChanged(int)), ui->sceneEditorWidget, SLOT(flushUiAccordingState(int)));
-    connect(ui->glWidget, SIGNAL(escapePressed()), ui->sceneEditorWidget, SLOT(cancelSelection()));
-    connect(ui->glWidget, SIGNAL(deleteCurrent()), ui->sceneEditorWidget, SLOT(deleteCurrentObject()));
+
+    _copySC = new QShortcut(QKeySequence("Ctrl+C"), ui->glWidget);
+    connect(_copySC, SIGNAL(activated()), ui->sceneEditorWidget, SLOT(copyObject()));
+
+    connect(ui->sceneEditorWidget, SIGNAL(editTransformation(int)), ui->glWidget, SLOT(enableTransformationMode(int)));
 }
 
 EditorWindow::~EditorWindow()
 {
     delete ui;
+    delete _copySC;
+}
+
+QString EditorWindow::genTitle() const
+{
+    QString title = "TIMEditor - Scene " + QString::number(ui->sceneEditorWidget->activeScene()+1);
+    if(!_savePath[ui->sceneEditorWidget->activeScene()].isEmpty())
+        title += " - " + _savePath[ui->sceneEditorWidget->activeScene()];
+
+    return title;
 }
 
 /** SLOTS **/
@@ -103,6 +128,9 @@ void EditorWindow::on_actionSet_skybox_triggered()
     _rendererThread->mainRenderer()->addEvent([=](){
         _rendererThread->mainRenderer()->setSkybox(_rendererThread->mainRenderer()->getCurSceneIndex(), list);
     });
+
+    if(_rendererThread->mainRenderer()->getCurSceneIndex() > 0)
+        ui->sceneEditorWidget->setSkybox(_rendererThread->mainRenderer()->getCurSceneIndex()-1, list);
 }
 
 interface::XmlMeshAssetLoader::MeshElementModel convertEditorModel(MeshElement model)
@@ -138,7 +166,6 @@ void EditorWindow::addMeshToAsset()
     AssetViewWidget::Element elem;
     elem.materials = ui->meshEditorWidget->currentMesh();
     elem.name = ui->meshEditorWidget->currentMeshName();
-    elem.type = AssetViewWidget::Element::MESH;
 
     vector<interface::XmlMeshAssetLoader::MeshElementModel> model;
     for(int i=0 ; i<elem.materials.size() ; ++i)
@@ -161,27 +188,8 @@ void EditorWindow::loadMeshAssets(QString filename)
     {
         AssetViewWidget::Element elem;
         elem.name = p.first.c_str();
-        elem.type = AssetViewWidget::Element::MESH;
 
-        for(size_t i=0 ; i<p.second.size() ; ++i)
-        {
-            AssetViewWidget::Material mat;
-            mat.color = QColor(255*p.second[i].color.x(), 255*p.second[i].color.y(), 255*p.second[i].color.z());
-            mat.material = p.second[i].material;
-            mat.geometry = p.second[i].geometry.c_str();
-
-            for(int j=0 ; j<3 ; ++j)
-            {
-                mat.textures[j] = p.second[i].textures[j].c_str();
-                QIcon ic = ui->resourceWidget->getResourceIconForPath(p.second[i].textures[j].c_str());
-                if(!ic.isNull())
-                    mat.texturesIcon[j] = ic;
-                else
-                    mat.texturesIcon[j] = QIcon(p.second[i].textures[j].c_str());
-
-            }
-            elem.materials.push_back(mat);
-        }
+        elem.materials = ui->meshEditorWidget->convertFromEngine(p.second);
         ui->assetViewWidget->addElement(elem);
     }
 }
@@ -222,7 +230,50 @@ void EditorWindow::on_actionScene_1_triggered()
     _rendererThread->mainRenderer()->unlock();
 
     ui->meshEditorWidget->setEditedMesh(nullptr, nullptr, nullptr, "");
+    ui->sceneEditorWidget->switchScene(0);
+
+    setWindowTitle(genTitle());
 }
+
+void EditorWindow::on_actionScene_2_triggered()
+{
+    _rendererThread->mainRenderer()->lock();
+    _rendererThread->mainRenderer()->setCurSceneIndex(2);
+    ui->glWidget->setEditMode(RendererWidget::SCENE_EDITOR);
+    _rendererThread->mainRenderer()->unlock();
+
+    ui->meshEditorWidget->setEditedMesh(nullptr, nullptr, nullptr, "");
+    ui->sceneEditorWidget->switchScene(1);
+
+    setWindowTitle(genTitle());
+}
+
+void EditorWindow::on_actionScene_3_triggered()
+{
+    _rendererThread->mainRenderer()->lock();
+    _rendererThread->mainRenderer()->setCurSceneIndex(3);
+    ui->glWidget->setEditMode(RendererWidget::SCENE_EDITOR);
+    _rendererThread->mainRenderer()->unlock();
+
+    ui->meshEditorWidget->setEditedMesh(nullptr, nullptr, nullptr, "");
+    ui->sceneEditorWidget->switchScene(2);
+
+    setWindowTitle(genTitle());
+}
+
+void EditorWindow::on_actionScene_4_triggered()
+{
+    _rendererThread->mainRenderer()->lock();
+    _rendererThread->mainRenderer()->setCurSceneIndex(4);
+    ui->glWidget->setEditMode(RendererWidget::SCENE_EDITOR);
+    _rendererThread->mainRenderer()->unlock();
+
+    ui->meshEditorWidget->setEditedMesh(nullptr, nullptr, nullptr, "");
+    ui->sceneEditorWidget->switchScene(3);
+
+    setWindowTitle(genTitle());
+}
+
 
 void EditorWindow::on_actionLoad_collada_triggered()
 {
@@ -235,10 +286,16 @@ void EditorWindow::on_actionLoad_collada_triggered()
 
     vector<AssimpLoader::Node> nodes = loader.nodes();
 
-    _rendererThread->mainRenderer()->lock();
-    _rendererThread->mainRenderer()->setCurSceneIndex(1);
-    ui->glWidget->setEditMode(RendererWidget::SCENE_EDITOR);
-    _rendererThread->mainRenderer()->unlock();
+    if(_rendererThread->mainRenderer()->getCurSceneIndex() == 0)
+    {
+        switch(ui->sceneEditorWidget->activeScene())
+        {
+            case 0: on_actionScene_1_triggered(); break;
+            case 1: on_actionScene_2_triggered(); break;
+            case 2: on_actionScene_3_triggered(); break;
+            case 3: on_actionScene_4_triggered(); break;
+        }
+    }
 
     for(const AssimpLoader::Node& elem : nodes)
     {
@@ -248,6 +305,70 @@ void EditorWindow::on_actionLoad_collada_triggered()
             ui->sceneEditorWidget->addSceneObject(QString::fromStdString(elem.name), QString::fromStdString(elem.idName), asset.materials, elem.matrix);
         }
     }
+
+    ui->statusBar->showMessage("Collada scene loaded", 1000 * 60 * 10);
+}
+
+void EditorWindow::on_actionSave_triggered()
+{
+    if(_savePath[ui->sceneEditorWidget->activeScene()].isEmpty())
+        on_actionSave_As_triggered();
+    else
+        ui->sceneEditorWidget->exportScene(_savePath[ui->sceneEditorWidget->activeScene()],
+                                           ui->sceneEditorWidget->activeScene());
+
+    ui->statusBar->showMessage(QString("Scene saved : ") + QDateTime::currentDateTime().toString("hh:mm:ss"), 1000 * 60 * 10);
+    setWindowTitle(genTitle());
+}
+
+void EditorWindow::on_actionLoad_triggered()
+{
+    QString file = QFileDialog::getOpenFileName(this, "Load scene", ".", "XML files (*.xml)");
+    if(file.isEmpty())
+        return;
+
+    if(_rendererThread->mainRenderer()->getCurSceneIndex() == 0)
+    {
+        switch(ui->sceneEditorWidget->activeScene())
+        {
+            case 0: on_actionScene_1_triggered(); break;
+            case 1: on_actionScene_2_triggered(); break;
+            case 2: on_actionScene_3_triggered(); break;
+            case 3: on_actionScene_4_triggered(); break;
+        }
+    }
+
+    ui->sceneEditorWidget->importScene(file, ui->sceneEditorWidget->activeScene());
+    _savePath[ui->sceneEditorWidget->activeScene()] = file;
+
+    ui->statusBar->showMessage("Scene loaded", 1000 * 60 * 10);
+    setWindowTitle(genTitle());
+}
+
+void EditorWindow::on_actionSave_As_triggered()
+{
+    QString file = QFileDialog::getSaveFileName(this, "Save scene", ".", "XML Files (*.xml)");
+    if(file.isEmpty())
+        return;
+
+    ui->sceneEditorWidget->exportScene(file, ui->sceneEditorWidget->activeScene());
+    _savePath[ui->sceneEditorWidget->activeScene()] = file;
+
+    ui->statusBar->showMessage(QString("Scene saved at ") + QDateTime::currentDateTime().toString("hh:mm:ss"), 1000 * 60 * 10);
+    setWindowTitle(genTitle());
+}
+
+void EditorWindow::on_actionNew_triggered()
+{
+    QMessageBox::StandardButton reply = QMessageBox::question(this, "New scene", "Are you sure to clear the scene ?",
+                                                              QMessageBox::Yes|QMessageBox::No);
+    if(reply == QMessageBox::Yes)
+        ui->sceneEditorWidget->clearScene(ui->sceneEditorWidget->activeScene());
+
+    ui->statusBar->showMessage("New scene", 10000);
+
+    _savePath[ui->sceneEditorWidget->activeScene()] = "";
+    setWindowTitle(genTitle());
 }
 
 void EditorWindow::addAssetToScene(QString assetName)
@@ -261,4 +382,21 @@ void EditorWindow::addAssetToScene(QString assetName)
 
         ui->sceneEditorWidget->activateLastAdded();
     }
+}
+
+void EditorWindow::addGeometryToScene(QString geomPath, QString name)
+{
+    AssetViewWidget::Element asset;
+    MeshElement elem;
+    elem.color = QColor(255,255,255);
+    elem.material = {0.5,0,0.15,0};
+    elem.geometry = geomPath;
+    asset.materials += elem;
+
+    vec3 camPos = _rendererThread->mainRenderer()->getSceneView(_rendererThread->mainRenderer()->getCurSceneIndex()).camera.pos;
+    vec3 camDir = _rendererThread->mainRenderer()->getSceneView(_rendererThread->mainRenderer()->getCurSceneIndex()).camera.dir;
+    ui->sceneEditorWidget->addSceneObject("", name, asset.materials, mat3::IDENTITY(), camPos + (camDir-camPos).resize(2), vec3(1,1,1));
+
+    ui->sceneEditorWidget->activateLastAdded();
+
 }

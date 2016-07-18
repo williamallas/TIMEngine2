@@ -5,6 +5,7 @@
 namespace tim
 {
     using namespace core;
+    using namespace renderer;
 namespace interface
 {
 namespace pipeline
@@ -37,7 +38,8 @@ void DeferredRendererNode::prepare()
         for(const MeshInstance& m : culledMesh)
         {
             for(uint i=0 ; i<m.mesh().nbElements() ; ++i)
-                _toDraw.push_back({&(m.mesh().element(i)), &(m.matrix()), &(m.attachedUBO())});
+                if(m.mesh().element(i).isEnable())
+                    _toDraw.push_back({&(m.mesh().element(i)), &(m.matrix()), &(m.attachedUBO())});
         }
     }
 
@@ -71,8 +73,14 @@ void DeferredRendererNode::render()
 
     _rendererEntity->deferredRenderer().frameBuffer().bind();
 
-    renderer::openGL.clearDepth();
-    renderer::openGL.clearColor(vec4::construct(0));
+    openGL.clearDepth();
+    openGL.clearColor(vec4::construct(0));
+
+    for(int i=0 ; i<NB_CLIP_PLAN ; ++i)
+        if(_useClipPlan[i]) glEnable(GL_CLIP_DISTANCE0+i);
+        else glDisable(GL_CLIP_DISTANCE0+i);
+
+    std::set<Shader*> alreadyUsed;
 
     if(!_toDraw.empty())
     {
@@ -88,6 +96,22 @@ void DeferredRendererNode::render()
             if(curDrawState != _toDraw[curIndex].elem->drawState())
             {
                 _meshDrawer.setDrawState(curDrawState);
+
+                if(curDrawState.shader())
+                {
+                    if(alreadyUsed.find(curDrawState.shader()) == alreadyUsed.end())
+                    {
+                        alreadyUsed.insert(curDrawState.shader());
+                        curDrawState.shader()->bind();
+                        for(int i=0 ; i<NB_CLIP_PLAN ; ++i)
+                        {
+                            if(_useClipPlan[i])
+                                curDrawState.shader()->setUniform(_clipPlan[i],
+                                                                  curDrawState.shader()->engineUniformId(Shader::EngineUniform::CLIP_PLAN_0+i));
+                        }
+                    }
+                }
+
                 _meshDrawer.draw(accMesh, accMatr, accMate);
                 accMesh.resize(0);
                 accMatr.resize(0);
@@ -107,18 +131,38 @@ void DeferredRendererNode::render()
         if(!accMesh.empty())
         {
             _meshDrawer.setDrawState(curDrawState);
+
+            if(curDrawState.shader())
+            {
+                if(alreadyUsed.find(curDrawState.shader()) == alreadyUsed.end())
+                {
+                    alreadyUsed.insert(curDrawState.shader());
+                    curDrawState.shader()->bind();
+                    for(int i=0 ; i<NB_CLIP_PLAN ; ++i)
+                    {
+                        if(_useClipPlan[i])
+                            curDrawState.shader()->setUniform(_clipPlan[i],
+                                                              curDrawState.shader()->engineUniformId(Shader::EngineUniform::CLIP_PLAN_0+i));
+                    }
+                }
+            }
+
             _meshDrawer.draw(accMesh, accMatr, accMate, accExtraUbo);
         }
     }
 
-    vector<renderer::LightContextRenderer::Light> lights(_culledLight.size());
+    for(int i=0 ; i<NB_CLIP_PLAN ; ++i)
+        if(_useClipPlan[i])
+            glDisable(GL_CLIP_DISTANCE0+i);
+
+    vector<LightContextRenderer::Light> lights(_culledLight.size());
     for(uint i=0 ; i<lights.size() ; ++i)
         lights[i] = _culledLight[i].get().get();
 
-	if (_rendererEntity->lightRenderer())
-		_rendererEntity->lightRenderer()->draw(lights);
-	else
-		_rendererEntity->lightContext()->clear();
+    if (_rendererEntity->lightRenderer())
+        _rendererEntity->lightRenderer()->draw(lights);
+    else
+        _rendererEntity->lightContext()->clear();
 
     if(_globalLightInfo)
     {
@@ -128,7 +172,7 @@ void DeferredRendererNode::render()
                 _dirLightDepthMapRenderer[i]->render();
         }
 
-        vector<renderer::DirectionalLightRenderer::Light> lights(_globalLightInfo->dirLights.size());
+        vector<DirectionalLightRenderer::Light> lights(_globalLightInfo->dirLights.size());
         for(uint i=0 ; i<_globalLightInfo->dirLights.size() ; ++i)
         {
             lights[i].direction = _globalLightInfo->dirLights.at(i).direction;

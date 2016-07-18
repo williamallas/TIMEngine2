@@ -507,6 +507,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>copyButton</sender>
+   <signal>clicked()</signal>
+   <receiver>SceneEditor</receiver>
+   <slot>copyObject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>60</x>
+     <y>117</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>566</x>
+     <y>103</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>itemSelectionChanged(QModelIndex)</slot>
@@ -518,5 +534,6 @@
   <slot>edit_cameraPosZ(double)</slot>
   <slot>deleteCurrentObject()</slot>
   <slot>resetRotation()</slot>
+  <slot>copyObject()</slot>
  </slots>
 </ui>

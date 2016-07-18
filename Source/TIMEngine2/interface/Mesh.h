@@ -47,6 +47,9 @@ namespace interface
             void setGeometry(const Geometry& g) { _geometry = g; }
             const Geometry& geometry() const { return _geometry; }
 
+            void setEnable(bool b) { _enable = b; }
+            bool isEnable() const { return _enable; }
+
             void setTexture(const Texture& t, uint index);
             Texture texture(uint index) const { index = std::min(index,2u); return _textures[index]; }
 
@@ -67,6 +70,7 @@ namespace interface
 
 
             renderer::DrawState _state;
+            bool _enable = true;
 
 
             void setDefault();

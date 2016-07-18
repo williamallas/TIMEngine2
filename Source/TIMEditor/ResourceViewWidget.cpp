@@ -8,6 +8,7 @@
 #include <QDir>
 #include <QDirIterator>
 #include <QDropEvent>
+#include <QDrag>
 #include <QMimeData>
 #include <QDialog>
 #include <QVBoxLayout>
@@ -34,9 +35,11 @@ void ResourceViewWidget::addElement(Element e)
     if(e.type == Element::Geometry)
         name = QFileInfo(e.path).baseName();
 
-    _items += {e, getIcon(e)};
-    auto ol = new QListWidgetItem(_items.back().icon, name, this);
+    QIcon ic = getIcon(e);
+    QListWidgetItem* ol = new QListWidgetItem(ic, name, this);
     ol->setSizeHint(QSize(100,100));
+
+    _items += {e, ic, ol};
 }
 
 QList<QString> ResourceViewWidget::selectResources(int type, QWidget* parent, bool singleSelection)
@@ -156,6 +159,39 @@ void ResourceViewWidget::dragEnterEvent(QDragEnterEvent* event)
 void ResourceViewWidget::dragMoveEvent(QDragMoveEvent* event)
 {
     event->accept();
+}
+
+void ResourceViewWidget::mouseMoveEvent(QMouseEvent *event)
+{
+    if (!(event->buttons() & Qt::LeftButton))
+        return;
+
+    if (currentItem() == NULL)
+        return;
+
+    QDrag *drag = new QDrag(this);
+    QMimeData *mimeData = new QMimeData;
+
+    QList<QUrl> list;
+    for(auto elem : _items)
+    {
+        if(elem.item == currentItem())
+        {
+            list.append(QUrl(elem.elem.path));
+            list.append(QUrl(currentItem()->text()));
+
+            if(elem.elem.type == Element::Geometry)
+                mimeData->setObjectName("ResourceViewWidget::Geometry");
+            else
+                mimeData->setObjectName("ResourceViewWidget::Texture");
+            break;
+        }
+    }
+
+    mimeData->setUrls(list);
+
+    drag->setMimeData(mimeData);
+    drag->start(Qt::CopyAction | Qt::MoveAction);
 }
 
 

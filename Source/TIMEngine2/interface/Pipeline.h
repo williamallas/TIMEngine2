@@ -51,6 +51,17 @@ namespace interface
         {
             Camera camera;
             DirLightView dirLightView;
+
+            void offset(vec3 o)
+            {
+                if(camera.useRawMat)
+                    camera.raw_view = camera.raw_view * mat4::Translation(-o);
+
+                camera.dir += o;
+                camera.pos += o;
+
+                dirLightView.camPos += o;
+            }
         };
 
         class DeferredRendererEntity
@@ -209,9 +220,20 @@ namespace interface
             void setBufferOutputNode(OutBufferNode* node, uint index)
             {
                 if(_input.size() <= index)
+                {
                     _input.resize(index+1, nullptr);
+                    _enableInput.resize(index+1, true);
+                }
 
                 _input[index] = node;
+            }
+
+            void setEnableInput(uint index, bool enable)
+            {
+                if(_input.size() <= index)
+                    return;
+
+                _enableInput[index] = enable;
             }
 
             void prepare() override
@@ -220,13 +242,14 @@ namespace interface
 
                 for(uint i=0 ; i<_input.size() ; ++i)
                 {
-                    if(_input[i])
+                    if(_input[i] && _enableInput[i])
                         _input[i]->prepare();
                 }
             }
 
         protected:
             vector<OutBufferNode*> _input;
+            vector<bool> _enableInput;
         };
 
         class InOutBufferNode : public InBuffersNode, public OutBufferNode {};
@@ -256,6 +279,8 @@ namespace interface
             void addLightInstanceCollector(CollectObjectNode<LightInstance>& c) { _lightInstanceSource.push_back(&c); }
             void setSceneView(SceneView& view) { _sceneView = &view; }
             void setGlobalLight(const GlobalLight& gLight) { _globalLightInfo=&gLight; }
+            void setClipPlan(vec4 plan, int index) { _clipPlan[index] = plan; }
+            void setUseClipPlan(bool b, int index) { _useClipPlan[index] = b; }
 
             void setDirLightShadow(DepthMapRendererNode& r, uint index)
             {
@@ -272,6 +297,10 @@ namespace interface
             const GlobalLight* _globalLightInfo = nullptr;
 
             vector<DepthMapRendererNode*> _dirLightDepthMapRenderer;
+
+            static const int NB_CLIP_PLAN = 4;
+            vec4 _clipPlan[NB_CLIP_PLAN];
+            bool _useClipPlan[NB_CLIP_PLAN] = {false};
         };
 
         class TerminalNode : public InBuffersNode, public RendererNode { };

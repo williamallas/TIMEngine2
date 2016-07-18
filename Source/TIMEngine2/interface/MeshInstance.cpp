@@ -17,8 +17,11 @@ void MeshInstance::setMatrix(const mat4& m)
 
 void MeshInstance::setMesh(const Mesh& m)
 {
+    bool sameVolume = m.initialVolume() == _mesh.initialVolume();
     _mesh = m;
-    setMatrix(_model);
+
+    if(!sameVolume)
+        setMatrix(_model);
 }
 
 void MeshInstance::attachUBO(uint id, uint index)

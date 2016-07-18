@@ -88,7 +88,8 @@ void DirLightShadowNode::prepare()
             for(const MeshInstance& m : culledMesh)
             {
                 for(uint i=0 ; i<m.mesh().nbElements() ; ++i)
-                    _toDraw[j].push_back({&(m.mesh().element(i)), &(m.matrix())});
+                    if(m.mesh().element(i).isEnable())
+                        _toDraw[j].push_back({&(m.mesh().element(i)), &(m.matrix())});
             }
         }
     }

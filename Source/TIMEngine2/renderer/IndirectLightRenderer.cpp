@@ -95,17 +95,19 @@ void IndirectLightRenderer::draw() const
     {
         _skybox->bind(4);
         openGL.bindTextureSampler(textureSampler[TextureMode::FilteredNoRepeat], 4);
-    }
+    } else openGL.bindTexture(0, GL_TEXTURE_CUBE_MAP, 4);
+
     if(_processedSkybox)
     {
         _processedSkybox->bind(5);
         openGL.bindTextureSampler(textureSampler[TextureMode::FilteredNoRepeat], 5);
-    }
+    } else openGL.bindTexture(0, GL_TEXTURE_CUBE_MAP, 5);
+
     if(_processedBrdf)
     {
         _processedBrdf->bind(6);
         openGL.bindTextureSampler(textureSampler[TextureMode::FilteredNoRepeat], 6);
-    }
+    } else openGL.bindTexture(0, GL_TEXTURE_2D, 6);
 
     _fullScreenPass->setUniform((_enableGI && _processedSkybox)?1:0, _uniformEnableGI);
     _fullScreenPass->setUniform(_globalAmbient, _uniformGlobalAmbient);

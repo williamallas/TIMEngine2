@@ -50,6 +50,22 @@ void MeshEditorWidget::activeEditMode()
     _editedMaterials = &_meshEditorMaterials;
     _editedMesh = _meshEditorNode;
     _highlightedMesh = nullptr;
+
+    ui->meshPartView->clear();
+    ui->meshName->setText("");
+
+    for(int i=0 ; i<_editedMaterials->size() ; ++i)
+    {
+        addUiElement((*_editedMaterials)[i]);
+    }
+
+    if(!_editedMaterials->empty())
+    {
+        _curElementIndex = 0;
+        itemSelectionChanged(0);
+    }
+    else setUi(MeshElement());
+
 }
 
 void MeshEditorWidget::setEditedMesh(MeshInstance* node, MeshInstance* highlighted, QList<MeshElement>* materials, QString model)
@@ -134,7 +150,10 @@ void MeshEditorWidget::addUiElement(const MeshElement& elem)
 Mesh::Element MeshEditorWidget::constructMeshElement(const MeshElement& elem)
 {
     Mesh::Element melem;
-    melem.setGeometry(resource::AssetManager<Geometry>::instance().load<false>(elem.geometry.toStdString()).value());
+
+    auto optGeom = resource::AssetManager<Geometry>::instance().load<false>(elem.geometry.toStdString(), true);
+    if(optGeom.hasValue())
+        melem.setGeometry(optGeom.value());
 
     vec4 color = vec4(elem.color.red(), elem.color.green(), elem.color.blue(), 255) / vec4::construct(255);
     melem.setColor(color);
@@ -154,8 +173,10 @@ Mesh::Element MeshEditorWidget::constructMeshElement(const MeshElement& elem)
         param.trilinear = true;
         param.anisotropy = 4;
         param.nbLevels = -1;
-        Texture tex = resource::AssetManager<Texture>::instance().load<false>(elem.textures[i].toStdString(), param).value();
-        melem.setTexture(tex, i);
+
+        auto opt = resource::AssetManager<Texture>::instance().load<false>(elem.textures[i].toStdString(), param);
+        if(opt.hasValue())
+            melem.setTexture(opt.value(), i);
     }
 
     melem.drawState().setShader(ShaderPool::instance().get("gPass"));
@@ -248,6 +269,33 @@ void MeshEditorWidget::updateTexture(int texId)
         mesh.element(_curElementIndex).setTexture(tex, texId);
         _editedMesh->setMesh(mesh);
     });
+}
+
+QList<MeshElement> MeshEditorWidget::convertFromEngine(const vector<interface::XmlMeshAssetLoader::MeshElementModel>& model)
+{
+    QList<MeshElement> res;
+
+    for(size_t i=0 ; i<model.size() ; ++i)
+    {
+        MeshElement mat;
+        mat.color = QColor(255*model[i].color.x(), 255*model[i].color.y(), 255*model[i].color.z());
+        mat.material = model[i].material;
+        mat.geometry = model[i].geometry.c_str();
+
+        for(int j=0 ; j<MeshElement::NB_TEXTURES ; ++j)
+        {
+            mat.textures[j] = model[i].textures[j].c_str();
+            QIcon ic = _resourceWidget->getResourceIconForPath(model[i].textures[j].c_str());
+            if(!ic.isNull())
+                mat.texturesIcon[j] = ic;
+            else
+                mat.texturesIcon[j] = QIcon(model[i].textures[j].c_str());
+
+        }
+        res.push_back(mat);
+    }
+
+    return res;
 }
 
 /* SLOTS */
@@ -362,6 +410,11 @@ void MeshEditorWidget::itemSelectionChanged(int row)
 
     _curElementIndex = row;
 
+     setUi((*_editedMaterials)[_curElementIndex]);
+}
+
+void MeshEditorWidget::setUi(const MeshElement& mat)
+{
     ui->dm_colorR->blockSignals(true);
     ui->dm_colorG->blockSignals(true);
     ui->dm_colorB->blockSignals(true);
@@ -374,24 +427,23 @@ void MeshEditorWidget::itemSelectionChanged(int row)
     ui->dm_specularSlider->blockSignals(true);
     ui->dm_emissiveSlider->blockSignals(true);
 
-    ui->dm_colorR->setValue((*_editedMaterials)[_curElementIndex].color.red());
-    ui->dm_colorG->setValue((*_editedMaterials)[_curElementIndex].color.green());
-    ui->dm_colorB->setValue((*_editedMaterials)[_curElementIndex].color.blue());
+    ui->dm_colorR->setValue(mat.color.red());
+    ui->dm_colorG->setValue(mat.color.green());
+    ui->dm_colorB->setValue(mat.color.blue());
     updateColorButton();
 
-    ui->dm_roughnessVal->setValue((*_editedMaterials)[_curElementIndex].material.x());
-    ui->dm_metallicVal->setValue((*_editedMaterials)[_curElementIndex].material.y());
-    ui->dm_specularVal->setValue((*_editedMaterials)[_curElementIndex].material.z());
-    ui->dm_emissiveVal->setValue((*_editedMaterials)[_curElementIndex].material.w());
+    ui->dm_roughnessVal->setValue(mat.material.x());
+    ui->dm_metallicVal->setValue(mat.material.y());
+    ui->dm_specularVal->setValue(mat.material.z());
+    ui->dm_emissiveVal->setValue(mat.material.w());
 
-    ui->dm_roughnessSlider->setValue(int((*_editedMaterials)[_curElementIndex].material.x()*ui->dm_roughnessSlider->maximum()));
-    ui->dm_metallicSlider->setValue(int((*_editedMaterials)[_curElementIndex].material.y()*ui->dm_metallicSlider->maximum()));
-    ui->dm_specularSlider->setValue(int((*_editedMaterials)[_curElementIndex].material.z()*ui->dm_specularSlider->maximum()));
-    ui->dm_emissiveSlider->setValue(int((*_editedMaterials)[_curElementIndex].material.w()*ui->dm_emissiveSlider->maximum()));
-
-    ui->diffuseTex->setIcon((*_editedMaterials)[_curElementIndex].texturesIcon[0]);
-    ui->normalTex->setIcon((*_editedMaterials)[_curElementIndex].texturesIcon[1]);
-    ui->materialTex->setIcon((*_editedMaterials)[_curElementIndex].texturesIcon[2]);
+    ui->dm_roughnessSlider->setValue(int(mat.material.x()*ui->dm_roughnessSlider->maximum()));
+    ui->dm_metallicSlider->setValue(int(mat.material.y()*ui->dm_metallicSlider->maximum()));
+    ui->dm_specularSlider->setValue(int(mat.material.z()*ui->dm_specularSlider->maximum()));
+    ui->dm_emissiveSlider->setValue(int(mat.material.w()*ui->dm_emissiveSlider->maximum()));
+    ui->diffuseTex->setIcon(mat.texturesIcon[0]);
+    ui->normalTex->setIcon(mat.texturesIcon[1]);
+    ui->materialTex->setIcon(mat.texturesIcon[2]);
 
     ui->dm_colorR->blockSignals(false);
     ui->dm_colorG->blockSignals(false);
@@ -444,7 +496,10 @@ void MeshEditorWidget::removeElement()
         _curElementIndex--;
 
     if(_curElementIndex < 0)
+    {
+        setUi(MeshElement());
         return;
+    }
 
     ui->meshPartView->item(_curElementIndex)->setSelected(true);
     itemSelectionChanged(_curElementIndex);

@@ -33,6 +33,8 @@ namespace core
         Sphere max(const Sphere&) const;
         Box toBox() const;
 
+        bool operator==(const Sphere&) const;
+
         /* Collision */
         bool inside(const Sphere&) const;
         bool outside(const Sphere&) const;

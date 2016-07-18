@@ -31,6 +31,7 @@ Mesh::Element& Mesh::Element::operator=(const Element& e)
 {
     _state = e._state;
     _geometry = e._geometry;
+    _enable = e._enable;
     for(int i=0 ; i<3 ; ++i)
         setTexture(e.texture(i), i);
 
@@ -51,6 +52,7 @@ void Mesh::Element::setTexture(const Texture& t, uint index)
 
 void Mesh::Element::setDefault()
 {
+    _enable = true;
     _state = renderer::DrawState();
     for(int i=0 ; i<3 ; ++i)
         setTexture(Texture(), i);

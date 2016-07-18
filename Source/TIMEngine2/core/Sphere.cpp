@@ -29,6 +29,10 @@ void Sphere::transform(const mat4& m)
                                 (m3*vec3(0,0, _radius)).length());
 }
 
+bool Sphere::operator==(const Sphere& s) const
+{
+    return s._center == _center && s._radius == _radius;
+}
 
 /* AABB */
 bool Sphere::inside(const Box& box) const
@@ -85,7 +89,7 @@ Sphere Sphere::computeSphere(const real* ptr, uint size, uint stride)
     }
 
     vec3 center = (minV+maxV) / 2;
-    center = {0,0,0};
+    //center = {0,0,0};
 
     float minD = 0;
     for(uint i=0 ; i<size ; ++i)

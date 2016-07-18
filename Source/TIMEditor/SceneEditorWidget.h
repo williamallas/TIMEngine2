@@ -7,6 +7,7 @@
 #include "MainRenderer.h"
 #include "MeshElement.h"
 #include "MeshEditorWidget.h"
+#include "interface/XmlMeshAssetLoader.h"
 
 class ResourceViewWidget;
 
@@ -25,10 +26,18 @@ public:
 
     void setMainRenderer(tim::MainRenderer* r);
     void setMeshEditor(MeshEditorWidget* r) { _meshEditor = r; }
+
+    void setSkybox(uint sceneIndex, const QList<QString>&);
+
     void addSceneObject(QString name, QString model, const QList<MeshElement>&, mat4);
     void addSceneObject(QString name, QString model, const QList<MeshElement>&, const mat3&, const vec3&, const vec3&);
 
+    void switchScene(int);
+    int activeScene() const { return _curSceneIndex; }
+
     void activateLastAdded();
+
+    static const uint NB_SCENE = 4;
 
 protected:
     Ui::SceneEditor *ui;
@@ -47,10 +56,16 @@ protected:
         interface::MeshInstance* node;
         QList<MeshElement> materials;
         QListWidgetItem* listItem;
-        int sceneIndex = 0;
+
+        int exportHelper;
     };
-    QList<SceneObject> _objects;
+    QList<SceneObject> _objects[NB_SCENE];
+    int _curSceneIndex = 0;
     int _curItemIndex = -1;
+
+
+    QList<tim::interface::Pipeline::DirectionalLight> _directionalLights[NB_SCENE];
+    QList<QString> _skyboxs[NB_SCENE];
 
     vec3 saved_scale     = {1,1,1};
     mat3 saved_rotate    = mat3::IDENTITY();
@@ -59,10 +74,14 @@ protected:
     tim::interface::MeshInstance* _translateLine[3] = {nullptr};
     tim::interface::MeshInstance* _highlightedMeshInstance = nullptr;
 
+    void addSceneObject(bool lock, QString name, QString model, const QList<MeshElement>&, const mat3&, const vec3&, const vec3&);
+    void addSceneObject(int scene, bool lock, QString name, QString model, const QList<MeshElement>&, const mat3&, const vec3&, const vec3&);
     void activateObject(int);
     void flushItemUi(int);
     void updateSelectedMeshMatrix();
     static mat4 constructTransformation(const SceneObject&);
+    static void parseTransformation(TiXmlElement*, vec3& tr, vec3& sc, mat3&);
+    static QList<QString> parseSkyboxXmlElement(TiXmlElement*);
 
     QTimer _flushState;
 
@@ -94,8 +113,12 @@ public slots:
     void edit_cameraPosY(double);
     void edit_cameraPosZ(double);
 
-signals:
+    void exportScene(QString, int);
+    void importScene(QString, int);
+    void clearScene(int);
 
+signals:
+    void editTransformation(int);
 };
 
 #endif // MESHEDITORWIDGET_H

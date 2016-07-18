@@ -22,13 +22,14 @@ ShaderPool::~ShaderPool()
     }
 }
 
-Option<renderer::Shader*> ShaderPool::add(std::string name, std::string vs, std::string ps, std::string gs)
+Option<renderer::Shader*> ShaderPool::add(std::string name, std::string vs, std::string ps, std::string gs,
+                                          std::initializer_list<std::string> option)
 {
     Option<uint> vShader, pShader, gShader;
 
     ShaderCompiler vsCompiler(ShaderCompiler::VERTEX_SHADER);
     vsCompiler.setSource(StringUtils::readFile(vs));
-    vShader = vsCompiler.compile({});
+    vShader = vsCompiler.compile(option);
     if(!vShader.hasValue())
         LOG("Error compiling ",vs," :\n",vsCompiler.error());
 
@@ -36,7 +37,7 @@ Option<renderer::Shader*> ShaderPool::add(std::string name, std::string vs, std:
     if(!ps.empty())
     {
         psCompiler.setSource(StringUtils::readFile(ps));
-        pShader = psCompiler.compile({});
+        pShader = psCompiler.compile(option);
         if(!pShader.hasValue())
             LOG("Error compiling ",ps," :\n",psCompiler.error());
     }
@@ -45,7 +46,7 @@ Option<renderer::Shader*> ShaderPool::add(std::string name, std::string vs, std:
     if(!gs.empty())
     {
         gsCompiler.setSource(StringUtils::readFile(gs));
-        gShader = gsCompiler.compile({});
+        gShader = gsCompiler.compile(option);
         if(!gShader.hasValue())
             LOG("Error compiling ",gs," :\n",gsCompiler.error());
     }

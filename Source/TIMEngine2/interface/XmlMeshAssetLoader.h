@@ -34,14 +34,13 @@ namespace interface
 
         const boost::container::map<std::string, vector<MeshElementModel>>& allAssets() const { return _models; }
 
+        static vector<MeshElementModel> parseMeshAssetElement(TiXmlElement*, std::string& name);
+
     protected:
 
         boost::container::map<std::string, vector<MeshElementModel>> _models;
 
-        void parseMeshAssetElement(TiXmlElement*);
-
         static vec3 toColor(std::string);
-        static std::string str(const char*);
     };
 
 }

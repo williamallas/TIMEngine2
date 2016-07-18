@@ -10,14 +10,19 @@ void FullScreenDock::keyPressEvent(QKeyEvent* event)
     {
         event->accept();
 
-        if(!this->isFullScreen())
-            this->showFullScreen();
-        else
-            this->showNormal();
+        switchFullScreen();
     }
     else
     {
         event->ignore();
         QDockWidget::keyPressEvent(event);
     }
+}
+
+void FullScreenDock::switchFullScreen()
+{
+    if(!this->isFullScreen())
+        this->showFullScreen();
+    else
+        this->showNormal();
 }

@@ -30,6 +30,7 @@ protected:
     {
         Element elem;
         QIcon icon;
+        QListWidgetItem* item;
     };
     QList<ItemElement> _items;
     QIcon _objIcon, _timIcon;
@@ -39,6 +40,7 @@ protected:
     void dropEvent(QDropEvent*) override;
     void dragMoveEvent(QDragMoveEvent*) override;
     void dragEnterEvent(QDragEnterEvent*) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
 
     bool isTexture(QString) const;
     bool isGeometry(QString) const;

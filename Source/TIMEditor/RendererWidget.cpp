@@ -3,8 +3,8 @@
 
 #include <QMimeData>
 
-RendererWidget::RendererWidget(QWidget *parent) :
-    QGLWidget(parent)
+RendererWidget::RendererWidget(QWidget *parent) : QGLWidget(parent)
+
 {
     setMinimumSize(100,100);
     setAutoBufferSwap(false);
@@ -30,6 +30,30 @@ void RendererWidget::resizeEvent(QResizeEvent* ev)
 {
     if(_renderer)
         _renderer->updateSize(uivec2(ev->size().width(), ev->size().height()));
+}
+
+void RendererWidget::enableTransformationMode(int mode)
+{
+    if(_editMode == SCENE_EDITOR && _stateReady == NO_INTERACTION)
+    {
+        switch(mode)
+        {
+        case 0:
+            _stateReady = TRANSLATE_MODE;
+            break;
+
+        case 1:
+            _stateReady = SCALE_MODE;
+            break;
+
+        case 2:
+            _stateReady = ROTATE_MODE;
+            break;
+        }
+
+        emit startEdit();
+        emit stateChanged(_stateReady);
+    }
 }
 
 void RendererWidget::mouseMoveEvent(QMouseEvent *event)
@@ -70,7 +94,7 @@ void RendererWidget::mouseMoveEvent(QMouseEvent *event)
                         sinf(_inSceneEditorCameraAngle[1]*PI/180)};
 
             _renderer->lock();
-            _renderer->getSceneView(1).camera.dir = _renderer->getSceneView(1).camera.pos + dir;
+            _renderer->getSceneView(_renderer->getCurSceneIndex()).camera.dir = _renderer->getSceneView(_renderer->getCurSceneIndex()).camera.pos + dir;
             _renderer->unlock();
         }
     }
@@ -112,6 +136,9 @@ void RendererWidget::wheelEvent(QWheelEvent* event)
 
 void RendererWidget::keyPressEvent(QKeyEvent* event)
 {
+    if(event->key() == Qt::Key_F11)
+        emit F11_pressed();
+
     if(event->key() == Qt::Key_Shift)
         _shiftPressed=true;
 
@@ -305,9 +332,12 @@ void RendererWidget::dropEvent(QDropEvent* event)
    if(mimeData->hasUrls())
    {
        QList<QUrl> urlList = event->mimeData()->urls();
-       for(QUrl& url : urlList)
+
+       if(mimeData->objectName() == "AssetViewWidget")
+           emit addAssetToScene(urlList[0].url());
+       else if(mimeData->objectName() == "ResourceViewWidget::Geometry" && urlList.size() >= 2)
        {
-           emit addAssetToScene(url.url());
+           emit addGeometryToScene(urlList[0].url(), urlList[1].url());
        }
    }
 }
@@ -326,9 +356,8 @@ void RendererWidget::dragEnterEvent(QDragEnterEvent* event)
     {
         QList<QUrl> urlList = event->mimeData()->urls();
 
-        if(urlList.size() > 0)
-        {
-            emit dropEnterAsset(urlList[0].url(), event);
-        }
+        if(urlList.size() > 0 && (event->mimeData()->objectName() == "AssetViewWidget" ||
+                                  event->mimeData()->objectName() == "ResourceViewWidget::Geometry"))
+            event->acceptProposedAction();
     }
 }

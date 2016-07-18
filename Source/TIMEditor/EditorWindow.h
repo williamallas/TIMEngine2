@@ -2,8 +2,11 @@
 #define EDITORWINDOW_H
 
 #include <QMainWindow>
+#include <QShortcut>
 #include "RendererThread.h"
 #include "interface/XmlMeshAssetLoader.h"
+#include "MeshElement.h"
+#include "SceneEditorWidget.h"
 
 namespace Ui {
 class EditorWindow;
@@ -24,6 +27,11 @@ private:
     RendererThread* _rendererThread;
     tim::interface::XmlMeshAssetLoader _assetLoader;
 
+    QShortcut* _copySC;
+    QString _savePath[SceneEditorWidget::NB_SCENE];
+
+    QString genTitle() const;
+
 public slots:
     void addResourceFolder();
     void addResourceFolderRec();
@@ -40,8 +48,17 @@ private slots:
     void on_actionLoad_collada_triggered();
     void on_action_selectAE_triggered();
     void on_actionScene_1_triggered();
+    void on_actionScene_2_triggered();
+    void on_actionScene_3_triggered();
+    void on_actionScene_4_triggered();
+    void on_actionSave_triggered();
+    void on_actionLoad_triggered();
+    void on_actionSave_As_triggered();
+    void on_actionNew_triggered();
 
     void addAssetToScene(QString);
+    void addGeometryToScene(QString, QString);
+
 
 
 };

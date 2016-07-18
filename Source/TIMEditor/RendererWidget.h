@@ -4,7 +4,6 @@
 #include <QGLWidget>
 #include <QMouseEvent>
 #include <QMessageBox>
-#include <QShortcut>
 
 #include "core/Vector.h"
 
@@ -79,7 +78,6 @@ protected:
     QPoint _lastMousePos;
     bool _shiftPressed=false;
 
-
     int _editMode = MESH_EDITOR;
 
     /* state machine */
@@ -88,8 +86,8 @@ protected:
 
 signals:
     void pressedMouseMoved(int, int);
-    void dropEnterAsset(QString, QDragEnterEvent*);
     void addAssetToScene(QString);
+    void addGeometryToScene(QString, QString);
     void clickInEditor(vec3, vec3);
     void translateMouse(float,float,int);
     void startEdit();
@@ -97,9 +95,11 @@ signals:
     void stateChanged(int);
     void escapePressed();
     void deleteCurrent();
+    void F11_pressed();
 
 public slots:
     void closeContext();
+    void enableTransformationMode(int); // 0->translate 1->scale 2->rotate
 };
 
 #endif // RENDERERWIDGET_H

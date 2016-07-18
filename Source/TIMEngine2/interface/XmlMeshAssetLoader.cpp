@@ -26,7 +26,12 @@ bool XmlMeshAssetLoader::load(std::string filename)
     while(elem)
     {
         if(elem->ValueStr() == std::string("MeshAsset"))
-            parseMeshAssetElement(elem);
+        {
+            std::string name;
+            auto asset = parseMeshAssetElement(elem, name);
+            if(!name.empty() && !asset.empty())
+                _models[name] = std::move(asset);
+        }
 
         elem=elem->NextSiblingElement();
     }
@@ -74,13 +79,10 @@ Mesh XmlMeshAssetLoader::getMesh(std::string name, const renderer::Texture::GenT
     return mesh;
 }
 
-void XmlMeshAssetLoader::parseMeshAssetElement(TiXmlElement* node)
+vector<XmlMeshAssetLoader::MeshElementModel> XmlMeshAssetLoader::parseMeshAssetElement(TiXmlElement* node, std::string& name)
 {
     vector<MeshElementModel> meshModel;
-    std::string name = str(node->Attribute("name"));
-
-    if(name.empty())
-        return;
+    name = StringUtils::str(node->Attribute("name"));
 
     node=node->FirstChildElement();
     while(node)
@@ -98,25 +100,25 @@ void XmlMeshAssetLoader::parseMeshAssetElement(TiXmlElement* node)
                 while(elem)
                 {
                     if(StringUtils(elem->ValueStr()).toLower().str() == "color")
-                        elementModel.color = toColor(str(elem->GetText()));
+                        elementModel.color = toColor(StringUtils::str(elem->GetText()));
                     else if(StringUtils(elem->ValueStr()).toLower().str() == "geometry")
-                        elementModel.geometry = str(elem->GetText());
+                        elementModel.geometry = StringUtils::str(elem->GetText());
 
                     else if(StringUtils(elem->ValueStr()).toLower().str() == "roughness")
-                        elementModel.material[0] = StringUtils(str(elem->GetText())).toFloat();
+                        elementModel.material[0] = StringUtils(StringUtils::str(elem->GetText())).toFloat();
                     else if(StringUtils(elem->ValueStr()).toLower().str() == "metallic")
-                        elementModel.material[1] = StringUtils(str(elem->GetText())).toFloat();
+                        elementModel.material[1] = StringUtils(StringUtils::str(elem->GetText())).toFloat();
                     else if(StringUtils(elem->ValueStr()).toLower().str() == "specular")
-                        elementModel.material[2] = StringUtils(str(elem->GetText())).toFloat();
+                        elementModel.material[2] = StringUtils(StringUtils::str(elem->GetText())).toFloat();
                     else if(StringUtils(elem->ValueStr()).toLower().str() == "emissive")
-                        elementModel.material[3] = StringUtils(str(elem->GetText())).toFloat();
+                        elementModel.material[3] = StringUtils(StringUtils::str(elem->GetText())).toFloat();
 
                     else if(StringUtils(elem->ValueStr()).toLower().str() == "diffusetex")
-                        elementModel.textures[0] = str(elem->GetText());
+                        elementModel.textures[0] = StringUtils::str(elem->GetText());
                     else if(StringUtils(elem->ValueStr()).toLower().str() == "normaltex")
-                        elementModel.textures[1] = str(elem->GetText());
+                        elementModel.textures[1] = StringUtils::str(elem->GetText());
                     else if(StringUtils(elem->ValueStr()).toLower().str() == "materialtex")
-                        elementModel.textures[2] = str(elem->GetText());
+                        elementModel.textures[2] = StringUtils::str(elem->GetText());
 
                     elem=elem->NextSiblingElement();
                 }
@@ -127,8 +129,7 @@ void XmlMeshAssetLoader::parseMeshAssetElement(TiXmlElement* node)
         node=node->NextSiblingElement();
     }
 
-    if(meshModel.size() > 0)
-        _models[name] = meshModel;
+    return meshModel;
 }
 
 vec3 XmlMeshAssetLoader::toColor(std::string str)
@@ -140,12 +141,6 @@ vec3 XmlMeshAssetLoader::toColor(std::string str)
         res[i] = StringUtils(v[i]).toFloat() / 255;
 
     return res;
-}
-
-std::string XmlMeshAssetLoader::str(const char* c)
-{
-    if(c) return std::string(c);
-    else return "";
 }
 
 }

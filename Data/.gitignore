@@ -1,6 +1,16 @@
 /other/
 /skybox/
+/shader/old/
 *.dll
 *.obj
+*.tim
 /Log.txt
 /err.txt
+*.png
+/SpaceBounce/
+*.bmp
+*.xml
+*.exe
+*.jpg
+*.blend
+*.mtl

@@ -203,6 +203,44 @@ Box Box::operator+(const vec3& v) const
                vec3(_box[0].y(), _box[1].y(), _box[2].y())+v);
 }
 
+Plan Box::extractOptimalPlan() const
+{
+    vec3 dir(1,1,1);
+
+    vec3 s = size();
+    for(int i=0 ; i<3 ; ++i)
+    {
+        if(s[i%3] > s[(i+1)%3] && s[i%3] > s[(i+2)%3])
+        {
+            dir[i] = 0;
+            if(s[(i+1)%3] > s[(i+2)%3])
+                dir[(i+1)%3] = 0;
+            else
+                dir[(i+2)%3] = 0;
+
+            break;
+        }
+    }
+
+    return Plan(center(), dir);
+}
+
+Box Box::computeBox(const real* ptr, uint size, uint stride)
+{
+    vec3 minV = vec3::construct(std::numeric_limits<float>::max()), maxV = vec3::construct(std::numeric_limits<float>::min());
+
+    for(uint i=0 ; i<size ; ++i)
+    {
+        for(int j=0 ; j<3 ; ++j)
+        {
+            minV[j] = std::min(minV[j], ptr[j+i*stride]);
+            maxV[j] = std::max(maxV[j], ptr[j+i*stride]);
+        }
+    }
+
+    return Box(minV, maxV);
+}
+
 
 }
 }

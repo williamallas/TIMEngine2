@@ -27,17 +27,16 @@ MainRenderer::MainRenderer(RendererWidget* parent) : _parent(parent)
     _running = true;
 
     _view[0].camera.ratio = 1;
-    _view[0].camera.clipDist = {.1,100};
+    _view[0].camera.clipDist = {.01,100};
     _view[0].camera.pos = {0,-3,0};
     _view[0].camera.dir = {0,0,0};
 
-    _view[1].camera.ratio = 1;
-    _view[1].camera.clipDist = {.1,1000};
-    _view[1].camera.fov = 110;
-
-    _scene[1].globalLight.dirLights.push_back({vec3(1,1,-2), vec4(1,1,1,1), true});
-    _dirLightView[1].dirLightView.lightDir = vec3(1,1,-2);
-
+    for(int i=0 ; i<NB_SCENE-1 ; ++i)
+    {
+        _view[i+1].camera.ratio = 1;
+        _view[i+1].camera.clipDist = {.01,500};
+        _view[i+1].camera.fov = 110;
+    }
 }
 
 void MainRenderer::main()
@@ -45,9 +44,11 @@ void MainRenderer::main()
     lock();
 
     ShaderPool::instance().add("gPass", "shader/gBufferPass.vert", "shader/gBufferPass.frag").value();
+    ShaderPool::instance().add("portalShader", "shader/gBufferPass.vert", "shader/gBufferPass.frag", "", {"PORTAL_SHADER"}).value();
     ShaderPool::instance().add("highlighted", "shader/overlayObject.vert", "shader/overlayObject.frag").value();
     ShaderPool::instance().add("highlightedMoving", "shader/overlayObject.vert", "shader/overlayObject2.frag").value();
     ShaderPool::instance().add("fxaa", "shader/fxaa.vert", "shader/fxaa.frag").value();
+    ShaderPool::instance().add("combineScene", "shader/combineScene.vert", "shader/combineScene.frag").value();
 
     {
     const float lineLength = 1000;
@@ -96,15 +97,13 @@ void MainRenderer::main()
         _lineMesh[i].element(0).drawState().setShader(ShaderPool::instance().get("gPass"));
         _lineMesh[i].element(0).drawState().setPrimitive(DrawState::LINE_STRIP);
     }
+    }
 
-//    DrawState s1, s2;
-//    s1.setPrimitive(DrawState::LINES);
-//    s2.setPrimitive(DrawState::TRIANGLES);
+    _scenePortalsManager = new MultipleSceneHelper(_renderingParameter, _pipeline);
 
-//    s1.debug();
-//    s2.debug();
-//    std::cout << "Comp:" << (s1==s2) << std::endl;
-//    std::cout << "size:" << sizeof(DrawState) << std::endl;
+    for(int i=0 ; i<NB_SCENE-1 ; ++i)
+    {
+        _scenePortalsManager->registerDirLightView(&_scene[i+1], &_dirLightView[i+1]);
     }
 
     resize();
@@ -118,7 +117,7 @@ void MainRenderer::main()
     skybox += "skybox/simple4/nz.png";
 
     setSkybox(0, skybox);
-    setSkybox(1, skybox);
+    //setSkybox(1, skybox);
 
     unlock();
     while(_running)
@@ -137,18 +136,40 @@ void MainRenderer::main()
 
         updateCamera_SceneEditor();
 
-        if(_pipeline.pipeline)
+        if(_pipeline.pipeline())
         {
-            _pipeline.setScene(_scene[_curScene], _view[_curScene]);
-            if(_scene[_curScene].globalLight.dirLights.size() > 0 && _scene[_curScene].globalLight.dirLights[0].projectShadow)
+            _scenePortalsManager->setCurScene(_scene[_curScene]);
+            _scenePortalsManager->setView(_view[_curScene]);
+
+            interface::Scene* sceneCrossed = nullptr;
+            if(_scenePortalsManager->update(sceneCrossed))
             {
-                _dirLightView[_curScene].dirLightView.camPos = _view[_curScene].camera.pos;
-                _dirLightView[_curScene].dirLightView.lightDir = _scene[_curScene].globalLight.dirLights[0].direction;
-                _pipeline.setDirLightView(_dirLightView[_curScene]);
+                for(int i=0 ; i<NB_SCENE ; ++i)
+                {
+                    if(&_scene[i] == sceneCrossed)
+                    {
+                        _view[i] = _view[_curScene];
+                        _curScene = i;
+                        break;
+                    }
+                }
             }
 
-            _pipeline.pipeline->prepare();
-            _pipeline.pipeline->render();
+            _pipeline.setScene(_scene[_curScene], _view[_curScene], 0);
+
+            for(int i=0 ; i<NB_SCENE ; ++i)
+            {
+                if(_scene[i].globalLight.dirLights.size() > 0 && _scene[i].globalLight.dirLights[0].projectShadow)
+                {
+                    _dirLightView[i].dirLightView.camPos = _view[_curScene].camera.pos;
+
+                    if(i == _curScene)
+                        _pipeline.setDirLightView(_dirLightView[_curScene], 0);
+                }
+            }
+
+            _pipeline.pipeline()->prepare();
+            _pipeline.pipeline()->render();
         }
 
         resize();
@@ -187,23 +208,29 @@ void MainRenderer::resize()
     if(_newSize)
     {
         openGL.resetStates();
-        _pipeline.create(_currentSize, _renderingParameter);
-        _pipeline.rendererEntity->envLightRenderer().setEnableGI(true);
-        _pipeline.setScene(_scene[0], _view[0]);
-        _pipeline.rendererEntity->envLightRenderer().setSkybox(_scene[0].globalLight.skybox.first, _scene[0].globalLight.skybox.second);
+        _pipeline.createExtensible(_currentSize, _renderingParameter);
+
+        _scenePortalsManager->setResolution(_currentSize);
+        _scenePortalsManager->rebuild(_scene[_curScene]);
+        //_pipeline.setScene(_scene[_curScene], _view[_curScene], 0);
+
+        for(auto ptr : _pipeline.rendererEntities())
+            ptr->envLightRenderer().setEnableGI(true);
+
+        //_pipeline.rendererEntity->envLightRenderer().setSkybox(_scene[0].globalLight.skybox.first, _scene[0].globalLight.skybox.second);
     }
     _newSize=false;
 }
 
 void MainRenderer::updateCamera_SceneEditor()
 {
-    if(_curScene != 1 || !_enableMove) return;
+    if(_curScene == 0 || !_enableMove) return;
 
-    vec3 newPos    = _view[1].camera.pos,
-         newRelDir = _view[1].camera.dir - _view[1].camera.pos;
+    vec3 newPos    = _view[_curScene].camera.pos,
+         newRelDir = _view[_curScene].camera.dir - _view[_curScene].camera.pos;
 
-    vec3 forward = newRelDir.normalized() * _time * (_speedBoost ? 10:2);
-    vec3 side    = newRelDir.cross(-_view[1].camera.up).normalized() * _time * (_speedBoost ? 10:2);
+    vec3 forward = newRelDir.normalized() * _time * (_speedBoost ? 10:1);
+    vec3 side    = newRelDir.cross(-_view[_curScene].camera.up).normalized() * _time * (_speedBoost ? 10:1);
 
     if(_moveDirection[0])
         newPos += forward;
@@ -215,8 +242,8 @@ void MainRenderer::updateCamera_SceneEditor()
     else if(_moveDirection[3])
         newPos -= side;
 
-    _view[1].camera.pos = newPos;
-    _view[1].camera.dir = _view[1].camera.pos + newRelDir;
+    _view[_curScene].camera.pos = newPos;
+    _view[_curScene].camera.dir = _view[_curScene].camera.pos + newRelDir;
 }
 
 void MainRenderer::addEvent(std::function<void()> f)
@@ -259,6 +286,12 @@ void MainRenderer::updateCamera_SceneEditor(int wheel)
 
 void MainRenderer::setSkybox(int sceneIndex, QList<QString> list)
 {
+    if(list.isEmpty())
+    {
+        getScene(sceneIndex).globalLight.skybox = {nullptr, nullptr};
+        return;
+    }
+
     resource::TextureLoader::ImageFormat formatTex;
     vector<std::string> imgSkybox(6);
     for(int i=0 ; i<list.size() ; ++i)
@@ -273,12 +306,19 @@ void MainRenderer::setSkybox(int sceneIndex, QList<QString> list)
     renderer::Texture* skybox = renderer::Texture::genTextureCube(skyboxParam, dataSkybox, 4);
     renderer::Texture* processedSky =
             renderer::IndirectLightRenderer::processSkybox(skybox,
-            pipeline().rendererEntity->envLightRenderer().processSkyboxShader());
+            (*(pipeline().rendererEntities().begin()))->envLightRenderer().processSkyboxShader());
 
     for(uint j=0 ; j<dataSkybox.size() ; ++j)
         delete[] dataSkybox[j];
 
     getScene(sceneIndex).globalLight.skybox = {skybox, processedSky};
+}
+
+void MainRenderer::setDirectionalLight(uint sceneIndex, const tim::interface::Pipeline::DirectionalLight& l)
+{
+    getScene(sceneIndex).globalLight.dirLights.push_back(l);
+    if(l.projectShadow)
+        _dirLightView[sceneIndex].dirLightView.lightDir = l.direction;
 }
 
 }

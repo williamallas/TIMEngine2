@@ -31,7 +31,7 @@ namespace pipeline
 
 		for (size_t i = 0; i < _input.size(); ++i)
 		{
-			if(_input[i])
+            if(_input[i] && _enableInput[i])
 				_input[i]->render();
 		}
 
@@ -52,12 +52,12 @@ namespace pipeline
 		_fbo.bind();
 		_state.bind();
 
-		for (size_t i = 0; i < _input.size(); ++i)
+        for (size_t i=0 ; i < _input.size() ; ++i)
 		{
-			if (_input[i])
+            if (_input[i] && _enableInput[i])
 			{
                 openGL.bindTextureSampler(textureSampler[TextureMode::OnlyLinearNoRepeat], i);
-				_input[0]->buffer()->bind(i);
+                _input[i]->buffer()->bind(i);
 			}
 		}
 

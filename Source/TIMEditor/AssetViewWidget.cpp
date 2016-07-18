@@ -3,7 +3,6 @@
 #include <QTextStream>
 #include <QFile>
 #include <QFileInfo>
-#include <QDir>
 #include <QDrag>
 #include <QMimeData>
 
@@ -40,11 +39,9 @@ bool AssetViewWidget::getElement(QString name, Element* elemptr) const
     return false;
 }
 
-QIcon AssetViewWidget::getIcon(const Element& elem) const
+QIcon AssetViewWidget::getIcon(const Element&) const
 {
-    if(elem.type == Element::MESH)
-        return _meshIcon;
-    else return _materialIcon;
+    return _meshIcon;
 }
 
 void AssetViewWidget::exportMesh(QString filePath, QString relativeSource)
@@ -56,32 +53,34 @@ void AssetViewWidget::exportMesh(QString filePath, QString relativeSource)
         QTextStream stream(&file);
         for(ItemElement& e : _items)
         {
-            if(e.elem.type == Element::MESH)
+            stream << "<MeshAsset name=\"" << e.elem.name << "\">\n";
+
+            for(Material& m : e.elem.materials)
             {
-                stream << "<MeshAsset name=\"" << e.elem.name << "\">\n";
-
-                for(Material& m : e.elem.materials)
-                {
-                    stream << "\t<Element type=0>\n";
-                    stream << "\t\t<color>" << m.color.red() << "," << m.color.green() << "," << m.color.blue() << "</color>\n";
-                    stream << "\t\t<geometry>" << destDir.relativeFilePath(m.geometry) <<"</geometry>\n";
-                    stream << "\t\t<roughness>" << m.material[0] <<"</roughness>\n";
-                    stream << "\t\t<metallic>" << m.material[1] <<"</metallic>\n";
-                    stream << "\t\t<specular>" << m.material[2] <<"</specular>\n";
-                    stream << "\t\t<emissive>" << m.material[3] <<"</emissive>\n";
-                    if(!m.textures[0].isEmpty())
-                        stream << "\t\t<diffuseTex>" << destDir.relativeFilePath(m.textures[0]) <<"</diffuseTex>\n";
-                    if(!m.textures[1].isEmpty())
-                        stream << "\t\t<normalTex>" << destDir.relativeFilePath(m.textures[1]) <<"</normalTex>\n";
-                    if(!m.textures[2].isEmpty())
-                        stream << "\t\t<materialTex>" << destDir.relativeFilePath(m.textures[2]) <<"</materialTex>\n";
-                    stream << "\t</Element>\n";
-                }
-
-                stream << "</MeshAsset>\n\n";
+                writeMaterial(m, stream, destDir);
             }
+
+            stream << "</MeshAsset>\n\n";
         }
     }
+}
+
+void AssetViewWidget::writeMaterial(const Material& m, QTextStream& stream, QDir& destDir, QString prefix)
+{
+    stream << prefix << "<Element type=0>\n";
+    stream << prefix << "\t<color>" << m.color.red() << "," << m.color.green() << "," << m.color.blue() << "</color>\n";
+    stream << prefix << "\t<geometry>" << destDir.relativeFilePath(m.geometry) <<"</geometry>\n";
+    stream << prefix << "\t<roughness>" << m.material[0] <<"</roughness>\n";
+    stream << prefix << "\t<metallic>" << m.material[1] <<"</metallic>\n";
+    stream << prefix << "\t<specular>" << m.material[2] <<"</specular>\n";
+    stream << prefix << "\t<emissive>" << m.material[3] <<"</emissive>\n";
+    if(!m.textures[0].isEmpty())
+        stream << prefix << "\t<diffuseTex>" << destDir.relativeFilePath(m.textures[0]) <<"</diffuseTex>\n";
+    if(!m.textures[1].isEmpty())
+        stream << prefix << "\t<normalTex>" << destDir.relativeFilePath(m.textures[1]) <<"</normalTex>\n";
+    if(!m.textures[2].isEmpty())
+        stream << prefix << "\t<materialTex>" << destDir.relativeFilePath(m.textures[2]) <<"</materialTex>\n";
+    stream << prefix << "</Element>\n";
 }
 
 void AssetViewWidget::onItemDoubleClicked(QListWidgetItem* item)
@@ -112,18 +111,6 @@ void AssetViewWidget::onItemDoubleClicked(QListWidgetItem* item)
     }
 }
 
-void AssetViewWidget::confirmAssetDrop(QString asset, QDragEnterEvent* event)
-{
-    for(ItemElement& elem : _items)
-    {
-        if(elem.elem.name == asset)
-        {
-            event->acceptProposedAction();
-            return;
-        }
-    }
-}
-
 void AssetViewWidget::mouseMoveEvent(QMouseEvent *event)
 {
     if (!(event->buttons() & Qt::LeftButton))
@@ -138,47 +125,9 @@ void AssetViewWidget::mouseMoveEvent(QMouseEvent *event)
     QList<QUrl> list;
     list.append(QUrl(currentItem()->text()));
     mimeData->setUrls(list);
+    mimeData->setObjectName("AssetViewWidget");
     drag->setMimeData(mimeData);
 
     drag->start(Qt::CopyAction | Qt::MoveAction);
 }
-
-//void ResourceViewWidget::dropEvent(QDropEvent* event)
-//{
-//    const QMimeData* mimeData = event->mimeData();
-//    event->acceptProposedAction();
-//    event->accept();
-
-//   if(mimeData->hasUrls())
-//   {
-//       QList<QUrl> urlList = event->mimeData()->urls();
-//       for(QUrl& url : urlList)
-//       {
-//           addFile(url.toLocalFile());
-//       }
-//   }
-//}
-
-//void ResourceViewWidget::dragEnterEvent(QDragEnterEvent* event)
-//{
-//    if(event->mimeData()->hasUrls())
-//    {
-//        QList<QUrl> urlList = event->mimeData()->urls();
-
-//        for(QUrl& url : urlList)
-//        {
-//            if(isTexture(url.toLocalFile()) || isGeometry(url.toLocalFile()))
-//            {
-//                event->acceptProposedAction();
-//                break;
-//            }
-//        }
-//    }
-//}
-
-//void ResourceViewWidget::dragMoveEvent(QDragMoveEvent* event)
-//{
-//    event->accept();
-//}
-
 

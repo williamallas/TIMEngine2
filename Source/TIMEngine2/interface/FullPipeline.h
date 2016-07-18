@@ -13,6 +13,7 @@ namespace interface
 {
     struct FullPipeline : boost::noncopyable
     {
+        static const int NB_CHANEL = 8;
         ~FullPipeline();
 
         struct Parameter
@@ -23,95 +24,53 @@ namespace interface
 
             bool usePointLight = false;
             bool useSSReflexion = false;
+            bool useFxaa = true;
         };
 
-        Pipeline* pipeline = nullptr;
-        Pipeline::DeferredRendererEntity* rendererEntity = nullptr;
+        Pipeline* pipeline() const { return _pipeline; }
+        bool isStereo() const { return _stereoscopy; }
 
-        pipeline::SimpleSceneMeshCullingNode* meshCuller = nullptr;
-        pipeline::SimpleSceneLightCullingNode* lightCuller = nullptr;
+        Pipeline::InOutBufferNode* combineNode(int index=0) const;
+        const vector<pipeline::DeferredRendererNode*>& deferredRendererNode(int chanel, int eye=0) const;
 
-        pipeline::DirLightCullingNode<SimpleScene>* dirLightCuller = nullptr;
-        pipeline::DirLightShadowNode* shadowRenderer = nullptr;
 
-		/* If not hmd */
-		pipeline::OnScreenRenderer* onScreen = nullptr;
-		pipeline::DeferredRendererNode* rendererNode = nullptr;
-
-		/* Extra node for HMD */
-        Pipeline::TerminalNode* hmdNode = nullptr;
-		pipeline::DeferredRendererNode* hmdEyeRendererNode[2] = { nullptr, nullptr };
-		Pipeline::DeferredRendererEntity* secondRendererEntity = nullptr;
-        pipeline::SimpleFilter* antialiasingFilter[2] = {nullptr, nullptr};
+        const std::set<Pipeline::DeferredRendererEntity*>& rendererEntities() const { return _deferredEntities; }
 
         void create(uivec2, const Parameter&);
-		
-		template<class T>
-		void createForHmd(uivec2, const Parameter&);
+        void createTwoScene(uivec2, const Parameter&, const Parameter&);
+        void createExtensible(uivec2, const Parameter&);
 
-        void setScene(Scene&, View&);
-        void setDirLightView(View&);
+        void setScene(Scene&, View&, int sceneId);
+
+        /* for stereoscopy */
+        void createStero(Pipeline::TerminalNode&, uivec2, const Parameter&);
+        void createStereoExtensible(Pipeline::TerminalNode& hmdNode, uivec2, const Parameter&);
+        void setStereoView(View&, View*[2], int sceneId);
+
+        /* for both */
+        void extendPipeline(uivec2, const Parameter&, int index);
+        void setDirLightView(View&, int sceneId);
+        void setScene(Scene&, int sceneId);
 
     private:
         void setNull();
+        Pipeline::OutBuffersNode* createSubDeferredPipeline(uivec2, const Parameter&, int);
+        std::pair<Pipeline::OutBuffersNode*,Pipeline::OutBuffersNode*> createSubStereoDeferredPipeline(uivec2, const Parameter&, int);
+
+        Pipeline* _pipeline = nullptr;
+        bool _stereoscopy = false;
+
+        std::set<Pipeline::DeferredRendererEntity*> _deferredEntities;
+        vector<pipeline::DeferredRendererNode*> _deferredRendererNodes[2][NB_CHANEL];
+
+        vector<pipeline::SimpleSceneMeshCullingNode*> _meshCullingNodes[NB_CHANEL];
+        vector<pipeline::SimpleSceneLightCullingNode*> _lightCullingNodes[NB_CHANEL];
+
+        vector< pipeline::DirLightCullingNode<SimpleScene>* > _dirLightCullingNodes[NB_CHANEL];
+        vector< Pipeline::DepthMapRendererNode* > _shadowMapNodes[NB_CHANEL];
+
+        Pipeline::InOutBufferNode* _combineMultipleScene[2] = {nullptr, nullptr};
     };
-
-	template<class T>
-	void FullPipeline::createForHmd(uivec2 res, const Parameter& param)
-	{
-		delete pipeline;
-		setNull();
-
-		pipeline = new interface::Pipeline;
-		rendererEntity = &pipeline->genDeferredRendererEntity(res, param.usePointLight, param.useSSReflexion, 0);
-		secondRendererEntity = &pipeline->genDeferredRendererEntity(res, param.usePointLight, param.useSSReflexion, 1);
-		onScreen = nullptr;
-
-		hmdEyeRendererNode[0] = &pipeline->createNode<pipeline::DeferredRendererNode>();
-		hmdEyeRendererNode[1] = &pipeline->createNode<pipeline::DeferredRendererNode>();
-
-		meshCuller = &pipeline->createNode<pipeline::SimpleSceneMeshCullingNode>();
-		if (param.usePointLight) lightCuller = &pipeline->createNode<pipeline::SimpleSceneLightCullingNode>();
-		if (param.useShadow) dirLightCuller = &pipeline->createNode<pipeline::DirLightCullingNode<SimpleScene>>();
-		if (param.useShadow) shadowRenderer = &pipeline->createNode<pipeline::DirLightShadowNode>();
-
-		hmdEyeRendererNode[0]->setRendererEntity(*rendererEntity);
-		hmdEyeRendererNode[1]->setRendererEntity(*secondRendererEntity);
-
-		if (param.useShadow)
-		{
-			shadowRenderer->setDepthMapResolution(param.shadowResolution);
-			shadowRenderer->setShadowLightRange(param.shadowCascad);
-			shadowRenderer->addMeshInstanceCollector(*dirLightCuller);
-			dirLightCuller->setDepthMapResolution(param.shadowResolution);
-			dirLightCuller->setShadowLightRange(param.shadowCascad);
-
-			hmdEyeRendererNode[0]->setDirLightShadow(*shadowRenderer, 0);
-			hmdEyeRendererNode[1]->setDirLightShadow(*shadowRenderer, 0);
-		}
-
-		hmdEyeRendererNode[0]->addMeshInstanceCollector(*meshCuller);
-		hmdEyeRendererNode[1]->addMeshInstanceCollector(*meshCuller);
-
-		if (param.usePointLight)
-		{
-			hmdEyeRendererNode[0]->addLightInstanceCollector(*lightCuller);
-			hmdEyeRendererNode[1]->addLightInstanceCollector(*lightCuller);
-		}
-
-        antialiasingFilter[0] = &pipeline->createNode<pipeline::SimpleFilter>();
-        antialiasingFilter[1] = &pipeline->createNode<pipeline::SimpleFilter>();
-        antialiasingFilter[0]->setShader(ShaderPool::instance().get("fxaa"));
-        antialiasingFilter[1]->setShader(ShaderPool::instance().get("fxaa"));
-
-        antialiasingFilter[0]->setBufferOutputNode(hmdEyeRendererNode[0]->outputNode(0),0);
-        antialiasingFilter[1]->setBufferOutputNode(hmdEyeRendererNode[1]->outputNode(0),0);
-
-		hmdNode = &pipeline->createNode<T>();
-        hmdNode->setBufferOutputNode(antialiasingFilter[0], 0);
-        hmdNode->setBufferOutputNode(antialiasingFilter[1], 1);
-		pipeline->setOutputNode(*hmdNode);
-	}
 }
 }
 #include "MemoryLoggerOff.h"

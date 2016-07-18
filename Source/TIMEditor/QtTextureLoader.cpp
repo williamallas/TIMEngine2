@@ -13,13 +13,30 @@ ubyte* QtTextureLoader::loadImage(const std::string& file, ImageFormat& format) 
     if(textureImg.isNull())
         return nullptr;
 
-    textureImg = QGLWidget::convertToGLFormat(textureImg);
-    ubyte* b = new ubyte[textureImg.byteCount()];
-    memcpy(b, textureImg.bits(), textureImg.byteCount());
-    format.size.x() = textureImg.size().width();
-    format.size.y() = textureImg.size().height();
-    format.nbComponent = 4;
-    return b;
+    QImage glImg = QGLWidget::convertToGLFormat(textureImg);
+
+    if(glImg.isNull())
+    {
+        LOG("Not enough memory to convert ", file, "to gl format (",
+            textureImg.height(),"x", textureImg.width());
+
+        return nullptr;
+    }
+
+    try{
+        ubyte* b = new ubyte[glImg.byteCount()];
+        memcpy(b, glImg.bits(), glImg.byteCount());
+        format.size.x() = glImg.size().width();
+        format.size.y() = glImg.size().height();
+        format.nbComponent = 4;
+        return b;
+    }
+    catch(const std::bad_alloc&)
+    {
+        LOG("Not enough memory to alloc ", file, " (", glImg.byteCount(), " bytes)");
+    }
+
+    return nullptr;
 }
 
 }

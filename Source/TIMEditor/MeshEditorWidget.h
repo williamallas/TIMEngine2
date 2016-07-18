@@ -4,6 +4,7 @@
 #include <QWidget>
 #include "MainRenderer.h"
 #include "MeshElement.h"
+#include "interface/XmlMeshAssetLoader.h"
 
 #include <QColor>
 #include <QModelindex>
@@ -38,6 +39,8 @@ public:
     static tim::interface::Mesh::Element constructMeshElement(const MeshElement&);
     static tim::interface::Mesh highlightMesh(const tim::interface::Mesh&);
 
+    QList<MeshElement> convertFromEngine(const vector<interface::XmlMeshAssetLoader::MeshElementModel>&);
+
 protected:
     Ui::MeshEditor *ui;
     tim::MainRenderer* _renderer;
@@ -58,6 +61,7 @@ protected:
     void updateTexture(int);
 
     void addUiElement(const MeshElement&);
+    void setUi(const MeshElement&);
 
 public slots:
     void dm_roughnessSlider_sliderMoved(int);

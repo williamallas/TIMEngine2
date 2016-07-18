@@ -4,6 +4,7 @@
 #include <QListWidget>
 #include <QListWidgetItem>
 #include <QIcon>
+#include <QDir>
 #include "MeshEditorWidget.h"
 
 class AssetViewWidget : public QListWidget
@@ -19,10 +20,7 @@ public:
 
     struct Element
     {
-        enum { MATERIAL, MESH };
-        int type;
         QString name;
-
         QList<Material> materials;
     };
 
@@ -30,6 +28,7 @@ public:
     bool getElement(QString name, Element*) const;
 
     void exportMesh(QString file, QString relativeSource);
+    static void writeMaterial(const Material&, QTextStream&, QDir& destDir, QString prefix = "\t");
 
 protected:
     MeshEditorWidget* _meshEditor = nullptr;
@@ -45,7 +44,6 @@ protected:
 
 protected slots:
     void onItemDoubleClicked(QListWidgetItem*);
-    void confirmAssetDrop(QString, QDragEnterEvent*);
 
     void mouseMoveEvent(QMouseEvent *event) override;
 

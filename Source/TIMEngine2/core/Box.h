@@ -3,6 +3,7 @@
 
 #include "Vector.h"
 #include "Intersection.h"
+#include "Plan.h"
 
 #include "MemoryLoggerOn.h"
 namespace tim
@@ -17,6 +18,9 @@ namespace core
     {
 
     public:
+
+        static Box computeBox(const real* ptr, uint size, uint stride=1);
+
         Box();
         Box(const Vector<vec2, 3>&);
         Box(const vec3&, const vec3&);
@@ -58,6 +62,8 @@ namespace core
         Intersection collide(const OrientedBox&) const;
 
         Box operator+(const vec3&) const;
+
+        Plan extractOptimalPlan() const;
 
         /* out */
         std::string str() const;

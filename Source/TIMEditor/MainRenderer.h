@@ -6,6 +6,7 @@
 #include "resource/MeshLoader.h"
 #include "resource/AssetManager.h"
 #include "interface/pipeline/pipeline.h"
+#include "MultipleSceneHelper.h"
 
 #include <QMutex>
 #include <QQueue>
@@ -34,10 +35,11 @@ public:
     void updateCamera_MeshEditor(int wheel);
     void updateCamera_SceneEditor(int wheel);
 
-    tim::interface::Pipeline::SceneView& getSceneView(int index) { return _view[index]; }
+    tim::interface::View& getSceneView(int index) { return _view[index]; }
 
-    tim::interface::Pipeline::SceneEntity<tim::interface::SimpleScene>&
-        getScene(int index) { return _scene[index]; }
+    tim::interface::Scene& getScene(int index) { return _scene[index]; }
+
+    MultipleSceneHelper* portalsManager() const { return _scenePortalsManager; }
 
     int getCurSceneIndex() const { return _curScene; }
     void setCurSceneIndex(int index) { _curScene = index; }
@@ -48,6 +50,7 @@ public:
     void addEvent(std::function<void()>);
 
     void setSkybox(int sceneIndex, QList<QString>);
+    void setDirectionalLight(uint sceneIndex, const tim::interface::Pipeline::DirectionalLight&);
 
     const tim::interface::Mesh& lineMesh(uint index) const { return _lineMesh[index]; }
 
@@ -65,10 +68,11 @@ private:
 
 
     /* Shared state */
-    const int NB_SCENE=2;
-    tim::interface::Pipeline::SceneView _view[2];
-    tim::interface::Pipeline::SceneView _dirLightView[2];
-    tim::interface::Pipeline::SceneEntity<tim::interface::SimpleScene> _scene[2];
+    static const int NB_SCENE=5;
+    tim::interface::View _view[NB_SCENE];
+    tim::interface::View _dirLightView[NB_SCENE];
+    tim::interface::Scene _scene[NB_SCENE];
+    MultipleSceneHelper* _scenePortalsManager = nullptr;
 
     int _curScene=0;
     bool _enableMove = false;

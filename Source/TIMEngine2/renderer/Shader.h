@@ -29,9 +29,11 @@ namespace renderer
             WORLD_ORIGIN, INV_PROJVIEW_WORLD_ORIGIN,
             TIME, FRAME_TIME, NB_DRAW,
             CAMERA_WORLD, CAMERA_UP, CAMERA_DIR,
+            CLIP_PLAN_0, CLIP_PLAN_1, CLIP_PLAN_2, CLIP_PLAN_3,
             LASTEngineUniform,
         };
         int engineUniformId(EngineUniform) const;
+        int engineUniformId(int) const;
         int engineTextureScaleId(size_t) const;
 
         void bind() const;
@@ -72,6 +74,7 @@ namespace renderer
     inline uint Shader::id() const { return _id; }
     inline void Shader::bind() const { openGL.bindShader(_id); }
     inline int Shader::engineUniformId(EngineUniform id) const { return _engineUniform[id]; }
+    inline int Shader::engineUniformId(int id) const { return _engineUniform[id]; }
 
     inline void Shader::setUniform(const mat4& x, int id) const { if(id>=0) glUniformMatrix4fv(id, 1, GL_TRUE, x.data()); }
     inline void Shader::setUniform(const mat3& x, int id) const { if(id>=0) glUniformMatrix3fv(id, 1, GL_TRUE, x.data()); }

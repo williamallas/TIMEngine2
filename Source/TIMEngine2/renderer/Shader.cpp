@@ -146,6 +146,10 @@ Option<Shader*> Shader::linkComputeShader(const Option<uint>& cs)
     Shader* prog = new Shader;
     prog->_id = id;
     prog->loadEngineUniform();
+    prog->setUniform(vec4(0,0,0,0), prog->_engineUniform[EngineUniform::CLIP_PLAN_0]);
+    prog->setUniform(vec4(0,0,0,0), prog->_engineUniform[EngineUniform::CLIP_PLAN_1]);
+    prog->setUniform(vec4(0,0,0,0), prog->_engineUniform[EngineUniform::CLIP_PLAN_2]);
+    prog->setUniform(vec4(0,0,0,0), prog->_engineUniform[EngineUniform::CLIP_PLAN_3]);
     return prog;
 }
 
@@ -171,6 +175,11 @@ void Shader::loadEngineUniform()
     _engineUniform[EngineUniform::CAMERA_WORLD] = glGetUniformLocation(_id, "cameraWorld");
     _engineUniform[EngineUniform::CAMERA_UP] = glGetUniformLocation(_id, "cameraUp");
     _engineUniform[EngineUniform::CAMERA_DIR] = glGetUniformLocation(_id, "cameraDir");
+
+    _engineUniform[EngineUniform::CLIP_PLAN_0] = glGetUniformLocation(_id, "clipPlan0");
+    _engineUniform[EngineUniform::CLIP_PLAN_1] = glGetUniformLocation(_id, "clipPlan1");
+    _engineUniform[EngineUniform::CLIP_PLAN_2] = glGetUniformLocation(_id, "clipPlan2");
+    _engineUniform[EngineUniform::CLIP_PLAN_3] = glGetUniformLocation(_id, "clipPlan3");
 
     openGL.bindShader(_id);
 
