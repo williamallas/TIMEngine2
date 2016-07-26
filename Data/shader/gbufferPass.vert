@@ -29,7 +29,7 @@ struct Material
 	uvec2 tex1;
 	uvec2 tex2;
 	vec4 parameter;
-	vec4 color;
+	uvec4 color_scale_unused;
 };
 
 layout(std140, binding = 2) uniform Materials
@@ -52,7 +52,7 @@ void main()
 	
 #ifdef PORTAL_SHADER
 	vec4 worldVert = models[drawId] * vec4(vertex,1);
-	float dist = dot(worldVert, materials[drawId].color);
+	float dist = dot(worldVert, materials[drawId].parameter);
 	
 	if(dist < 0)
 		gl_Position = vec4(cameraPos.xyz,0); // culled out
