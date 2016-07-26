@@ -443,6 +443,17 @@ namespace core
                             2*q.x()*q.z()-2*q.y()*q.w(), 2*q.y()*q.z()+2*q.x()*q.w(), 1-2*q.x()*q.x()-2*q.y()*q.y(), 0,
                             0,0,0,1});
         }
+
+        static Matrix4 constructTransformation(const Matrix3<T>& rot, const Vector3<T>& tr, const Vector3<T>& sc)
+        {
+        #ifndef USE_VCPP
+            Matrix4 trans = rot.template to<4>() * Matrix4::Scale(sc);
+        #else
+            Matrix4 trans = rot.to<4>() * Matrix4::Scale(sc);
+        #endif
+            trans.setTranslation(tr);
+            return trans;
+        }
     };
 
     typedef Matrix4<float> mat4;

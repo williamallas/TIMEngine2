@@ -31,13 +31,23 @@ namespace interface
             void setMetallic(float m) { _mat.parameter[1] = m; }
             void setSpecular(float s) { _mat.parameter[2] = s; }
             void setEmissive(float e) { _mat.parameter[3] = e; }
-            void setColor(const vec4& c) { _mat.color = c; }
+            void setColor(const vec4& c) { _mat.color = packColor(c[0],c[1],c[2],c[3]); }
+            void setTextureScale(float x) { _mat.scale = static_cast<uint>(x * 1000); }
+
+            void setMaterial(const vec4& m) { _mat.parameter = m; }
 
             float roughness() const { return _mat.parameter[0]; }
             float metallic() const { return _mat.parameter[1]; }
             float specular() const { return _mat.parameter[2]; }
             float emissive() const { return _mat.parameter[3]; }
-            vec4 color() const { return _mat.color; }
+            float textureScale() const { return _mat.scale / 1000.f; }
+
+            vec4 color() const
+            {
+                float rgba[4];
+                unpackColor(_mat.color, rgba);
+                return vec4(rgba[0],rgba[1],rgba[2],rgba[3]);
+            }
 
             template <class T>
             void copyUserDefinedMaterial(const T&);
@@ -47,8 +57,11 @@ namespace interface
             void setGeometry(const Geometry& g) { _geometry = g; }
             const Geometry& geometry() const { return _geometry; }
 
-            void setEnable(bool b) { _enable = b; }
-            bool isEnable() const { return _enable; }
+            void setEnable(int e) { _enable = e; }
+            int isEnable() const { return _enable; }
+
+            bool castShadow() const { return _castShadow; }
+            void setCastShadow(bool b) { _castShadow = b; }
 
             void setTexture(const Texture& t, uint index);
             Texture texture(uint index) const { index = std::min(index,2u); return _textures[index]; }
@@ -70,7 +83,8 @@ namespace interface
 
 
             renderer::DrawState _state;
-            bool _enable = true;
+            int _enable = 2;
+            bool _castShadow = true;
 
 
             void setDefault();

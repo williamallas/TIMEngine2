@@ -29,11 +29,22 @@ namespace pipeline
 		if (!_filter || _input.empty() || _input[0] == nullptr)
 			return;
 
-		for (size_t i = 0; i < _input.size(); ++i)
-		{
-            if(_input[i] && _enableInput[i])
-				_input[i]->render();
-		}
+        if(!_invertRenderingOrder)
+        {
+            for (size_t i = 0; i < _input.size(); ++i)
+            {
+                if(_input[i] && _enableInput[i])
+                    _input[i]->render();
+            }
+        }
+        else
+        {
+            for (size_t i = _input.size() ; i >= 1; --i)
+            {
+                if(_input[i-1] && _enableInput[i-1])
+                    _input[i-1]->render();
+            }
+        }
 
 		if (_buffer == nullptr || _buffer->resolution() != _input[0]->buffer()->resolution())
 		{

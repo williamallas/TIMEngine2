@@ -23,6 +23,7 @@ namespace interface
             uint shadowResolution = 2048;
 
             bool usePointLight = false;
+            bool usePostSSReflexion = false;
             bool useSSReflexion = false;
             bool useFxaa = true;
         };
@@ -43,9 +44,9 @@ namespace interface
         void setScene(Scene&, View&, int sceneId);
 
         /* for stereoscopy */
-        void createStero(Pipeline::TerminalNode&, uivec2, const Parameter&);
+        void createStereo(Pipeline::TerminalNode&, uivec2, const Parameter&);
         void createStereoExtensible(Pipeline::TerminalNode& hmdNode, uivec2, const Parameter&);
-        void setStereoView(View&, View*[2], int sceneId);
+        void setStereoView(View&, View& eye1, View& eye2, int sceneId);
 
         /* for both */
         void extendPipeline(uivec2, const Parameter&, int index);

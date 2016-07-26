@@ -27,6 +27,9 @@ void FullPipeline::setScene(Scene& scene, int sceneId)
     for(size_t i=0 ; i<_deferredRendererNodes[0][sceneId].size() ; ++i)
         _deferredRendererNodes[0][sceneId][i]->setGlobalLight(scene.globalLight);
 
+    for(size_t i=0 ; i<_deferredRendererNodes[1][sceneId].size() ; ++i)
+        _deferredRendererNodes[1][sceneId][i]->setGlobalLight(scene.globalLight);
+
     for(size_t i=0 ; i<_meshCullingNodes[sceneId].size() ; ++i)
         _meshCullingNodes[sceneId][i]->setScene(scene);
 
@@ -51,11 +54,13 @@ void FullPipeline::setScene(interface::Scene& scene, interface::View& view, int 
         _lightCullingNodes[sceneId][i]->setSceneView(view);
 }
 
-void FullPipeline::setStereoView(View& cullingView, View* renderView[2], int sceneId)
+void FullPipeline::setStereoView(View& cullingView, View& eye1,  View& eye2, int sceneId)
 {
-    for(int j=0 ; j<2 ; ++j)
-        for(size_t i=0 ; i<_deferredRendererNodes[0][sceneId].size() ; ++i)
-            _deferredRendererNodes[j][sceneId][i]->setSceneView(*renderView[j]);
+    for(size_t i=0 ; i<_deferredRendererNodes[0][sceneId].size() ; ++i)
+        _deferredRendererNodes[0][sceneId][i]->setSceneView(eye1);
+
+    for(size_t i=0 ; i<_deferredRendererNodes[1][sceneId].size() ; ++i)
+        _deferredRendererNodes[1][sceneId][i]->setSceneView(eye2);
 
     for(size_t i=0 ; i<_meshCullingNodes[sceneId].size() ; ++i)
         _meshCullingNodes[sceneId][i]->setSceneView(cullingView);
@@ -176,13 +181,15 @@ void FullPipeline::extendPipeline(uivec2 res, const Parameter& param, int index)
     }
 }
 
-void FullPipeline::createStero(Pipeline::TerminalNode& hmdNode, uivec2 res, const Parameter& param)
+void FullPipeline::createStereo(Pipeline::TerminalNode& hmdNode, uivec2 res, const Parameter& param)
 {
     delete _pipeline;
     setNull();
 
     _pipeline = new interface::Pipeline;
     _stereoscopy = true;
+
+    _pipeline->registerNode(&hmdNode);
 
     auto stereoRenderer = createSubStereoDeferredPipeline(res, param, 0);
 
@@ -215,26 +222,36 @@ void FullPipeline::createStereoExtensible(Pipeline::TerminalNode& hmdNode, uivec
     _pipeline = new interface::Pipeline;
     _stereoscopy = true;
 
+    _pipeline->registerNode(&hmdNode);
+
     auto stereoRenderer = createSubStereoDeferredPipeline(res, param, 0);
+
     Pipeline::OutBuffersNode* stereo[2] = {stereoRenderer.first, stereoRenderer.second};
 
-    pipeline::SimpleFilter *copyNode[2], *copyMaterial[2], *combineNode[2];
+    pipeline::SimpleFilter *combineNode[2];
+    //pipeline::SimpleFilter *copyNode[2], *copyMaterial[2];
 
     for(int i=0 ; i<2 ; ++i)
     {
-        copyNode[i] = &_pipeline->createNode<pipeline::SimpleFilter>();
-        copyMaterial[i] = &_pipeline->createNode<pipeline::SimpleFilter>();
+        //copyNode[i] = &_pipeline->createNode<pipeline::SimpleFilter>();
+        //copyMaterial[i] = &_pipeline->createNode<pipeline::SimpleFilter>();
         combineNode[i] = &_pipeline->createNode<pipeline::SimpleFilter>();
 
-        copyNode[i]->setShader(renderer::drawQuadShader);
-        copyNode[i]->setBufferOutputNode(stereo[i]->outputNode(0),0);
+//        copyNode[i]->setShader(renderer::drawQuadShader);
+//        copyNode[i]->setBufferOutputNode(stereo[i]->outputNode(0),0);
 
-        copyMaterial[i]->setShader(renderer::drawQuadShader);
-        copyMaterial[i]->setBufferOutputNode(stereo[i]->outputNode(3),0);
+//        copyMaterial[i]->setShader(renderer::drawQuadShader);
+//        copyMaterial[i]->setBufferOutputNode(stereo[i]->outputNode(3),0);
+
+//        combineNode[i]->setShader(ShaderPool::instance().get("combineScene"));
+//        combineNode[i]->setBufferOutputNode(copyMaterial[i], 0);
+//        combineNode[i]->setBufferOutputNode(copyNode[i], 1);
 
         combineNode[i]->setShader(ShaderPool::instance().get("combineScene"));
-        combineNode[i]->setBufferOutputNode(copyMaterial[i], 0);
-        combineNode[i]->setBufferOutputNode(copyNode[i], 1);
+        combineNode[i]->setBufferOutputNode(stereo[i]->outputNode(3), 0);
+        combineNode[i]->setBufferOutputNode(stereo[i]->outputNode(0), 1);
+        combineNode[i]->setInvertRenderingOrder(true);
+        _combineMultipleScene[i] = combineNode[i];
     }
 
     if(param.useFxaa)
@@ -265,9 +282,13 @@ Pipeline::OutBuffersNode* FullPipeline::createSubDeferredPipeline(uivec2 res, co
     if(!_pipeline)
         return nullptr;
 
-    Pipeline::DeferredRendererEntity& rendererEntity = _pipeline->genDeferredRendererEntity(res, param.usePointLight, param.useSSReflexion);
+    Pipeline::DeferredRendererEntity& rendererEntity = _pipeline->genDeferredRendererEntity(res, param.usePointLight, param.usePostSSReflexion);
+    rendererEntity.envLightRenderer().setEnableSSReflexion(param.useSSReflexion);
 
     pipeline::DeferredRendererNode& rendererNode = _pipeline->createNode<pipeline::DeferredRendererNode>();
+    if(chanel > 0)
+        rendererNode.setAuxiliar(true);
+
     pipeline::SimpleSceneMeshCullingNode& meshCuller = _pipeline->createNode<pipeline::SimpleSceneMeshCullingNode>();
 
     pipeline::SimpleSceneLightCullingNode* lightCuller = nullptr;
@@ -310,10 +331,17 @@ std::pair<Pipeline::OutBuffersNode*,Pipeline::OutBuffersNode*>
     if(!_pipeline)
         return {nullptr,nullptr};
 
-    Pipeline::DeferredRendererEntity& rendererEntity = _pipeline->genDeferredRendererEntity(res, param.usePointLight, param.useSSReflexion);
+    Pipeline::DeferredRendererEntity& rendererEntity = _pipeline->genDeferredRendererEntity(res, param.usePointLight, param.usePostSSReflexion);
+    rendererEntity.envLightRenderer().setEnableSSReflexion(param.useSSReflexion);
 
     pipeline::DeferredRendererNode& rendererNode1 = _pipeline->createNode<pipeline::DeferredRendererNode>();
     pipeline::DeferredRendererNode& rendererNode2 = _pipeline->createNode<pipeline::DeferredRendererNode>();
+    if(chanel > 0)
+    {
+        rendererNode1.setAuxiliar(true);
+        rendererNode2.setAuxiliar(true);
+    }
+
     pipeline::SimpleSceneMeshCullingNode& meshCuller = _pipeline->createNode<pipeline::SimpleSceneMeshCullingNode>();
 
     pipeline::SimpleSceneLightCullingNode* lightCuller = nullptr;

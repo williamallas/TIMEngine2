@@ -23,11 +23,20 @@ namespace pipeline
         void render() override;
 
         void setRendererEntity(Pipeline::DeferredRendererEntity&);
+        void setScissorTest(bool b, vec2 coord = {0,0}, vec2 size = {1,1});
+
+        bool isAuxiliar() const { return _isAux; }
+        void setAuxiliar(bool b) { _isAux = b; }
 
     private:
         renderer::MeshRenderer& _meshDrawer;
 
         vector<std::reference_wrapper<LightInstance>> _culledLight;
+
+        bool _useScissor = false;
+        vec2 _coordScissor = {0,0};
+        vec2 _sizeScissor = {1,1};
+        bool _isAux = false;
 
         struct EInst
         {
@@ -40,6 +49,8 @@ namespace pipeline
         vector<ElementInstance> _toDraw;
 
         Pipeline::DeferredRendererEntity* _rendererEntity = nullptr;
+        renderer::FrameBuffer* _copyToFBO = nullptr;
+        renderer::Texture* _copyBuffer = nullptr;
     };
 }
 

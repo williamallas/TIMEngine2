@@ -21,6 +21,13 @@ renderer::Texture* DeferredRendererNode::buffer(uint index) const
     else return nullptr;
 }
 
+void DeferredRendererNode::setScissorTest(bool b, vec2 coord, vec2 size)
+{
+    _useScissor = b;
+    _coordScissor = coord;
+    _sizeScissor = size;
+}
+
 void DeferredRendererNode::prepare()
 {
     if(!tryPrepare()) return;
@@ -38,7 +45,7 @@ void DeferredRendererNode::prepare()
         for(const MeshInstance& m : culledMesh)
         {
             for(uint i=0 ; i<m.mesh().nbElements() ; ++i)
-                if(m.mesh().element(i).isEnable())
+                if(m.mesh().element(i).isEnable() == 2 || (!_isAux && m.mesh().element(i).isEnable() == 1))
                     _toDraw.push_back({&(m.mesh().element(i)), &(m.matrix()), &(m.attachedUBO())});
         }
     }
@@ -75,6 +82,21 @@ void DeferredRendererNode::render()
 
     openGL.clearDepth();
     openGL.clearColor(vec4::construct(0));
+
+    openGL.scissorTest(_useScissor);
+    if(_useScissor)
+    {
+        if(buffer(0))
+        {
+            uivec2 coord = {static_cast<uint>(buffer(0)->resolution().x() * _coordScissor.x()),
+                            static_cast<uint>(buffer(0)->resolution().y() * _coordScissor.y())};
+            uivec2 size = {static_cast<uint>(buffer(0)->resolution().x() * _sizeScissor.x()),
+                           static_cast<uint>(buffer(0)->resolution().y() * _sizeScissor.y())};
+
+            openGL.scissorParam(coord, size);
+        }
+
+    }
 
     for(int i=0 ; i<NB_CLIP_PLAN ; ++i)
         if(_useClipPlan[i]) glEnable(GL_CLIP_DISTANCE0+i);
@@ -166,11 +188,13 @@ void DeferredRendererNode::render()
 
     if(_globalLightInfo)
     {
+        openGL.scissorTest(false);
         for(uint i=0 ; i<std::min(_dirLightDepthMapRenderer.size(),_globalLightInfo->dirLights.size()) ; ++i)
         {
             if(_dirLightDepthMapRenderer[i] && _globalLightInfo->dirLights[i].projectShadow)
                 _dirLightDepthMapRenderer[i]->render();
         }
+        openGL.scissorTest(_useScissor);
 
         vector<DirectionalLightRenderer::Light> lights(_globalLightInfo->dirLights.size());
         for(uint i=0 ; i<_globalLightInfo->dirLights.size() ; ++i)
@@ -187,12 +211,35 @@ void DeferredRendererNode::render()
         }
         _rendererEntity->dirLightRenderer().draw(lights);
 
+        if(_rendererEntity->envLightRenderer().isLocalReflexionEnabled())
+        {
+            if(!_copyToFBO)
+            {
+                renderer::Texture::GenTexParam param;
+                param.size = uivec3(_rendererEntity->lightContext()->resolution(), 0);
+                param.nbLevels = 1;
+                param.format = _rendererEntity->lightContext()->buffer()->format();
+                _copyBuffer = renderer::Texture::genTexture2D(param);
+
+                _copyToFBO = new renderer::FrameBuffer(_rendererEntity->lightContext()->resolution());
+                _copyToFBO->attachTexture(0, _copyBuffer);
+            }
+
+            openGL.scissorTest(false);
+            _rendererEntity->lightContext()->frameBuffer().copyTo(*_copyToFBO);
+            openGL.scissorTest(_useScissor);
+
+            _rendererEntity->envLightRenderer().setReflexionBuffer(_copyBuffer);
+        }
+
         _rendererEntity->envLightRenderer().setSkybox(_globalLightInfo->skybox.first, _globalLightInfo->skybox.second);
         _rendererEntity->envLightRenderer().draw();
     }
 
     if(_rendererEntity->reflexionRenderer())
         _rendererEntity->reflexionRenderer()->draw();
+
+    openGL.scissorTest(false);
 }
 
 void DeferredRendererNode::setRendererEntity(Pipeline::DeferredRendererEntity& entity)

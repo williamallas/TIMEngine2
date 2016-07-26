@@ -52,7 +52,9 @@ namespace renderer
         uivec2 header;
         uint64_t texures[3];
         vec4 parameter;
-        vec4 color;
+        uint color;
+        uint scale;
+        uint unused[2];
     };
     static_assert(sizeof(DummyMaterial) == sizeof(mat4), "DummyMaterial struct is too big or to small.");
     static_assert(sizeof(Material) == sizeof(DummyMaterial), "Material struct is too big or to small.");

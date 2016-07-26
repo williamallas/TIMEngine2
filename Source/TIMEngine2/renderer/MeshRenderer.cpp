@@ -52,6 +52,8 @@ int MeshRenderer::draw(const vector<MeshBuffers*>& meshs, const vector<mat4>& mo
        || (!extraUbo.empty() && extraUbo.size() < meshs.size()))
         return 0;
 
+    openGL.alphaTest(false);
+
 #ifdef USE_SSBO_MODELS
     if(_modelBuffer.size() < models.size())
         _modelBuffer.create(models.size(), &models[0], DrawMode::STREAM);

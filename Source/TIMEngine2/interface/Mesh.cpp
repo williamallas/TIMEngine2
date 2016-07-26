@@ -14,6 +14,7 @@ Mesh::Element::Element(const Geometry& g, float roughness, float metallic, const
     setSpecular(specular);
     setEmissive(0);
     setColor(color);
+    setTextureScale(1);
 }
 
 Mesh::Element::Element()
@@ -52,7 +53,8 @@ void Mesh::Element::setTexture(const Texture& t, uint index)
 
 void Mesh::Element::setDefault()
 {
-    _enable = true;
+    _enable = 2;
+    _castShadow = false;
     _state = renderer::DrawState();
     for(int i=0 ; i<3 ; ++i)
         setTexture(Texture(), i);
@@ -62,6 +64,7 @@ void Mesh::Element::setDefault()
     setSpecular(0.1);
     setEmissive(0);
     setColor(vec4::construct(0.7));
+    setTextureScale(1);
 }
 
 void Mesh::Element::flushMat()
