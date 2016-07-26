@@ -262,7 +262,7 @@
            <double>0.050000000000000</double>
           </property>
           <property name="value">
-           <double>0.200000000000000</double>
+           <double>0.100000000000000</double>
           </property>
          </widget>
         </item>
@@ -384,6 +384,46 @@
          <enum>Qt::Horizontal</enum>
         </property>
        </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_5">
+        <item>
+         <widget class="QLabel" name="label_6">
+          <property name="text">
+           <string>Texture Scale:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSlider" name="dm_textureScaleSlider">
+          <property name="minimum">
+           <number>1</number>
+          </property>
+          <property name="maximum">
+           <number>1000</number>
+          </property>
+          <property name="value">
+           <number>500</number>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QDoubleSpinBox" name="dm_textureScaleVal">
+          <property name="decimals">
+           <number>3</number>
+          </property>
+          <property name="singleStep">
+           <double>0.100000000000000</double>
+          </property>
+          <property name="value">
+           <double>1.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item>
        <layout class="QGridLayout" name="gridLayout_2">
@@ -552,8 +592,8 @@
    <slot>updateMaterial()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>102</x>
-     <y>317</y>
+     <x>148</x>
+     <y>342</y>
     </hint>
     <hint type="destinationlabel">
      <x>252</x>
@@ -568,8 +608,8 @@
    <slot>updateMaterial()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>157</x>
-     <y>319</y>
+     <x>224</x>
+     <y>342</y>
     </hint>
     <hint type="destinationlabel">
      <x>252</x>
@@ -584,8 +624,8 @@
    <slot>updateMaterial()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>219</x>
-     <y>317</y>
+     <x>300</x>
+     <y>342</y>
     </hint>
     <hint type="destinationlabel">
      <x>252</x>
@@ -600,8 +640,8 @@
    <slot>selectGeometryFromResources()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>182</x>
-     <y>226</y>
+     <x>260</x>
+     <y>276</y>
     </hint>
     <hint type="destinationlabel">
      <x>369</x>
@@ -616,8 +656,8 @@
    <slot>removeElement()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>228</x>
-     <y>228</y>
+     <x>301</x>
+     <y>276</y>
     </hint>
     <hint type="destinationlabel">
      <x>349</x>

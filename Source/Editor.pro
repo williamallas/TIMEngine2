@@ -138,7 +138,8 @@ FORMS += \
     TIMEditor/MeshEditor.ui \
     TIMEditor/SceneEditor.ui \
     TIMEditor/SelectResourcesDialog.ui \
-    TIMEditor/SelectSkyboxDialog.ui
+    TIMEditor/SelectSkyboxDialog.ui \
+    TIMEditor/lightcomponent.ui
 
 RESOURCES += \
     ../EditorResources.qrc

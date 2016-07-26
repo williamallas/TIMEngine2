@@ -23,7 +23,7 @@ public:
 
     QIcon getResourceIconForPath(QString path);
 
-    QList<QString> selectResources(int type, QWidget*, bool singleSelection);
+    QList<QString> selectResources(int type, QWidget*, bool singleSelection, bool& emptySelected);
 
 protected:
     struct ItemElement

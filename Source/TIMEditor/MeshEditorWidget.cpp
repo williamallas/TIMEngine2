@@ -5,6 +5,8 @@
 #include <QListWidgetItem>
 #include <QFileInfo>
 
+#undef DrawState
+
 using namespace tim;
 using namespace tim::core;
 using namespace tim::interface;
@@ -19,10 +21,13 @@ MeshEditorWidget::MeshEditorWidget(QWidget* parent) : QWidget(parent), ui(new Ui
     connect(ui->dm_metallicSlider, SIGNAL(sliderMoved(int)), this, SLOT(dm_metallicSlider_sliderMoved(int)));
     connect(ui->dm_specularSlider, SIGNAL(sliderMoved(int)), this, SLOT(dm_specularSlider_sliderMoved(int)));
     connect(ui->dm_emissiveSlider, SIGNAL(sliderMoved(int)), this, SLOT(dm_emissiveSlider_sliderMoved(int)));
+    connect(ui->dm_textureScaleSlider, SIGNAL(sliderMoved(int)), this, SLOT(dm_textureScaleSlider_sliderMoved(int)));
 
     connect(ui->dm_roughnessVal, SIGNAL(valueChanged(double)), this, SLOT(dm_roughnessVal_valueChanged(double)));
     connect(ui->dm_metallicVal, SIGNAL(valueChanged(double)), this, SLOT(dm_metallicVal_valueChanged(double)));
+    connect(ui->dm_specularVal, SIGNAL(valueChanged(double)), this, SLOT(dm_specularVal_valueChanged(double)));
     connect(ui->dm_emissiveVal, SIGNAL(valueChanged(double)), this, SLOT(dm_emissiveVal_valueChanged(double)));
+    connect(ui->dm_textureScaleVal, SIGNAL(valueChanged(double)), this, SLOT(dm_textureScaleVal_valueChanged(double)));
 
     connect(ui->dmSelectColor, SIGNAL(pressed()), this, SLOT(dmSelectColor_clicked()));
 }
@@ -79,6 +84,10 @@ void MeshEditorWidget::setEditedMesh(MeshInstance* node, MeshInstance* highlight
 
         ui->meshPartView->clear();
         ui->meshName->setText("");
+
+        ui->diffuseTex->setIcon(QIcon());
+        ui->normalTex->setIcon(QIcon());
+        ui->materialTex->setIcon(QIcon());
 
         return;
     }
@@ -162,6 +171,7 @@ Mesh::Element MeshEditorWidget::constructMeshElement(const MeshElement& elem)
     melem.setRoughness(elem.material.x());
     melem.setMetallic(elem.material.y());
     melem.setSpecular(elem.material.z());
+    melem.setTextureScale(elem.textureScale);
 
     for(int i=0 ; i<MeshElement::NB_TEXTURES ; ++i)
     {
@@ -180,6 +190,15 @@ Mesh::Element MeshEditorWidget::constructMeshElement(const MeshElement& elem)
     }
 
     melem.drawState().setShader(ShaderPool::instance().get("gPass"));
+    if(elem.useAdvanced)
+    {
+        melem.drawState() = elem.advanced;
+        if(!elem.advancedShader.isEmpty())
+            melem.drawState().setShader(ShaderPool::instance().get(elem.advancedShader.toStdString()));
+        else
+            melem.drawState().setShader(ShaderPool::instance().get("gPass"));
+    }
+
     return melem;
 }
 
@@ -237,12 +256,20 @@ void MeshEditorWidget::updateTexture(int texId)
     if(_curElementIndex < 0)
         return;
 
-    QList<QString> list = _resourceWidget->selectResources(ResourceViewWidget::Element::Texture, this, true);
-    if(list.empty())
+    bool clearTexture = false;
+    QList<QString> list = _resourceWidget->selectResources(ResourceViewWidget::Element::Texture, this, true, clearTexture);
+    if(list.empty() && !clearTexture)
         return;
-
-    (*_editedMaterials)[_curElementIndex].textures[texId] = list[0];
-    (*_editedMaterials)[_curElementIndex].texturesIcon[texId] = _resourceWidget->getResourceIconForPath(list[0]);
+    else if(list.empty() && clearTexture)
+    {
+        (*_editedMaterials)[_curElementIndex].textures[texId] = "";
+        (*_editedMaterials)[_curElementIndex].texturesIcon[texId] = QIcon();
+    }
+    else
+    {
+        (*_editedMaterials)[_curElementIndex].textures[texId] = list[0];
+        (*_editedMaterials)[_curElementIndex].texturesIcon[texId] = _resourceWidget->getResourceIconForPath(list[0]);
+    }
 
    switch(texId)
    {
@@ -256,9 +283,21 @@ void MeshEditorWidget::updateTexture(int texId)
        break;
    }
 
-    std::string texFile = list[0].toStdString();
+   std::string texFile;
+   if(!list.empty())
+    texFile = list[0].toStdString();
+
     _renderer->addEvent([=](){
+
         Mesh mesh = _editedMesh->mesh();
+
+        if(texFile.empty())
+        {
+            mesh.element(_curElementIndex).setTexture(Texture(), texId);
+            _editedMesh->setMesh(mesh);
+            return;
+        }
+
         renderer::Texture::GenTexParam param;
         param.linear = true;
         param.repeat = true;
@@ -280,7 +319,12 @@ QList<MeshElement> MeshEditorWidget::convertFromEngine(const vector<interface::X
         MeshElement mat;
         mat.color = QColor(255*model[i].color.x(), 255*model[i].color.y(), 255*model[i].color.z());
         mat.material = model[i].material;
-        mat.geometry = model[i].geometry.c_str();
+        mat.geometry = QString::fromStdString(model[i].geometry.c_str());
+        mat.textureScale = model[i].textureScale;
+
+        mat.advanced = model[i].advanced;
+        mat.advancedShader = QString::fromStdString(model[i].advancedShader);
+        mat.useAdvanced = model[i].useAdvanced;
 
         for(int j=0 ; j<MeshElement::NB_TEXTURES ; ++j)
         {
@@ -323,6 +367,12 @@ void MeshEditorWidget::dm_emissiveSlider_sliderMoved(int n)
     updateMaterial();
 }
 
+void MeshEditorWidget::dm_textureScaleSlider_sliderMoved(int n)
+{
+    ui->dm_textureScaleVal->setValue(pow(1.01, double(n) - (ui->dm_emissiveSlider->maximum() / 2)));
+    updateMaterial();
+}
+
 
 void MeshEditorWidget::dm_roughnessVal_valueChanged(double n)
 {
@@ -345,6 +395,18 @@ void MeshEditorWidget::dm_specularVal_valueChanged(double n)
 void MeshEditorWidget::dm_emissiveVal_valueChanged(double n)
 {
     ui->dm_emissiveSlider->setValue(int(n*ui->dm_emissiveSlider->maximum()));
+    updateMaterial();
+}
+
+int convertTexScaleForSlider(double n)
+{
+    return 500 + int(log(double(n)) / log(1.01));
+}
+
+void MeshEditorWidget::dm_textureScaleVal_valueChanged(double n)
+{
+    int v = convertTexScaleForSlider(n);
+    ui->dm_textureScaleSlider->setValue(v);
     updateMaterial();
 }
 
@@ -376,9 +438,16 @@ void MeshEditorWidget::updateMaterial()
                       (*_editedMaterials)[_curElementIndex].color.green(),
                       (*_editedMaterials)[_curElementIndex].color.blue(), 255) / vec4::construct(255);
 
+    (*_editedMaterials)[_curElementIndex].textureScale = ui->dm_textureScaleVal->value();
+    float texScale = ui->dm_textureScaleVal->value();
+
     int index = _curElementIndex;
     MeshInstance* editedMesh = _editedMesh;
     MeshInstance* hMesh = _highlightedMesh;
+
+    bool useAdvanced = (*_editedMaterials)[_curElementIndex].useAdvanced;
+    renderer::DrawState adv = (*_editedMaterials)[_curElementIndex].advanced;
+    std::string advShader = (*_editedMaterials)[_curElementIndex].advancedShader.toStdString();
 
     _renderer->addEvent([=](){
         Mesh mesh = editedMesh->mesh();
@@ -390,6 +459,17 @@ void MeshEditorWidget::updateMaterial()
         mesh.element(index).setSpecular(material.z());
         mesh.element(index).setEmissive(material.w());
         mesh.element(index).setColor(color);
+        mesh.element(index).setTextureScale(texScale);
+
+        mesh.element(index).drawState().setShader(ShaderPool::instance().get("gPass"));
+        if(useAdvanced)
+        {
+            mesh.element(index).drawState() = adv;
+            if(!advShader.empty())
+                mesh.element(index).drawState().setShader(ShaderPool::instance().get(advShader));
+        }
+
+
         editedMesh->setMesh(mesh);
 
         if(hMesh) hMesh->setMesh(highlightMesh(mesh));
@@ -422,10 +502,12 @@ void MeshEditorWidget::setUi(const MeshElement& mat)
     ui->dm_metallicVal->blockSignals(true);
     ui->dm_specularVal->blockSignals(true);
     ui->dm_emissiveVal->blockSignals(true);
+    ui->dm_textureScaleVal->blockSignals(true);
     ui->dm_roughnessSlider->blockSignals(true);
     ui->dm_metallicSlider->blockSignals(true);
     ui->dm_specularSlider->blockSignals(true);
     ui->dm_emissiveSlider->blockSignals(true);
+    ui->dm_textureScaleSlider->blockSignals(true);
 
     ui->dm_colorR->setValue(mat.color.red());
     ui->dm_colorG->setValue(mat.color.green());
@@ -436,11 +518,13 @@ void MeshEditorWidget::setUi(const MeshElement& mat)
     ui->dm_metallicVal->setValue(mat.material.y());
     ui->dm_specularVal->setValue(mat.material.z());
     ui->dm_emissiveVal->setValue(mat.material.w());
+    ui->dm_textureScaleVal->setValue(mat.textureScale);
 
     ui->dm_roughnessSlider->setValue(int(mat.material.x()*ui->dm_roughnessSlider->maximum()));
     ui->dm_metallicSlider->setValue(int(mat.material.y()*ui->dm_metallicSlider->maximum()));
     ui->dm_specularSlider->setValue(int(mat.material.z()*ui->dm_specularSlider->maximum()));
     ui->dm_emissiveSlider->setValue(int(mat.material.w()*ui->dm_emissiveSlider->maximum()));
+    ui->dm_textureScaleSlider->setValue(convertTexScaleForSlider(mat.textureScale));
     ui->diffuseTex->setIcon(mat.texturesIcon[0]);
     ui->normalTex->setIcon(mat.texturesIcon[1]);
     ui->materialTex->setIcon(mat.texturesIcon[2]);
@@ -452,15 +536,21 @@ void MeshEditorWidget::setUi(const MeshElement& mat)
     ui->dm_metallicVal->blockSignals(false);
     ui->dm_specularVal->blockSignals(false);
     ui->dm_emissiveVal->blockSignals(false);
+    ui->dm_textureScaleVal->blockSignals(false);
     ui->dm_roughnessSlider->blockSignals(false);
     ui->dm_metallicSlider->blockSignals(false);
     ui->dm_specularSlider->blockSignals(false);
     ui->dm_emissiveSlider->blockSignals(false);
+    ui->dm_textureScaleSlider->blockSignals(false);
 }
 
 void MeshEditorWidget::selectGeometryFromResources()
 {
-    QList<QString> elems = _resourceWidget->selectResources(ResourceViewWidget::Element::Geometry, this, false);
+    if(!_editedMaterials)
+        return;
+
+    bool tmp;
+    QList<QString> elems = _resourceWidget->selectResources(ResourceViewWidget::Element::Geometry, this, false, tmp);
     for(QString& str : elems)
     {
         addElement(str);

@@ -25,14 +25,17 @@ public:
     QList<QString> selectedItems() const;
 
     void registerItem(QListWidgetItem* item, QString path) { _itemToPath[item]=path; }
+    bool isEmptySelected() const { return _emptySelected; }
 
 protected slots:
     void confirmSelection();
     void itemDoubleClicked(QListWidgetItem * item);
+    void emptySelected();
 
 private:
     Ui::SelectResourcesDialog *ui;
     QList<QString> _selectedItems;
+    bool _emptySelected = false;
 
     QMap<QListWidgetItem*, QString> _itemToPath;
 

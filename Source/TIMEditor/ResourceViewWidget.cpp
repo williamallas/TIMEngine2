@@ -42,7 +42,7 @@ void ResourceViewWidget::addElement(Element e)
     _items += {e, ic, ol};
 }
 
-QList<QString> ResourceViewWidget::selectResources(int type, QWidget* parent, bool singleSelection)
+QList<QString> ResourceViewWidget::selectResources(int type, QWidget* parent, bool singleSelection, bool& emptySelected)
 {
     SelectResourcesDialog dialog(parent);
     if(singleSelection)
@@ -58,6 +58,7 @@ QList<QString> ResourceViewWidget::selectResources(int type, QWidget* parent, bo
         }
     }
     dialog.exec();
+    emptySelected = dialog.isEmptySelected();
     return dialog.selectedItems();
 }
 

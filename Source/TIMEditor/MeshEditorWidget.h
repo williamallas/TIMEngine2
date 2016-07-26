@@ -68,11 +68,13 @@ public slots:
     void dm_metallicSlider_sliderMoved(int);
     void dm_specularSlider_sliderMoved(int);
     void dm_emissiveSlider_sliderMoved(int);
+    void dm_textureScaleSlider_sliderMoved(int);
 
     void dm_roughnessVal_valueChanged(double);
     void dm_metallicVal_valueChanged(double);
     void dm_specularVal_valueChanged(double);
     void dm_emissiveVal_valueChanged(double);
+    void dm_textureScaleVal_valueChanged(double);
 
     void dmSelectColor_clicked();
     void itemSelectionChanged(QModelIndex);

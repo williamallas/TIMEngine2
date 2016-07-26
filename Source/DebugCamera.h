@@ -28,9 +28,9 @@ namespace tim
                 boostv*=5;
 
             if(_input->keyState(SDLK_w).pressed)
-                cam.pos+=cam.dir*time*boostv;
+                cam.pos+=cam.dir*time*boostv*0.3;
             else if(_input->keyState(SDLK_s).pressed)
-                cam.pos-=cam.dir*time*boostv;
+                cam.pos-=cam.dir*time*boostv*0.3;
 
             if(_input->keyState(SDLK_a).pressed)
                 cam.pos-=cam.dir.cross(cam.up).normalized()*time*boostv*0.3;

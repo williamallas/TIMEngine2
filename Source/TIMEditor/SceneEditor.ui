@@ -225,16 +225,34 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="resetRotButton">
+         <widget class="QPushButton" name="deleteButton">
           <property name="text">
-           <string>Reset Rot</string>
+           <string>Delete</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_7">
+        <item>
+         <widget class="QPushButton" name="copyTransButton">
+          <property name="text">
+           <string>Copy Trans</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="deleteButton">
+         <widget class="QPushButton" name="pastTransButton">
           <property name="text">
-           <string>Delete</string>
+           <string>Past Trans</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="resetRotButton">
+          <property name="text">
+           <string>Reset Rot</string>
           </property>
          </widget>
         </item>

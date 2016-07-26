@@ -45,3 +45,9 @@ void SelectResourcesDialog::itemDoubleClicked(QListWidgetItem * item)
     _selectedItems.push_back(_itemToPath[item]);
     close();
 }
+
+void SelectResourcesDialog::emptySelected()
+{
+    _emptySelected = true;
+    close();
+}

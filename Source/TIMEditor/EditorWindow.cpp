@@ -139,6 +139,11 @@ interface::XmlMeshAssetLoader::MeshElementModel convertEditorModel(MeshElement m
     out.color = vec3(model.color.red(), model.color.green(), model.color.blue()) / 255.f;
     out.geometry = model.geometry.toStdString();
     out.material = model.material;
+    out.textureScale = model.textureScale;
+
+    out.advanced = model.advanced;
+    out.advancedShader = model.advancedShader.toStdString();
+    out.useAdvanced = model.useAdvanced;
 
     for(int i=0 ; i<MeshElement::NB_TEXTURES ; ++i)
     {

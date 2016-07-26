@@ -21,6 +21,7 @@ MainRenderer::MainRenderer(RendererWidget* parent) : _parent(parent)
     _renderingParameter.shadowCascad = {4,15,50};
     _renderingParameter.shadowResolution = 2048;
     _renderingParameter.usePointLight = false;
+    _renderingParameter.useSSReflexion = true;
     _currentSize = {200,200};
     _newSize = true;
 
@@ -44,11 +45,14 @@ void MainRenderer::main()
     lock();
 
     ShaderPool::instance().add("gPass", "shader/gBufferPass.vert", "shader/gBufferPass.frag").value();
+    ShaderPool::instance().add("gPassAlphaTest", "shader/gBufferPass.vert", "shader/gBufferPass.frag", "", {"ALPHA_TEST"}).value();
+    ShaderPool::instance().add("water", "shader/gBufferPass.vert", "shader/gBufferPass.frag", "", {"WATER_SHADER"}).value();
     ShaderPool::instance().add("portalShader", "shader/gBufferPass.vert", "shader/gBufferPass.frag", "", {"PORTAL_SHADER"}).value();
     ShaderPool::instance().add("highlighted", "shader/overlayObject.vert", "shader/overlayObject.frag").value();
     ShaderPool::instance().add("highlightedMoving", "shader/overlayObject.vert", "shader/overlayObject2.frag").value();
     ShaderPool::instance().add("fxaa", "shader/fxaa.vert", "shader/fxaa.frag").value();
     ShaderPool::instance().add("combineScene", "shader/combineScene.vert", "shader/combineScene.frag").value();
+    ShaderPool::instance().add("processSpecularCubeMap", "shader/processCubemap.vert", "shader/processCubemap.frag").value();
 
     {
     const float lineLength = 1000;
@@ -120,6 +124,7 @@ void MainRenderer::main()
     //setSkybox(1, skybox);
 
     unlock();
+    float totalTime=0;
     while(_running)
     {
         lock();
@@ -162,6 +167,7 @@ void MainRenderer::main()
                 if(_scene[i].globalLight.dirLights.size() > 0 && _scene[i].globalLight.dirLights[0].projectShadow)
                 {
                     _dirLightView[i].dirLightView.camPos = _view[_curScene].camera.pos;
+                    _dirLightView[i].dirLightView.lightDir = _scene[_curScene].globalLight.dirLights[0].direction;
 
                     if(i == _curScene)
                         _pipeline.setDirLightView(_dirLightView[_curScene], 0);
@@ -178,7 +184,8 @@ void MainRenderer::main()
         _parent->swapBuffers();
 
         _time = float(std::max(timer.elapsed(), qint64(1))) / 1000;
-
+        totalTime += _time;
+        _pipeline.pipeline()->meshRenderer().frameState().setTime(totalTime, _time);
         unlock();
     }
 }
@@ -292,26 +299,11 @@ void MainRenderer::setSkybox(int sceneIndex, QList<QString> list)
         return;
     }
 
-    resource::TextureLoader::ImageFormat formatTex;
-    vector<std::string> imgSkybox(6);
+    vector<std::string> files(list.size());
     for(int i=0 ; i<list.size() ; ++i)
-        imgSkybox[i] = list[i].toStdString();
+        files[i] = list[i].toStdString();
 
-    vector<ubyte*> dataSkybox = resource::textureLoader->loadImageCube(imgSkybox, formatTex);
-
-    renderer::Texture::GenTexParam skyboxParam;
-    skyboxParam.format = renderer::Texture::RGBA8;
-    skyboxParam.nbLevels = 1;
-    skyboxParam.size = uivec3(formatTex.size,0);
-    renderer::Texture* skybox = renderer::Texture::genTextureCube(skyboxParam, dataSkybox, 4);
-    renderer::Texture* processedSky =
-            renderer::IndirectLightRenderer::processSkybox(skybox,
-            (*(pipeline().rendererEntities().begin()))->envLightRenderer().processSkyboxShader());
-
-    for(uint j=0 ; j<dataSkybox.size() ; ++j)
-        delete[] dataSkybox[j];
-
-    getScene(sceneIndex).globalLight.skybox = {skybox, processedSky};
+    getScene(sceneIndex).globalLight.skybox = renderer::IndirectLightRenderer::loadAndProcessSkybox(files, ShaderPool::instance().get("processSpecularCubeMap"));
 }
 
 void MainRenderer::setDirectionalLight(uint sceneIndex, const tim::interface::Pipeline::DirectionalLight& l)

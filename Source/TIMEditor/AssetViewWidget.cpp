@@ -74,12 +74,33 @@ void AssetViewWidget::writeMaterial(const Material& m, QTextStream& stream, QDir
     stream << prefix << "\t<metallic>" << m.material[1] <<"</metallic>\n";
     stream << prefix << "\t<specular>" << m.material[2] <<"</specular>\n";
     stream << prefix << "\t<emissive>" << m.material[3] <<"</emissive>\n";
+    stream << prefix << "\t<textureScale>" << m.textureScale <<"</textureScale>\n";
     if(!m.textures[0].isEmpty())
         stream << prefix << "\t<diffuseTex>" << destDir.relativeFilePath(m.textures[0]) <<"</diffuseTex>\n";
     if(!m.textures[1].isEmpty())
         stream << prefix << "\t<normalTex>" << destDir.relativeFilePath(m.textures[1]) <<"</normalTex>\n";
     if(!m.textures[2].isEmpty())
         stream << prefix << "\t<materialTex>" << destDir.relativeFilePath(m.textures[2]) <<"</materialTex>\n";
+
+    if(m.useAdvanced)
+    {
+        stream << prefix << "\t<Advanced>\n";
+        stream << prefix << "\t\t<shader>" << m.advancedShader << "</shader>\n";
+        stream << prefix << "\t\t<blend>" << m.advanced.blend() << "</blend>\n";
+        stream << prefix << "\t\t<cullBackFace>" << m.advanced.cullBackFace() << "</cullBackFace>\n";
+        stream << prefix << "\t\t<cullFace>" << m.advanced.cullFace() << "</cullFace>\n";
+        stream << prefix << "\t\t<depthTest>" << m.advanced.depthTest() << "</depthTest>\n";
+        stream << prefix << "\t\t<writeDepth>" << m.advanced.writeDepth() << "</writeDepth>\n";
+        stream << prefix << "\t\t<priority>" << m.advanced.priority() << "</priority>\n";
+        stream << prefix << "\t\t<blendEquation>" << QString::fromStdString(renderer::DrawState::toBlendEquationStr(m.advanced.blendEquation())) << "</blendEquation>\n";
+        stream << prefix << "\t\t<primitive>" << QString::fromStdString(renderer::DrawState::toPrimitiveStr(m.advanced.primitive())) << "</primitive>\n";
+        stream << prefix << "\t\t<depthFunc>" << QString::fromStdString(renderer::DrawState::toComparFuncStr(m.advanced.depthFunc())) << "</depthFunc>\n";
+        stream << prefix << "\t\t<blendFunc f1=\"" << QString::fromStdString(renderer::DrawState::toBlendFuncStr(m.advanced.blendFunc()[0])) <<
+                            "\" f2=\"" << QString::fromStdString(renderer::DrawState::toBlendFuncStr(m.advanced.blendFunc()[1])) << "\" />\n";
+
+        stream << prefix << "\t</Advanced>\n";
+    }
+
     stream << prefix << "</Element>\n";
 }
 
@@ -92,18 +113,20 @@ void AssetViewWidget::onItemDoubleClicked(QListWidgetItem* item)
             QList<Material> meshEditorElem;
             for(Material m : elem.elem.materials)
             {
-                Material subMesh;
-                subMesh.color = m.color;
-                subMesh.geometry = m.geometry;
-                subMesh.material = m.material;
+//                Material subMesh;
+//                subMesh.color = m.color;
+//                subMesh.geometry = m.geometry;
+//                subMesh.material = m.material;
 
-                for(int i=0 ; i<MeshElement::NB_TEXTURES ; ++i)
-                {
-                    subMesh.textures[i] = m.textures[i];
-                    subMesh.texturesIcon[i] = m.texturesIcon[i];
-                }
+//                for(int i=0 ; i<MeshElement::NB_TEXTURES ; ++i)
+//                {
+//                    subMesh.textures[i] = m.textures[i];
+//                    subMesh.texturesIcon[i] = m.texturesIcon[i];
+//                }
 
-                meshEditorElem.push_back(subMesh);
+//                subMesh.textureScale = m.textureScale;
+
+                meshEditorElem.push_back(m);
             }
             _meshEditor->setMesh(elem.elem.name, meshEditorElem);
             return;

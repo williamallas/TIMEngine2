@@ -71,6 +71,11 @@ protected:
     mat3 saved_rotate    = mat3::IDENTITY();
     vec3 saved_translate = {0,0,0};
 
+    vec3 copy_scale     = {1,1,1};
+    mat3 copy_rotate    = mat3::IDENTITY();
+    vec3 copy_translate = {0,0,0};
+    bool somethingCopied = false;
+
     tim::interface::MeshInstance* _translateLine[3] = {nullptr};
     tim::interface::MeshInstance* _highlightedMeshInstance = nullptr;
 
@@ -79,7 +84,6 @@ protected:
     void activateObject(int);
     void flushItemUi(int);
     void updateSelectedMeshMatrix();
-    static mat4 constructTransformation(const SceneObject&);
     static void parseTransformation(TiXmlElement*, vec3& tr, vec3& sc, mat3&);
     static QList<QString> parseSkyboxXmlElement(TiXmlElement*);
 
@@ -95,6 +99,9 @@ public slots:
     void on_scale_x_editingFinished();
     void on_scale_y_editingFinished();
     void on_scale_z_editingFinished();
+
+    void on_copyTransButton_clicked();
+    void on_pastTransButton_clicked();
 
     void on_name_editingFinished();
     void selectSceneObject(vec3,vec3);

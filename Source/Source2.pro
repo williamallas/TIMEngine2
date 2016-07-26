@@ -57,21 +57,21 @@ debug: DEFINES += TIM_DEBUG
 # Input
 HEADERS += TIM_SDL/*.h TIMEngine2/core/*.h TIMEngine2/renderer/*.h TIMEngine2/resource/*.h TIMEngine2/interface/*.h TIMEngine2/interface/pipeline/*.h TIMEngine2/scene/*.h \
     DebugCamera.h \
+    MainHelper.h \
     TIMEngine2/bullet/*.h \
     RTSEngine/Map/Case.h \
     RTSEngine/Map/FiniteGrid.h \
     RTSEngine/Graphic/MapRenderer.h \
     RTSEngine/Graphic/TerrainRenderer.h \
-    TIMEngine2/interface/ShaderPool.h \
-    TIMEngine2/interface/ResourceManager.h \
     RTSEngine/Graphic/RTSCamera.h \
     RTSEngine/Game.h \
-    OpenVR/VR_Device.h \
-    SpaceBounce.h \
+    OpenVR/VR_Device.h OpenVR/HmdSceneView.h OpenVR/OnHmdRenderer.h \
     AssimpLoader.h \
-    TIMEngine2/interface/XmlMeshAssetLoader.h \
+    MutlipleSceneHelper.h \
+    MultiSceneManager.h
 
 SOURCES += main2.cpp \
+           MainHelper.cpp \
            TIM_SDL/SDLInputManager.cpp \
            TIM_SDL/SDLTextureLoader.cpp \
            ../Lib/tinyxml/tinyxml.cpp \
@@ -125,8 +125,10 @@ SOURCES += main2.cpp \
     RTSEngine/Graphic/RTSCamera.cpp \
     RTSEngine/Game.cpp \
     OpenVR/VR_Device.cpp OpenVR/OnHmdRenderer.cpp \
-    SpaceBounce.cpp \
     AssimpLoader.cpp \
+    MultipleSceneHelper.cpp \
     TIMEngine2/interface/XmlMeshAssetLoader.cpp \
+    TIMEngine2/interface/XmlSceneLoader.cpp \
+    MultiSceneManager.cpp
 
 

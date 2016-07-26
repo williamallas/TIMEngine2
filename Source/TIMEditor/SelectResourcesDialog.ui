@@ -101,6 +101,19 @@
        </property>
       </widget>
      </item>
+     <item>
+      <widget class="QPushButton" name="pushButton_3">
+       <property name="minimumSize">
+        <size>
+         <width>100</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Empty</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
   </layout>
@@ -114,8 +127,8 @@
    <slot>confirmSelection()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>542</x>
-     <y>375</y>
+     <x>476</x>
+     <y>389</y>
     </hint>
     <hint type="destinationlabel">
      <x>864</x>
@@ -130,8 +143,8 @@
    <slot>close()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>637</x>
-     <y>381</y>
+     <x>582</x>
+     <y>389</y>
     </hint>
     <hint type="destinationlabel">
      <x>769</x>
@@ -139,8 +152,25 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>pushButton_3</sender>
+   <signal>clicked()</signal>
+   <receiver>SelectResourcesDialog</receiver>
+   <slot>emptySelected()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>650</x>
+     <y>383</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>820</x>
+     <y>374</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>confirmSelection()</slot>
+  <slot>emptySelected()</slot>
  </slots>
 </ui>

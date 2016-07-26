@@ -82,7 +82,7 @@ void SceneEditorWidget::addSceneObject(int sceneIndex, bool lock, QString name, 
     obj.scale = scale;
     obj.translate = tr;
 
-    mat4 trans = constructTransformation(obj);
+    mat4 trans = mat4::constructTransformation(obj.rotate, obj.translate, obj.scale);
 
     if(lock) _renderer->lock();
     obj.node = &_renderer->getScene(sceneIndex+1).scene.add<MeshInstance>(trans);
@@ -104,30 +104,23 @@ void SceneEditorWidget::addSceneObject(int sceneIndex, bool lock, QString name, 
         for(int i=0 ; i<obj.materials.size() ; ++i)
             m.addElement(MeshEditorWidget::constructMeshElement(obj.materials[i]));
 
-        if(modelName == "portal" && sceneIndex < 2)
-        {
-            int sceneTo = sceneIndex==0 ? 1:0;
-            std::cout << "Portal detected\n";
-            MultipleSceneHelper::Edge edge;
-            edge.sceneFrom = &_renderer->getScene(sceneIndex+1);
-            edge.sceneTo = &_renderer->getScene(sceneTo+1);
-            edge.portal = obj.node;
-            edge.portalGeom = m.element(0).geometry();
+//        if(modelName == "portal" && sceneIndex < 2)
+//        {
+//            int sceneTo = sceneIndex==0 ? 1:0;
+//            std::cout << "Portal detected\n";
+//            MultipleSceneHelper::Edge edge;
+//            edge.sceneFrom = &_renderer->getScene(sceneIndex+1);
+//            edge.sceneTo = &_renderer->getScene(sceneTo+1);
+//            edge.portal = obj.node;
+//            edge.portalGeom = m.element(0).geometry();
 
-            _renderer->portalsManager()->addEdge(edge);
-            m.element(0).drawState().setCullBackFace(true);
-            m.element(0).drawState().setShader(ShaderPool::instance().get("portalShader"));
-        }
+//            _renderer->portalsManager()->addEdge(edge);
+//            m.element(0).drawState().setCullBackFace(true);
+//            m.element(0).drawState().setShader(ShaderPool::instance().get("portalShader"));
+//        }
 
         obj.node->setMesh(m);
     });
-}
-
-mat4 SceneEditorWidget::constructTransformation(const SceneObject& obj)
-{
-    mat4 trans = obj.rotate.to<4>() * mat4::Scale(obj.scale);
-    trans.setTranslation(obj.translate);
-    return trans;
 }
 
 void SceneEditorWidget::activateObject(int index)
@@ -205,7 +198,9 @@ void SceneEditorWidget::flushItemUi(int index)
 void SceneEditorWidget::updateSelectedMeshMatrix()
 {
     _renderer->addEvent([=]{
-        mat4 m = constructTransformation(_objects[_curSceneIndex][_curItemIndex]);
+        mat4 m = mat4::constructTransformation(_objects[_curSceneIndex][_curItemIndex].rotate,
+                                               _objects[_curSceneIndex][_curItemIndex].translate,
+                                               _objects[_curSceneIndex][_curItemIndex].scale);
         _objects[_curSceneIndex][_curItemIndex].node->setMatrix(m);
         _highlightedMeshInstance->setMatrix(m);
     });
@@ -328,6 +323,28 @@ void SceneEditorWidget::on_name_editingFinished()
         n = _objects[_curSceneIndex][_curItemIndex].name + " (" + _objects[_curSceneIndex][_curItemIndex].baseModel + ")";
 
     _objects[_curSceneIndex][_curItemIndex].listItem->setText(n);
+}
+
+void SceneEditorWidget::on_copyTransButton_clicked()
+{
+    if(_curItemIndex >= 0)
+    {
+        copy_rotate = _objects[_curSceneIndex][_curItemIndex].rotate;
+        copy_scale = _objects[_curSceneIndex][_curItemIndex].scale;
+        copy_translate = _objects[_curSceneIndex][_curItemIndex].translate;
+        somethingCopied = true;
+    }
+}
+
+void SceneEditorWidget::on_pastTransButton_clicked()
+{
+    if(_curItemIndex >= 0 && somethingCopied)
+    {
+        _objects[_curSceneIndex][_curItemIndex].rotate = copy_rotate;
+        _objects[_curSceneIndex][_curItemIndex].scale = copy_scale;
+        _objects[_curSceneIndex][_curItemIndex].translate = copy_translate;
+        updateSelectedMeshMatrix();
+    }
 }
 
 float computeGrade(float dist, float ray)
@@ -808,6 +825,7 @@ void SceneEditorWidget::importScene(QString file, int sceneIndex)
     QMap<int, QString> meshAssetsName;
 
     int nbObject=0;
+    _renderer->getScene(sceneIndex+1).globalLight.dirLights.clear();
 
     while(elem)
     {
@@ -856,6 +874,20 @@ void SceneEditorWidget::importScene(QString file, int sceneIndex)
         else if(elem->ValueStr() == std::string("Skybox"))
         {
             skybox = parseSkyboxXmlElement(elem);
+        }
+        else if(elem->ValueStr() == std::string("DirLight"))
+        {
+            int shadow=0;
+            vec3 color = {1,1,1};
+            vec3 dir={0,0,-1};
+
+            elem->QueryIntAttribute("shadows", &shadow);
+            std::string strColor = StringUtils::str(elem->Attribute("color"));
+            std::string strDir = StringUtils::str(elem->Attribute("direction"));
+            if(!strColor.empty()) color = toVec<3>(strColor);
+            if(!strDir.empty()) dir = toVec<3>(strDir);
+
+            _renderer->getScene(sceneIndex+1).globalLight.dirLights.push_back({dir, vec4(color,1), shadow==1});
         }
 
         elem=elem->NextSiblingElement();
