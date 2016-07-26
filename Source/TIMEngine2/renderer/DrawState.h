@@ -68,6 +68,16 @@ namespace renderer
         static uint toGLBlendEquation(BlendEquation);
         static uint toGLPrimitive(Primitive);
 
+        static BlendFunc fromBlendFuncStr(std::string);
+        static CompareFunc fromComparFuncStr(std::string);
+        static BlendEquation fromBlendEquationStr(std::string);
+        static Primitive fromPrimitiveStr(std::string);
+
+        static std::string toBlendFuncStr(BlendFunc);
+        static std::string toComparFuncStr(CompareFunc);
+        static std::string toBlendEquationStr(BlendEquation);
+        static std::string toPrimitiveStr(Primitive);
+
         DrawState()
         {
            setPriority(128);
@@ -256,6 +266,122 @@ namespace renderer
             case Primitive::POINTS:return GL_POINTS;
         }
         return GL_TRIANGLES;
+    }
+
+    inline DrawState::BlendFunc DrawState::fromBlendFuncStr(std::string str)
+    {
+        if(str == "CONSTANT_ALPHA") return BlendFunc::CONSTANT_ALPHA;
+        else if(str == "CONSTANT_COLOR") return BlendFunc::CONSTANT_COLOR;
+        else if(str == "DST_ALPHA") return BlendFunc::DST_ALPHA;
+        else if(str == "ONE") return BlendFunc::ONE;
+        else if(str == "ONE_MINUS_CONSTANT_ALPHA") return BlendFunc::ONE_MINUS_CONSTANT_ALPHA;
+        else if(str == "ONE_MINUS_CONSTANT_COLOR") return BlendFunc::ONE_MINUS_CONSTANT_COLOR;
+        else if(str == "ONE_MINUS_DST_ALPHA") return BlendFunc::ONE_MINUS_DST_ALPHA;
+        else if(str == "ONE_MINUS_DST_COLOR") return BlendFunc::ONE_MINUS_DST_COLOR;
+        else if(str == "ONE_MINUS_SRC_ALPHA") return BlendFunc::ONE_MINUS_SRC_ALPHA;
+        else if(str == "ONE_MINUS_SRC_COLOR") return BlendFunc::ONE_MINUS_SRC_COLOR;
+        else if(str == "SRC_ALPHA") return BlendFunc::SRC_ALPHA;
+        else if(str == "SRC_COLOR") return BlendFunc::SRC_COLOR;
+        else if(str == "DST_COLOR") return BlendFunc::DST_COLOR;
+        else if(str == "ZERO") return BlendFunc::ZERO;
+        else return BlendFunc::SRC_ALPHA;
+    }
+
+    inline DrawState::CompareFunc DrawState::fromComparFuncStr(std::string str)
+    {
+        if(str == "ALWAYS") return CompareFunc::ALWAYS;
+        else if(str == "NEVER") return CompareFunc::NEVER;
+        else if(str == "NOTEQUAL") return CompareFunc::NOTEQUAL;
+        else if(str == "LESS") return CompareFunc::LESS;
+        else if(str == "LEQUAL") return CompareFunc::LEQUAL;
+        else if(str == "GREATER") return CompareFunc::GREATER;
+        else if(str == "GEQUAL") return CompareFunc::GEQUAL;
+        else if(str == "EQUAL") return CompareFunc::EQUAL;
+        else return CompareFunc::LESS;
+    }
+
+    inline DrawState::BlendEquation DrawState::fromBlendEquationStr(std::string str)
+    {
+        if(str == "ADD") return BlendEquation::ADD;
+        else if(str == "SUB") return BlendEquation::SUB;
+        else if(str == "REVERSE_SUB") return BlendEquation::REVERSE_SUB;
+        else if(str == "MIN") return BlendEquation::MIN;
+        else if(str == "MAX") return BlendEquation::MAX;
+        else return BlendEquation::ADD;
+    }
+
+    inline DrawState::Primitive DrawState::fromPrimitiveStr(std::string str)
+    {
+        if(str == "TRIANGLES") return Primitive::TRIANGLES;
+        else if(str == "TRIANGLE_STRIP") return Primitive::TRIANGLE_STRIP;
+        else if(str == "LINES") return Primitive::LINES;
+        else if(str == "LINE_STRIP") return Primitive::LINE_STRIP;
+        else if(str == "POINTS") return Primitive::POINTS;
+        else return Primitive::TRIANGLES;
+    }
+
+    inline std::string DrawState::toBlendFuncStr(BlendFunc f)
+    {
+        switch(f)
+        {
+            case BlendFunc::CONSTANT_ALPHA:return "CONSTANT_ALPHA";
+            case BlendFunc::CONSTANT_COLOR:return "CONSTANT_COLOR";
+            case BlendFunc::DST_ALPHA:return "DST_ALPHA";
+            case BlendFunc::ONE:return "ONE";
+            case BlendFunc::ONE_MINUS_CONSTANT_ALPHA:return "ONE_MINUS_CONSTANT_ALPHA";
+            case BlendFunc::ONE_MINUS_CONSTANT_COLOR:return "ONE_MINUS_CONSTANT_COLOR";
+            case BlendFunc::ONE_MINUS_DST_ALPHA:return "ONE_MINUS_DST_ALPHA";
+            case BlendFunc::ONE_MINUS_DST_COLOR:return "ONE_MINUS_DST_COLOR";
+            case BlendFunc::ONE_MINUS_SRC_ALPHA:return "ONE_MINUS_SRC_ALPHA";
+            case BlendFunc::ONE_MINUS_SRC_COLOR:return "ONE_MINUS_SRC_COLOR";
+            case BlendFunc::SRC_ALPHA:return "SRC_ALPHA";
+            case BlendFunc::SRC_COLOR:return "SRC_COLOR";
+            case BlendFunc::DST_COLOR:return "DST_COLOR";
+            case BlendFunc::ZERO:return "ZERO";
+        }
+        return "ONE_MINUS_SRC_ALPHA";
+    }
+
+    inline std::string DrawState::toComparFuncStr(CompareFunc f)
+    {
+        switch(f)
+        {
+            case CompareFunc::ALWAYS:return "ALWAYS";
+            case CompareFunc::NEVER:return "NEVER";
+            case CompareFunc::NOTEQUAL:return "NOTEQUAL";
+            case CompareFunc::LESS:return "LESS";
+            case CompareFunc::LEQUAL:return "LEQUAL";
+            case CompareFunc::GREATER:return "GREATER";
+            case CompareFunc::GEQUAL:return "GEQUAL";
+            case CompareFunc::EQUAL:return "EQUAL";
+        }
+        return "LESS";
+    }
+
+    inline std::string DrawState::toBlendEquationStr(BlendEquation e)
+    {
+        switch(e)
+        {
+            case BlendEquation::ADD:return "ADD";
+            case BlendEquation::SUB:return "SUB";
+            case BlendEquation::REVERSE_SUB:return "REVERSE_SUB";
+            case BlendEquation::MIN:return "MIN";
+            case BlendEquation::MAX:return "MAX";
+        }
+        return "ADD";
+    }
+
+    inline std::string DrawState::toPrimitiveStr(Primitive p)
+    {
+        switch(p)
+        {
+            case Primitive::TRIANGLES:return "TRIANGLES";
+            case Primitive::TRIANGLE_STRIP:return "TRIANGLE_STRIP";
+            case Primitive::LINES:return "LINES";
+            case Primitive::LINE_STRIP:return "LINE_STRIP";
+            case Primitive::POINTS:return "POINTS";
+        }
+        return "TRIANGLES";
     }
 }
 }
