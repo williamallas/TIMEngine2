@@ -96,6 +96,28 @@ namespace core
         return interpolateCos(interpolateCos(a,b, x), interpolateCos(c,d, x), y);
     }
 
+    inline uint packColor(float r, float g, float b, float a)
+    {
+        uint r_i = static_cast<uint>(r * 255);
+        uint g_i = static_cast<uint>(g * 255);
+        uint b_i = static_cast<uint>(b * 255);
+        uint a_i = static_cast<uint>(a * 255);
+
+        return (r_i<<24) + (g_i<<16) + (b_i<<8) + a_i;
+    }
+
+    inline void unpackColor(uint color, float rgba[])
+    {
+        uint r_i = (color & 0xff000000)  >> 24;
+        uint g_i = (color & 0x00ff0000)  >> 16;
+        uint b_i = (color & 0x0000ff00)  >> 8;
+        uint a_i = (color & 0x000000ff);
+        rgba[0] = r_i / 255.f;
+        rgba[1] = g_i / 255.f;
+        rgba[2] = b_i / 255.f;
+        rgba[3] = a_i / 255.f;
+    }
+
     #define BUILD_MASK(x) 1<<x
 
 }
