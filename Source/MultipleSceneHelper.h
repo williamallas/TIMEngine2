@@ -13,11 +13,14 @@ public:
         interface::Geometry portalGeom;
         interface::MeshInstance *portal;
         interface::Scene *sceneFrom, *sceneTo;
-        vec3 offset;
+        interface::MeshInstance* destPortal;
     };
 
     MultipleSceneHelper(const interface::FullPipeline::Parameter&, interface::FullPipeline&);
     ~MultipleSceneHelper();
+
+    interface::FullPipeline& pipeline() { return _pipeline; }
+    const interface::FullPipeline& pipeline() const { return _pipeline; }
 
     void setResolution(uivec2 res) { _resolution = res; }
 
@@ -26,9 +29,13 @@ public:
     void setStereoView(interface::View&, interface::View&);
     void registerDirLightView(interface::Scene*, interface::View*);
     void addEdge(Edge);
+    void addEdge(interface::Scene *sceneFrom, interface::Scene *sceneTo,
+                 interface::MeshInstance*, interface::Geometry, interface::MeshInstance* dest = nullptr);
 
-    bool update(interface::Scene*&, vec3* offset=nullptr);
+    bool update(interface::Scene*&);
     void rebuild(interface::Scene&);
+
+    void setEnableEdge(bool b, interface::Scene&, interface::MeshInstance*);
 
 private:
     struct InternalEdge
@@ -37,6 +44,7 @@ private:
 
         Plan portalPlan;
         Box portalBox;
+        bool enabled = true;
     };
 
     uivec2 _resolution;
@@ -56,10 +64,14 @@ private:
     boost::container::map<interface::Scene*, vector<InternalEdge>> _graph;
     vector<interface::View*> _extraCameras;
     vector<interface::View*> _extraStereoCameras[2];
+
     boost::container::map<interface::Scene*, interface::View*> _dirLightView;
 
     void freeCamera();
     void constructEdge(const InternalEdge&);
+    void optimizeExtraSceneRendering(InternalEdge&, int i);
+
+    bool getScreenBoundingBox(const Box&, const mat4& boxMat, const mat4& projView, vec2& minV, vec2& maxV);
 
 };
 
