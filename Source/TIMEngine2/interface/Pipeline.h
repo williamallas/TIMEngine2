@@ -247,9 +247,12 @@ namespace interface
                 }
             }
 
+            void setInvertRenderingOrder(bool b) { _invertRenderingOrder = b; }
+
         protected:
             vector<OutBufferNode*> _input;
             vector<bool> _enableInput;
+            bool _invertRenderingOrder = false;
         };
 
         class InOutBufferNode : public InBuffersNode, public OutBufferNode {};
@@ -308,6 +311,8 @@ namespace interface
         /* Methods */
         Pipeline();
         ~Pipeline();
+
+        void registerNode(ProcessNode* node) { _allProcessNodes.push_back(node); }
 
         renderer::MeshRenderer& meshRenderer();
 

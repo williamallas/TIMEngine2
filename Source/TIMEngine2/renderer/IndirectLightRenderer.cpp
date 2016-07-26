@@ -34,25 +34,8 @@ IndirectLightRenderer::IndirectLightRenderer(LightContextRenderer& context) : _c
             _fullScreenPass->bind();
             _uniformEnableGI = _fullScreenPass->uniformLocation("enableGI");
             _uniformGlobalAmbient = _fullScreenPass->uniformLocation("globalAmbient");
+            _uniformSSReflexion = _fullScreenPass->uniformLocation("localReflexion");
         }
-    }
-
-    if(!_processCubeMap)
-    {
-        ShaderCompiler vShader(ShaderCompiler::VERTEX_SHADER), pShader(ShaderCompiler::PIXEL_SHADER);
-        vShader.setSource(StringUtils::readFile("shader/processCubemap.vert"));
-        pShader.setSource(StringUtils::readFile("shader/processCubemap.frag"));
-
-        auto optShader = Shader::combine(vShader.compile({}), pShader.compile({}));
-
-        if(!optShader.hasValue())
-        {
-            LOG("shader/processCubemap.vert error:\n", vShader.error());
-            LOG("shader/processCubemap.frag error:\n", pShader.error());
-            LOG("Link erorr:", Shader::lastLinkError());
-        }
-        else
-            _processCubeMap = optShader.value();
     }
 
     Texture::GenTexParam param;
@@ -76,7 +59,6 @@ IndirectLightRenderer::IndirectLightRenderer(LightContextRenderer& context) : _c
 
 IndirectLightRenderer::~IndirectLightRenderer()
 {
-    delete _processCubeMap;
     delete _fullScreenPass;
     delete _processedBrdf;
 }
@@ -109,7 +91,14 @@ void IndirectLightRenderer::draw() const
         openGL.bindTextureSampler(textureSampler[TextureMode::FilteredNoRepeat], 6);
     } else openGL.bindTexture(0, GL_TEXTURE_2D, 6);
 
+    if(_inReflexionBuffer && _enableSSReflexion)
+    {
+        _inReflexionBuffer->bind(7);
+        openGL.bindTextureSampler(textureSampler[TextureMode::FilteredNoRepeat], 7);
+    }
+
     _fullScreenPass->setUniform((_enableGI && _processedSkybox)?1:0, _uniformEnableGI);
+    _fullScreenPass->setUniform(_enableSSReflexion?1:0, _uniformSSReflexion);
     _fullScreenPass->setUniform(_globalAmbient, _uniformGlobalAmbient);
 
     _context.frameState().bind(0);
@@ -237,5 +226,27 @@ float* IndirectLightRenderer::computeBrdf(uint size)
     return res;
 }
 
+std::pair<Texture*, Texture*> IndirectLightRenderer::loadAndProcessSkybox(const vector<std::string>& files, Shader* processShader)
+{
+    if(files.size() != 6)
+        return {nullptr, nullptr};
+
+    resource::TextureLoader::ImageFormat formatTex;
+    vector<ubyte*> dataSkybox = resource::textureLoader->loadImageCube(files, formatTex);
+
+    renderer::Texture::GenTexParam skyboxParam;
+    skyboxParam.format = renderer::Texture::RGBA8;
+    skyboxParam.nbLevels = 1;
+    skyboxParam.size = uivec3(formatTex.size,0);
+    renderer::Texture* skybox = renderer::Texture::genTextureCube(skyboxParam, dataSkybox, 4);
+    renderer::Texture* processedSky = renderer::IndirectLightRenderer::processSkybox(skybox, processShader);
+
+    for(uint j=0 ; j<dataSkybox.size() ; ++j)
+        delete[] dataSkybox[j];
+
+    return {skybox, processedSky};
+}
+
 }
 }
+

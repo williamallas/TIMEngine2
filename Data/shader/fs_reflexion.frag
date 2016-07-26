@@ -218,8 +218,8 @@ float dist(vec4 plan, vec3 p)
 vec4 raytraceCamSpace(vec3 rayPos, vec3 rayDir, sampler2D ZBuffer, vec3 n)
 {
 	vec4 backColor=vec4(0,0,0,0);//texture(texture3, mat3(invView)*rayDir);
-	const float maxDist = 2;
-	const float maxStep = 20.0;
+	const float maxDist = 8;
+	const float maxStep = 15.0;
 	
 	//float d_e = dist(computePlan(rayPos, n), rayPos+rayDir);
 	
@@ -273,7 +273,7 @@ void main()
 
 	vec4 material = texelFetch(texture2, ivec2(gl_FragCoord.xy),0);
 	//reflexion = 0.3;
-	if(material.x >= 0.2){
+	if(material.x >= 0.1){
 		
 		//outColor0 += vec4(0,0.5,0,0);
 		return;
@@ -287,7 +287,6 @@ void main()
 	
 	//outColor0 += texture(texture0, texc + (reflected.xy*0.03));
 
-	//return;
 
 	//bool hit = traceScreenSpaceRay(world, reflected, texture2, vec2(1600,900), 1, false, vec3(0), 0.02, 1, 0, 32, 5, hitCoord, hitPoint);
 	

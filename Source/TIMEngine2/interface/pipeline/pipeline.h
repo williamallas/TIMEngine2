@@ -15,5 +15,4 @@ namespace interface{
 }
 }
 
-
 #endif // pipeline_NODE_H

@@ -18,17 +18,22 @@ namespace renderer
        static Texture* processSkybox(Texture*, Shader*);
        static float* computeBrdf(uint size = 512);
 
+       static std::pair<Texture*, Texture*> loadAndProcessSkybox(const vector<std::string>&, Shader*);
+
        IndirectLightRenderer(LightContextRenderer&);
        ~IndirectLightRenderer();
 
        void draw() const;
 
-       Shader* processSkyboxShader() const { return _processCubeMap; }
        Shader* globalIndirectPassShader() const { return _fullScreenPass; }
        void setSkybox(Texture*, Texture*);
+       void setReflexionBuffer(Texture*);
 
        void setEnableGI(bool b) { _enableGI = b; }
        void setGlobalAmbient(const vec4& col) { _globalAmbient = col; }
+       void setEnableSSReflexion(bool b) { _enableSSReflexion = b; }
+
+       bool isLocalReflexionEnabled() const { return _enableSSReflexion; }
 
    private:
        static const uint NB_MIPMAP = 7;
@@ -39,23 +44,29 @@ namespace renderer
        Shader* _fullScreenPass = nullptr;
        int _uniformEnableGI = -1;
        int _uniformGlobalAmbient = -1;
+       int _uniformSSReflexion = -1;
 
        bool _enableGI = true;
+       bool _enableSSReflexion = false;
        vec4 _globalAmbient; // if enableGI = false
 
        DrawState _stateFullScreenPass;
 
-       Shader* _processCubeMap = nullptr;
-
        Texture* _skybox = nullptr,
               * _processedSkybox = nullptr,
-              * _processedBrdf = nullptr;
+              * _processedBrdf = nullptr,
+              * _inReflexionBuffer = nullptr;
    };
 
    inline void  IndirectLightRenderer::setSkybox(Texture* skybox, Texture* processed)
    {
        _skybox = skybox;
        _processedSkybox = processed;
+   }
+
+   inline void  IndirectLightRenderer::setReflexionBuffer(Texture* tex)
+   {
+       _inReflexionBuffer = tex;
    }
 
 }
