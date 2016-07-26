@@ -1,7 +1,7 @@
 #ifndef VR_DEVICE_H
 #define VR_DEVICE_H
 
-#include <openvr.h>
+#include <openvr_mingw.hpp>
 #include "core/Matrix.h"
 
 #include "renderer/FrameBuffer.h"
@@ -40,6 +40,7 @@ namespace tim {
 		bool isInit() const { return _hmd != nullptr;  }
 		void update();
 		HmdCamera& camera() { return _hmdCamera;  }
+        const HmdCamera& camera() const { return _hmdCamera;  }
 
         const core::mat4& controllerPose(int id) const { return _devicePose[_controller[id]]; }
         const core::vec3& controllerVel(int id) const { return _deviceVel[_controller[id]]; }

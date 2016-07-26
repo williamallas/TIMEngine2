@@ -110,7 +110,7 @@ void VR_Device::update()
     _isControllerConnected[0] = false;
     _isControllerConnected[1] = false;
 
-	for (int nDevice = 0 ; nDevice < vr::k_unMaxTrackedDeviceCount ; ++nDevice)
+    for (uint nDevice = 0 ; nDevice < vr::k_unMaxTrackedDeviceCount ; ++nDevice)
 	{
 		if (_vrTrackedDevicePose[nDevice].bPoseIsValid)
 		{
