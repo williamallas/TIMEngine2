@@ -18,10 +18,13 @@ namespace tim {
 		void render() override;
 
 		void setDrawOnScreen(int index) { _drawOnScreen = index; }
+                void setScreenResolution(uivec2 res) { _screenResolution = res; }
+                void setShader(renderer::Shader* sh) { _stateDrawQuad.setShader(sh); }
 
 	private:
 		VR_Device* _device;
 		int _drawOnScreen = 0;
+                uivec2 _screenResolution = {1600,900};
 
 		renderer::DrawState _stateDrawQuad;
 
