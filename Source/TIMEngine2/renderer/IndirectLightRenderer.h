@@ -15,6 +15,14 @@ namespace renderer
    class IndirectLightRenderer : boost::noncopyable
    {
    public:
+       struct Light
+       {
+           vec3 direction;
+           vec3 color;
+           renderer::Texture* depthMap = nullptr;
+           vector<mat4> matrix;
+       };
+
        static Texture* processSkybox(Texture*, Shader*);
        static float* computeBrdf(uint size = 512);
 
@@ -23,7 +31,7 @@ namespace renderer
        IndirectLightRenderer(LightContextRenderer&);
        ~IndirectLightRenderer();
 
-       void draw() const;
+       void draw(const vector<Light>&) const;
 
        Shader* globalIndirectPassShader() const { return _fullScreenPass; }
        void setSkybox(Texture*, Texture*);
@@ -46,9 +54,11 @@ namespace renderer
        int _uniformGlobalAmbient = -1;
        int _uniformSSReflexion = -1;
 
-       bool _enableGI = true;
+       int _uniformNbLight, _uniformLightDir, _uniformLightColor, _uniformLightMatrix;
+
+       bool _enableGI = false;
        bool _enableSSReflexion = false;
-       vec4 _globalAmbient; // if enableGI = false
+       vec4 _globalAmbient = vec4::construct(0.3); // if enableGI = false
 
        DrawState _stateFullScreenPass;
 

@@ -50,10 +50,13 @@ void DeferredRendererNode::prepare()
         }
     }
 
-    for(uint i=0 ; i<_dirLightDepthMapRenderer.size() ; ++i)
+    if(_globalLightInfo)
     {
-        if(_dirLightDepthMapRenderer[i])
-            _dirLightDepthMapRenderer[i]->prepare();
+        for(uint i=0 ; i<std::min(_dirLightDepthMapRenderer.size(),_globalLightInfo->dirLights.size()) ; ++i)
+        {
+            if(_dirLightDepthMapRenderer[i] && _globalLightInfo->dirLights[i].projectShadow)
+                _dirLightDepthMapRenderer[i]->prepare();
+        }
     }
 
     std::sort(_toDraw.begin(), _toDraw.end(), [](const ElementInstance& e1, const ElementInstance& e2)
@@ -196,7 +199,7 @@ void DeferredRendererNode::render()
         }
         openGL.scissorTest(_useScissor);
 
-        vector<DirectionalLightRenderer::Light> lights(_globalLightInfo->dirLights.size());
+        vector<IndirectLightRenderer::Light> lights(_globalLightInfo->dirLights.size());
         for(uint i=0 ; i<_globalLightInfo->dirLights.size() ; ++i)
         {
             lights[i].direction = _globalLightInfo->dirLights.at(i).direction;
@@ -209,31 +212,30 @@ void DeferredRendererNode::render()
                 lights[i].matrix =    _dirLightDepthMapRenderer[i]->matrix();
             }
         }
-        _rendererEntity->dirLightRenderer().draw(lights);
 
-        if(_rendererEntity->envLightRenderer().isLocalReflexionEnabled())
-        {
-            if(!_copyToFBO)
-            {
-                renderer::Texture::GenTexParam param;
-                param.size = uivec3(_rendererEntity->lightContext()->resolution(), 0);
-                param.nbLevels = 1;
-                param.format = _rendererEntity->lightContext()->buffer()->format();
-                _copyBuffer = renderer::Texture::genTexture2D(param);
+//        if(_rendererEntity->envLightRenderer().isLocalReflexionEnabled())
+//        {
+//            if(!_copyToFBO)
+//            {
+//                renderer::Texture::GenTexParam param;
+//                param.size = uivec3(_rendererEntity->lightContext()->resolution(), 0);
+//                param.nbLevels = 1;
+//                param.format = _rendererEntity->lightContext()->buffer()->format();
+//                _copyBuffer = renderer::Texture::genTexture2D(param);
 
-                _copyToFBO = new renderer::FrameBuffer(_rendererEntity->lightContext()->resolution());
-                _copyToFBO->attachTexture(0, _copyBuffer);
-            }
+//                _copyToFBO = new renderer::FrameBuffer(_rendererEntity->lightContext()->resolution());
+//                _copyToFBO->attachTexture(0, _copyBuffer);
+//            }
 
-            openGL.scissorTest(false);
-            _rendererEntity->lightContext()->frameBuffer().copyTo(*_copyToFBO);
-            openGL.scissorTest(_useScissor);
+//            openGL.scissorTest(false);
+//            _rendererEntity->lightContext()->frameBuffer().copyTo(*_copyToFBO);
+//            openGL.scissorTest(_useScissor);
 
-            _rendererEntity->envLightRenderer().setReflexionBuffer(_copyBuffer);
-        }
+//            _rendererEntity->envLightRenderer().setReflexionBuffer(_copyBuffer);
+//        }
 
         _rendererEntity->envLightRenderer().setSkybox(_globalLightInfo->skybox.first, _globalLightInfo->skybox.second);
-        _rendererEntity->envLightRenderer().draw();
+        _rendererEntity->envLightRenderer().draw(lights);
     }
 
     if(_rendererEntity->reflexionRenderer())

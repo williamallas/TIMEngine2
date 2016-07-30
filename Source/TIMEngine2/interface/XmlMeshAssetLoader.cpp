@@ -89,6 +89,7 @@ interface::Mesh XmlMeshAssetLoader::constructMesh(const vector<MeshElementModel>
                     elem.drawState().setShader(interface::ShaderPool::instance().get(model[i].advancedShader));
             }
         }
+        elem.setCastShadow(model[i].castShadow);
         mesh.addElement(elem);
     }
 
@@ -137,6 +138,8 @@ vector<XmlMeshAssetLoader::MeshElementModel> XmlMeshAssetLoader::parseMeshAssetE
                         elementModel.textures[1] = StringUtils::str(elem->GetText());
                     else if(StringUtils(elem->ValueStr()).toLower().str() == "materialtex")
                         elementModel.textures[2] = StringUtils::str(elem->GetText());
+                    else if(StringUtils(elem->ValueStr()).toLower().str() == "castshadow")
+                        elementModel.castShadow = StringUtils(elem->GetText()).toBool();
                     else if(StringUtils(elem->ValueStr()).toLower().str() == "advanced")
                     {
                         TiXmlElement* e=elem->FirstChildElement();

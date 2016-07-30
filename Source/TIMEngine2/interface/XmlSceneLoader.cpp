@@ -72,6 +72,10 @@ bool XmlSceneLoader::loadScene(std::string file, interface::Scene& scene, vector
             if(index < 0 || meshAssets.find(index)==meshAssets.end())
                 continue;
 
+            bool isStatic = true, isPhysic = true;
+            elem->QueryBoolAttribute("isStatic", &isStatic);
+            elem->QueryBoolAttribute("isPhysic", &isPhysic);
+
             vec3 tr, sc;
             mat3 rot;
             parseTransformation(elem, tr, sc, rot);
@@ -81,8 +85,10 @@ bool XmlSceneLoader::loadScene(std::string file, interface::Scene& scene, vector
             obj.model = meshAssetsName[index];
             obj.type = ObjectLoaded::MESH_INSTANCE;
             obj.asset = meshAssets[index];
+            obj.isPhysic = isPhysic;
+            obj.isStatic = isStatic;
 
-            obj.meshInstance = &scene.scene.add<MeshInstance>(XmlMeshAssetLoader::constructMesh(meshAssets[index], Texture::genParam(true,true,true, 4), false),
+            obj.meshInstance = &scene.scene.add<MeshInstance>(XmlMeshAssetLoader::constructMesh(meshAssets[index], Texture::genParam(true,true,true, 0), false),
                                                               mat4::constructTransformation(rot, tr, sc));
             objects.push_back(obj);
         }

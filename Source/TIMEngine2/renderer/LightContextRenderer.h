@@ -21,6 +21,8 @@ namespace renderer
             float radius, power;
             vec3 position;
             vec4 color;
+            vec3 direction;
+            float cutoff;
         };
 
         LightContextRenderer(const DeferredRenderer& gbuffers, bool hdr=false);

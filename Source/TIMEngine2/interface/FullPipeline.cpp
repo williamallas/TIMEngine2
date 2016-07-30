@@ -159,17 +159,17 @@ void FullPipeline::extendPipeline(uivec2 res, const Parameter& param, int index)
     if(_stereoscopy)
     {
         auto stereoPipeline = createSubStereoDeferredPipeline(res, param, index);
-        pipeline::SimpleFilter& copyNode1 = _pipeline->createNode<pipeline::SimpleFilter>();
-        pipeline::SimpleFilter& copyNode2 = _pipeline->createNode<pipeline::SimpleFilter>();
+//        pipeline::SimpleFilter& copyNode1 = _pipeline->createNode<pipeline::SimpleFilter>();
+//        pipeline::SimpleFilter& copyNode2 = _pipeline->createNode<pipeline::SimpleFilter>();
 
-        copyNode1.setShader(renderer::drawQuadShader);
-        copyNode1.setBufferOutputNode(stereoPipeline.first->outputNode(0), 0);
+//        copyNode1.setShader(renderer::drawQuadShader);
+//        copyNode1.setBufferOutputNode(stereoPipeline.first->outputNode(0), 0);
 
-        copyNode2.setShader(renderer::drawQuadShader);
-        copyNode2.setBufferOutputNode(stereoPipeline.second->outputNode(0), 0);
+//        copyNode2.setShader(renderer::drawQuadShader);
+//        copyNode2.setBufferOutputNode(stereoPipeline.second->outputNode(0), 0);
 
-        _combineMultipleScene[0]->setBufferOutputNode(&copyNode1, index+1);
-        _combineMultipleScene[1]->setBufferOutputNode(&copyNode2, index+1);
+        _combineMultipleScene[0]->setBufferOutputNode(stereoPipeline.first->outputNode(0), index+1);
+        _combineMultipleScene[1]->setBufferOutputNode(stereoPipeline.second->outputNode(0), index+1);
     }
     else
     {
@@ -284,6 +284,7 @@ Pipeline::OutBuffersNode* FullPipeline::createSubDeferredPipeline(uivec2 res, co
 
     Pipeline::DeferredRendererEntity& rendererEntity = _pipeline->genDeferredRendererEntity(res, param.usePointLight, param.usePostSSReflexion);
     rendererEntity.envLightRenderer().setEnableSSReflexion(param.useSSReflexion);
+    rendererEntity.envLightRenderer().setEnableGI(true);
 
     pipeline::DeferredRendererNode& rendererNode = _pipeline->createNode<pipeline::DeferredRendererNode>();
     if(chanel > 0)
@@ -331,8 +332,13 @@ std::pair<Pipeline::OutBuffersNode*,Pipeline::OutBuffersNode*>
     if(!_pipeline)
         return {nullptr,nullptr};
 
-    Pipeline::DeferredRendererEntity& rendererEntity = _pipeline->genDeferredRendererEntity(res, param.usePointLight, param.usePostSSReflexion);
-    rendererEntity.envLightRenderer().setEnableSSReflexion(param.useSSReflexion);
+    static int uniquId=1;
+    Pipeline::DeferredRendererEntity& rendererEntity1 = _pipeline->genDeferredRendererEntity(res, param.usePointLight, param.usePostSSReflexion, uniquId++);
+    Pipeline::DeferredRendererEntity& rendererEntity2 = _pipeline->genDeferredRendererEntity(res, param.usePointLight, param.usePostSSReflexion, uniquId++);
+    rendererEntity1.envLightRenderer().setEnableSSReflexion(param.useSSReflexion);
+    rendererEntity2.envLightRenderer().setEnableSSReflexion(param.useSSReflexion);
+    rendererEntity1.envLightRenderer().setEnableGI(true);
+    rendererEntity2.envLightRenderer().setEnableGI(true);
 
     pipeline::DeferredRendererNode& rendererNode1 = _pipeline->createNode<pipeline::DeferredRendererNode>();
     pipeline::DeferredRendererNode& rendererNode2 = _pipeline->createNode<pipeline::DeferredRendererNode>();
@@ -352,8 +358,8 @@ std::pair<Pipeline::OutBuffersNode*,Pipeline::OutBuffersNode*>
     if(param.useShadow) dirLightCuller = &_pipeline->createNode<pipeline::DirLightCullingNode<SimpleScene>>();
     if(param.useShadow) shadowRenderer = &_pipeline->createNode<pipeline::DirLightShadowNode>();
 
-    rendererNode1.setRendererEntity(rendererEntity);
-    rendererNode2.setRendererEntity(rendererEntity);
+    rendererNode1.setRendererEntity(rendererEntity1);
+    rendererNode2.setRendererEntity(rendererEntity2);
 
     if(param.useShadow)
     {
@@ -374,7 +380,8 @@ std::pair<Pipeline::OutBuffersNode*,Pipeline::OutBuffersNode*>
         rendererNode2.addLightInstanceCollector(*lightCuller);
     }
 
-    _deferredEntities.insert(&rendererEntity);
+    _deferredEntities.insert(&rendererEntity1);
+    _deferredEntities.insert(&rendererEntity2);
     _deferredRendererNodes[0][chanel].push_back(&rendererNode1);
     _deferredRendererNodes[1][chanel].push_back(&rendererNode2);
     _meshCullingNodes[chanel].push_back(&meshCuller);

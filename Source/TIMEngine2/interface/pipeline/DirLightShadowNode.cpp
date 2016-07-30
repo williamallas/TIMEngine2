@@ -73,6 +73,10 @@ void DirLightShadowNode::prepare()
 {
     if(!tryPrepare()) return;
 
+    if(!_sceneView)
+        return;
+
+
     for(uint i=0 ; i<renderer::MAX_SHADOW_MAP_LVL ; ++i)
         _toDraw[i].clear();
 
@@ -98,6 +102,9 @@ void DirLightShadowNode::prepare()
 void DirLightShadowNode::render()
 {
     if(!tryRender()) return;
+
+    if(!_sceneView)
+        return;
 
     if(_needUpdate)
     {

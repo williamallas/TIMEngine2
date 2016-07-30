@@ -24,6 +24,7 @@ namespace interface
             int type = MESH_INSTANCE;
 
             MeshInstance* meshInstance;
+            bool isStatic, isPhysic;
 
             vector<XmlMeshAssetLoader::MeshElementModel> asset;
         };

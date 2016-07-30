@@ -35,6 +35,11 @@ IndirectLightRenderer::IndirectLightRenderer(LightContextRenderer& context) : _c
             _uniformEnableGI = _fullScreenPass->uniformLocation("enableGI");
             _uniformGlobalAmbient = _fullScreenPass->uniformLocation("globalAmbient");
             _uniformSSReflexion = _fullScreenPass->uniformLocation("localReflexion");
+
+            _uniformNbLight = _fullScreenPass->uniformLocation("nbLights");
+            _uniformLightColor = _fullScreenPass->uniformLocation("lightColor");
+            _uniformLightDir = _fullScreenPass->uniformLocation("lightDirection");
+            _uniformLightMatrix = _fullScreenPass->uniformLocation("lightMatrix");
         }
     }
 
@@ -63,7 +68,7 @@ IndirectLightRenderer::~IndirectLightRenderer()
     delete _processedBrdf;
 }
 
-void IndirectLightRenderer::draw() const
+void IndirectLightRenderer::draw(const vector<Light>& lights) const
 {
     _context.frameBuffer().bind();
     _stateFullScreenPass.bind();
@@ -95,6 +100,36 @@ void IndirectLightRenderer::draw() const
     {
         _inReflexionBuffer->bind(7);
         openGL.bindTextureSampler(textureSampler[TextureMode::FilteredNoRepeat], 7);
+    }
+
+    int nbLight = static_cast<int>(lights.size());
+    _fullScreenPass->setUniform(nbLight, _uniformNbLight);
+
+    if(nbLight > 0)
+    {
+        std::unique_ptr<vec4[]> lightDir(new vec4[nbLight]);
+        std::unique_ptr<vec4[]> lightColor(new vec4[nbLight]);
+        std::unique_ptr<mat4[]> lightMatrix(new mat4[MAX_SHADOW_MAP_LVL]);
+
+        for(size_t i=0 ; i<lights.size() ; ++i)
+        {
+            lightDir[i] = vec4(lights[i].direction,0);
+            lightColor[i] = vec4(lights[i].color,0);
+
+            if(lights[i].depthMap && !lights[i].matrix.empty())
+            {
+                openGL.bindTextureSampler(textureSampler[TextureMode::DepthMap], 8);
+                lights[i].depthMap->bind(8);
+
+                lightDir[i].w() = static_cast<float>(lights[i].matrix.size());
+                for(size_t j=0 ; j<lights[i].matrix.size() ; ++j)
+                    lightMatrix[j] = lights[i].matrix[j];
+            }
+        }
+
+        _fullScreenPass->setUniform(&lightDir[0], lights.size(), _uniformLightDir);
+        _fullScreenPass->setUniform(&lightColor[0], lights.size(), _uniformLightColor);
+        _fullScreenPass->setUniform(&lightMatrix[0], MAX_SHADOW_MAP_LVL, _uniformLightMatrix);
     }
 
     _fullScreenPass->setUniform((_enableGI && _processedSkybox)?1:0, _uniformEnableGI);

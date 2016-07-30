@@ -47,19 +47,19 @@ void FrameBuffer::attachTexture(uint attachment, Texture* tex, uint level, uint 
     switch(tex->type())
     {
     case Texture::TEXTURE_2D:
-        glFramebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0+attachment, tex->id(), level); break;
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0+attachment, tex->id(), level); break;
     case Texture::ARRAY_2D:
-        glFramebufferTextureLayer(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0+attachment, tex->id(), level, layer); break;
+        glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0+attachment, tex->id(), level, layer); break;
 
     case Texture::CUBE_MAP:
         switch(layer)
         {
-            case 0: glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0+attachment, GL_TEXTURE_CUBE_MAP_POSITIVE_X, tex->id(), level); break;
-            case 1: glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0+attachment, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, tex->id(), level); break;
-            case 2: glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0+attachment, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, tex->id(), level); break;
-            case 3: glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0+attachment, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, tex->id(), level); break;
-            case 4: glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0+attachment, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, tex->id(), level); break;
-            case 5: glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0+attachment, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, tex->id(), level); break;
+            case 0: glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0+attachment, GL_TEXTURE_CUBE_MAP_POSITIVE_X, tex->id(), level); break;
+            case 1: glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0+attachment, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, tex->id(), level); break;
+            case 2: glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0+attachment, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, tex->id(), level); break;
+            case 3: glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0+attachment, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, tex->id(), level); break;
+            case 4: glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0+attachment, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, tex->id(), level); break;
+            case 5: glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0+attachment, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, tex->id(), level); break;
         }
         break;
 
@@ -79,9 +79,9 @@ void FrameBuffer::attachDepthTexture(Texture* tex, uint layer)
     switch(tex->type())
     {
     case Texture::TEXTURE_2D:
-        glFramebufferTexture(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, tex->id(), 0); break;
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, tex->id(), 0); break;
     case Texture::ARRAY_2D:
-        glFramebufferTextureLayer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, tex->id(), 0, layer); break;
+        glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, tex->id(), 0, layer); break;
     default: break;
     }
 }
@@ -133,6 +133,7 @@ void FrameBuffer::setupDefferedFBO(FrameBuffer& fbo, vector<Texture*>& buffers)
     param.format = Texture::Format::DEPTHCOMPONENT;
     buffers[3] = Texture::genTexture2D(param);
 
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo._id);
     fbo.attachTexture(0, buffers[0]);
     fbo.attachTexture(1, buffers[1]);
     fbo.attachTexture(2, buffers[2]);

@@ -30,6 +30,7 @@ namespace interface
             bool useAdvanced = false;
             std::string advancedShader;
             renderer::DrawState advanced;
+            bool castShadow = true;
         };
 
         XmlMeshAssetLoader();
