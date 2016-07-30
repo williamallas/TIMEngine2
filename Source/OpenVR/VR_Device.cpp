@@ -100,11 +100,32 @@ uivec2 VR_Device::hmdResolution() const
 	return uivec2(x, y);
 }
 
-void VR_Device::update()
+void VR_Device::sync()
+{
+    if(_compositor)
+        _compositor->WaitGetPoses(_vrTrackedDevicePose, vr::k_unMaxTrackedDeviceCount, NULL, 0);
+}
+
+void VR_Device::update(bool useWaitgetPoses)
 {
 	if (!_compositor) return;
 
-	_compositor->WaitGetPoses(_vrTrackedDevicePose, vr::k_unMaxTrackedDeviceCount, NULL, 0);
+    if(useWaitgetPoses)
+//        _compositor->WaitGetPoses(_vrTrackedDevicePose, vr::k_unMaxTrackedDeviceCount, NULL, 0);
+//    else
+    {         
+        float fSecondsSinceLastVsync;
+        _hmd->GetTimeSinceLastVsync( &fSecondsSinceLastVsync, NULL );
+
+        float fDisplayFrequency = _hmd->GetFloatTrackedDeviceProperty( vr::k_unTrackedDeviceIndex_Hmd, vr::Prop_DisplayFrequency_Float );
+        float fFrameDuration = 1.f / fDisplayFrequency;
+        float fVsyncToPhotons = _hmd->GetFloatTrackedDeviceProperty( vr::k_unTrackedDeviceIndex_Hmd, vr::Prop_SecondsFromVsyncToPhotons_Float );
+
+        float fPredictedSecondsFromNow = fFrameDuration - fSecondsSinceLastVsync + fVsyncToPhotons;
+
+        std::cout<< "Predicted ms from photons:" << fPredictedSecondsFromNow*1000 << "ms\n";
+        _hmd->GetDeviceToAbsoluteTrackingPose(vr::TrackingUniverseStanding, fPredictedSecondsFromNow, _vrTrackedDevicePose, vr::k_unMaxTrackedDeviceCount);
+    }
 
     int controllerFound=0;
     _isControllerConnected[0] = false;
@@ -132,6 +153,11 @@ void VR_Device::update()
 
 	if (_vrTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].bPoseIsValid)
 	{
+        if(_hmd->IsTrackedDeviceConnected(vr::k_unTrackedDeviceIndex_Hmd))
+            _hmdConnected = true;
+        else
+            _hmdConnected = false;
+
 		_hmdCamera._hmdMatrix = _devicePose[vr::k_unTrackedDeviceIndex_Hmd].inverted();
 		_hmdCamera._vel = convertToVec3(_vrTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].vVelocity);
 		_hmdCamera._angVel = convertToVec3(_vrTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].vAngularVelocity);
@@ -139,6 +165,8 @@ void VR_Device::update()
 		_hmdCamera._eyeView[LEFT] = _hmdCamera._hmdToEye[LEFT] * _hmdCamera._hmdMatrix;
 		_hmdCamera._eyeView[RIGHT] = _hmdCamera._hmdToEye[RIGHT] * _hmdCamera._hmdMatrix;
 	}
+    else
+        _hmdConnected = false;
 
 }
 

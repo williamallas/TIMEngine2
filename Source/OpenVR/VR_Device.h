@@ -25,12 +25,12 @@ namespace tim {
 
 		private:
 			HmdCamera() = default;
-			mat4 _hmdMatrix;
+            mat4 _hmdMatrix = mat4::IDENTITY();
 			vec3 _vel, _angVel;
 
-			mat4 _projection[2];
-			mat4 _hmdToEye[2];
-			mat4 _eyeView[2];
+            mat4 _projection[2] = {mat4::IDENTITY(), mat4::IDENTITY()};
+            mat4 _hmdToEye[2] = {mat4::IDENTITY(), mat4::IDENTITY()};
+            mat4 _eyeView[2] = {mat4::IDENTITY(), mat4::IDENTITY()};
 		};
 
 		VR_Device(vec2 zdist = { 0.1f, 1000.f });
@@ -38,13 +38,15 @@ namespace tim {
 
 		uivec2 hmdResolution() const;
 		bool isInit() const { return _hmd != nullptr;  }
-		void update();
+        void update(bool);
+        void sync();
 		HmdCamera& camera() { return _hmdCamera;  }
         const HmdCamera& camera() const { return _hmdCamera;  }
 
         const core::mat4& controllerPose(int id) const { return _devicePose[_controller[id]]; }
         const core::vec3& controllerVel(int id) const { return _deviceVel[_controller[id]]; }
         bool isControllerConnected(int id) const { return _isControllerConnected[id]; }
+        bool isHmdConnected() const { return _hmdConnected; }
 
 	protected:
 		vr::IVRSystem* _hmd = nullptr;
@@ -57,6 +59,7 @@ namespace tim {
 		HmdCamera _hmdCamera;
         uint _controller[2];
         bool _isControllerConnected[2] = {false, false};
+        bool _hmdConnected = false;
 	};
 }
 
