@@ -68,7 +68,8 @@ HEADERS += TIM_SDL/*.h TIMEngine2/core/*.h TIMEngine2/renderer/*.h TIMEngine2/re
     TIMEditor/SceneEditorWidget.h \
     TIMEditor/SelectResourcesDialog.h \
     TIMEditor/SelectSkyboxDialog.h \
-    MultipleSceneHelper.h
+    MultipleSceneHelper.h \
+    TIMEditor/LightComponent.h
     TIMEditor/MeshElement.h
 
 SOURCES += mainEditor.cpp \
@@ -90,7 +91,6 @@ SOURCES += mainEditor.cpp \
     TIMEngine2/renderer/MeshRenderer.cpp \
     TIMEngine2/renderer/DeferredRenderer.cpp \
     TIMEngine2/renderer/LightContextRenderer.cpp \
-    TIMEngine2/renderer/DirectionalLightRenderer.cpp \
     TIMEngine2/renderer/IndirectLightRenderer.cpp \
     TIMEngine2/renderer/TiledLightRenderer.cpp \
     TIMEngine2/renderer/PostReflexionRenderer.cpp \
@@ -131,7 +131,8 @@ SOURCES += mainEditor.cpp \
     TIMEditor/SceneEditorWidget.cpp \
     TIMEditor/SelectResourcesDialog.cpp \
     TIMEditor/SelectSkyboxDialog.cpp \
-    MultipleSceneHelper.cpp
+    MultipleSceneHelper.cpp \
+    TIMEditor/LightComponent.cpp
 
 FORMS += \
     TIMEditor/EditorWindow.ui \

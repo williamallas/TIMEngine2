@@ -199,6 +199,8 @@ Mesh::Element MeshEditorWidget::constructMeshElement(const MeshElement& elem)
             melem.drawState().setShader(ShaderPool::instance().get("gPass"));
     }
 
+    melem.setCastShadow(elem.castShadow);
+
     return melem;
 }
 
@@ -325,6 +327,7 @@ QList<MeshElement> MeshEditorWidget::convertFromEngine(const vector<interface::X
         mat.advanced = model[i].advanced;
         mat.advancedShader = QString::fromStdString(model[i].advancedShader);
         mat.useAdvanced = model[i].useAdvanced;
+        mat.castShadow = model[i].castShadow;
 
         for(int j=0 ; j<MeshElement::NB_TEXTURES ; ++j)
         {
@@ -448,6 +451,7 @@ void MeshEditorWidget::updateMaterial()
     bool useAdvanced = (*_editedMaterials)[_curElementIndex].useAdvanced;
     renderer::DrawState adv = (*_editedMaterials)[_curElementIndex].advanced;
     std::string advShader = (*_editedMaterials)[_curElementIndex].advancedShader.toStdString();
+    bool castShadow = (*_editedMaterials)[_curElementIndex].castShadow;
 
     _renderer->addEvent([=](){
         Mesh mesh = editedMesh->mesh();
@@ -460,6 +464,7 @@ void MeshEditorWidget::updateMaterial()
         mesh.element(index).setEmissive(material.w());
         mesh.element(index).setColor(color);
         mesh.element(index).setTextureScale(texScale);
+        mesh.element(index).setCastShadow(castShadow);
 
         mesh.element(index).drawState().setShader(ShaderPool::instance().get("gPass"));
         if(useAdvanced)

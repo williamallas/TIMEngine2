@@ -143,22 +143,22 @@ void MainRenderer::main()
 
         if(_pipeline.pipeline())
         {
-            _scenePortalsManager->setCurScene(_scene[_curScene]);
-            _scenePortalsManager->setView(_view[_curScene]);
+//            _scenePortalsManager->setCurScene(_scene[_curScene]);
+//            _scenePortalsManager->setView(_view[_curScene]);
 
-            interface::Scene* sceneCrossed = nullptr;
-            if(_scenePortalsManager->update(sceneCrossed))
-            {
-                for(int i=0 ; i<NB_SCENE ; ++i)
-                {
-                    if(&_scene[i] == sceneCrossed)
-                    {
-                        _view[i] = _view[_curScene];
-                        _curScene = i;
-                        break;
-                    }
-                }
-            }
+//            interface::Scene* sceneCrossed = nullptr;
+//            if(_scenePortalsManager->update(sceneCrossed, ))
+//            {
+//                for(int i=0 ; i<NB_SCENE ; ++i)
+//                {
+//                    if(&_scene[i] == sceneCrossed)
+//                    {
+//                        _view[i] = _view[_curScene];
+//                        _curScene = i;
+//                        break;
+//                    }
+//                }
+//            }
 
             _pipeline.setScene(_scene[_curScene], _view[_curScene], 0);
 

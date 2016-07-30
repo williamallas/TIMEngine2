@@ -75,6 +75,8 @@ void AssetViewWidget::writeMaterial(const Material& m, QTextStream& stream, QDir
     stream << prefix << "\t<specular>" << m.material[2] <<"</specular>\n";
     stream << prefix << "\t<emissive>" << m.material[3] <<"</emissive>\n";
     stream << prefix << "\t<textureScale>" << m.textureScale <<"</textureScale>\n";
+    stream << prefix << "\t<castShadow>" << m.castShadow <<"</castShadow>\n";
+
     if(!m.textures[0].isEmpty())
         stream << prefix << "\t<diffuseTex>" << destDir.relativeFilePath(m.textures[0]) <<"</diffuseTex>\n";
     if(!m.textures[1].isEmpty())

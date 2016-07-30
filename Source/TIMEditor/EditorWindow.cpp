@@ -144,6 +144,7 @@ interface::XmlMeshAssetLoader::MeshElementModel convertEditorModel(MeshElement m
     out.advanced = model.advanced;
     out.advancedShader = model.advancedShader.toStdString();
     out.useAdvanced = model.useAdvanced;
+    out.castShadow = model.castShadow;
 
     for(int i=0 ; i<MeshElement::NB_TEXTURES ; ++i)
     {
