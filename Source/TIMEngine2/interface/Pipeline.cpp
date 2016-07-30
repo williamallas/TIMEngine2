@@ -62,5 +62,27 @@ void Pipeline::render()
     renderer::openGL.execAllGLTask();
 }
 
+void Pipeline::SceneView::offset(vec3 o)
+{
+    if(camera.useRawMat)
+        camera.raw_view = camera.raw_view * mat4::Translation(-o);
+
+    camera.dir += o;
+    camera.pos += o;
+
+    dirLightView.camPos += o;
+}
+
+void Pipeline::SceneView::offset(const mat4& o, const mat4& inv_o)
+{
+    if(camera.useRawMat)
+        camera.raw_view = camera.raw_view * inv_o;
+
+    camera.dir = o * camera.dir;
+    camera.pos = o * camera.pos;
+
+    dirLightView.camPos = o * dirLightView.camPos;
+}
+
 }
 }

@@ -21,6 +21,7 @@ struct Light
 	vec4 head; // (type, radius, power, x)
 	vec4 position;
     vec4 color;
+	vec4 spot;
 };
 layout(std140, binding = 0) buffer lightsBuffer { Light lights[]; };
 

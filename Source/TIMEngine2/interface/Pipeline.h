@@ -8,7 +8,6 @@
 #include "renderer/renderer.h"
 #include "renderer/Texture.h"
 #include "renderer/MeshRenderer.h"
-#include "renderer/DirectionalLightRenderer.h"
 #include "renderer/IndirectLightRenderer.h"
 #include "renderer/TiledLightRenderer.h"
 #include "renderer/PostReflexionRenderer.h"
@@ -52,16 +51,8 @@ namespace interface
             Camera camera;
             DirLightView dirLightView;
 
-            void offset(vec3 o)
-            {
-                if(camera.useRawMat)
-                    camera.raw_view = camera.raw_view * mat4::Translation(-o);
-
-                camera.dir += o;
-                camera.pos += o;
-
-                dirLightView.camPos += o;
-            }
+            void offset(vec3 o);
+            void offset(const mat4& o, const mat4& o_inv);
         };
 
         class DeferredRendererEntity
@@ -75,7 +66,6 @@ namespace interface
             renderer::TiledLightRenderer* lightRenderer() { return _lightRenderer; }
             renderer::LightContextRenderer* lightContext() { return _lightContext; }
 
-            renderer::DirectionalLightRenderer& dirLightRenderer() { return _dirLightRenderer; }
             renderer::IndirectLightRenderer& envLightRenderer() { return _envLightRenderer; }
             renderer::PostReflexionRenderer* reflexionRenderer() { return _reflexionRenderer; }
 
@@ -85,7 +75,6 @@ namespace interface
             renderer::TiledLightRenderer* _lightRenderer = nullptr;
             renderer::LightContextRenderer* _lightContext = nullptr;
 
-            renderer::DirectionalLightRenderer _dirLightRenderer;
             renderer::IndirectLightRenderer _envLightRenderer;
             renderer::PostReflexionRenderer* _reflexionRenderer = nullptr;
 
@@ -94,7 +83,7 @@ namespace interface
                 : _renderer(res, param),
                   _lightRenderer(noLightRenderer ? nullptr : new renderer::TiledLightRenderer(_renderer)),
                   _lightContext(noLightRenderer ? new renderer::LightContextRenderer(_renderer) : _lightRenderer),
-                  _dirLightRenderer(*_lightContext), _envLightRenderer(*_lightContext),
+                  _envLightRenderer(*_lightContext),
                   _reflexionRenderer(reflexionRenderer ? new renderer::PostReflexionRenderer(*_lightContext) : nullptr) {}
 
             ~DeferredRendererEntity()

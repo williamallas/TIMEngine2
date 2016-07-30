@@ -31,6 +31,7 @@ namespace renderer
             vec4 head; // (type, radius, power, x)
             vec4 position;
             vec4 color;
+            vec4 spot;
         };
         renderer::ShaderStorageBuffer<Std140LightData> _lightBuffer;
         int _nbLightUniformId = -1;

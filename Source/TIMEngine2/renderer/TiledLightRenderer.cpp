@@ -81,42 +81,5 @@ void TiledLightRenderer::createLigthBuffer(const vector<Light>& lights)
      _lightBuffer.flush(&data[0], 0, lights.size());
 }
 
-//void TiledLightRenderer::draw(const vector<LightInstance>& lights)
-//{
-
-//}
-
-//void TiledLightRenderer::buildLightBuffer(const vector<LightInstance>& lights)
-//{
-//    if(lights.empty())
-//        return;
-
-//    bool newBuffer = false;
-
-//    if(lights.size() > _lightBuffer.size())
-//    {
-//        newBuffer = true;
-//        _lightBuffer.createBuffer(lights.size());
-//    }
-
-//    for(uint i=0 ; i<lights.size() ; ++i)
-//    {
-//        Light* l = lights[i].light();
-//        Std140LightData tmp;
-//        tmp.attenuation = l->lightData().attenuation;
-//        tmp.diffuse = l->lightData().diffuse;
-//        tmp.specular = l->lightData().specular;
-//        tmp.spotData = l->lightData().spotData;
-//        tmp.position = vec4(lights[i].matrix()->translation());
-//        tmp.head = {(float)l->lightData().type, l->radius(),0,0};
-//        _lightBuffer.data()[i] = tmp;
-//    }
-
-//    if(newBuffer)
-//        _lightBuffer.uploadOnGpu(true, false);
-//    else
-//        _lightBuffer.flushOnGpu(0, lights.size());
-//}
-
 }
 }
