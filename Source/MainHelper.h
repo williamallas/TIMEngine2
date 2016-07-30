@@ -8,8 +8,8 @@
 
 #include "MemoryLoggerOn.h"
 
-static const uint WIN_RES_X = 1400;
-static const uint WIN_RES_Y = 700;
+static const uint WIN_RES_X = 1620;
+static const uint WIN_RES_Y = 900;
 
 void initContextSDL();
 void delContextSDL();

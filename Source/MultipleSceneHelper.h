@@ -22,6 +22,8 @@ public:
     interface::FullPipeline& pipeline() { return _pipeline; }
     const interface::FullPipeline& pipeline() const { return _pipeline; }
 
+    interface::Scene* curScene() const { return _currentScene; }
+
     void setResolution(uivec2 res) { _resolution = res; }
 
     void setCurScene(interface::Scene&);
@@ -32,7 +34,7 @@ public:
     void addEdge(interface::Scene *sceneFrom, interface::Scene *sceneTo,
                  interface::MeshInstance*, interface::Geometry, interface::MeshInstance* dest = nullptr);
 
-    bool update(interface::Scene*&);
+    bool update(interface::Scene*&, mat4* offset);
     void rebuild(interface::Scene&);
 
     void setEnableEdge(bool b, interface::Scene&, interface::MeshInstance*);
@@ -51,6 +53,7 @@ private:
     interface::FullPipeline::Parameter _param;
     interface::FullPipeline& _pipeline;
 
+    int _portalLimit = 2;
     int _nbExtraPipeline = 0;
     int _curNbEdge = 0;
 
@@ -69,7 +72,7 @@ private:
 
     void freeCamera();
     void constructEdge(const InternalEdge&);
-    void optimizeExtraSceneRendering(InternalEdge&, int i);
+    bool optimizeExtraSceneRendering(InternalEdge&, int i);
 
     bool getScreenBoundingBox(const Box&, const mat4& boxMat, const mat4& projView, vec2& minV, vec2& maxV);
 

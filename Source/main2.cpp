@@ -9,6 +9,7 @@
 
 #include "OpenVR/OnHmdRenderer.h"
 #include "OpenVR/HmdSceneView.h"
+#include "PortalGame/Controller.h"
 
 #undef interface
 using namespace tim::core;
@@ -19,8 +20,8 @@ using namespace tim;
 
 int main(int, char**)
 {
-    uint RES_X = 1080;
-    uint RES_Y = 1200;
+    uint RES_X = 1512;
+    uint RES_Y = 1680;
 
 	tim::core::init();
 	{
@@ -54,22 +55,23 @@ int main(int, char**)
 			/* Pipeline entity */
 			FullPipeline pipeline;
 			FullPipeline::Parameter pipelineParam;
-            pipelineParam.useShadow = true;
+            pipelineParam.useShadow = false;
             pipelineParam.usePointLight = false;
             pipelineParam.shadowCascad = vector<float>({5, 20});
             pipelineParam.shadowResolution = 1024;
-            pipelineParam.useSSReflexion = true;
-            pipelineParam.useFxaa = true;
+            pipelineParam.useSSReflexion = false;
+            pipelineParam.useFxaa = false;
 
             OnHmdRenderer* hmdNode = new OnHmdRenderer;
             hmdNode->setDrawOnScreen(2);
+            float ratio = float(RES_X)/RES_Y;
             hmdNode->setScreenResolution({WIN_RES_X, WIN_RES_Y});
             hmdNode->setShader(ShaderPool::instance().get("feedbackStereo"));
 
             pipeline.createStereoExtensible(*hmdNode, {RES_X,RES_Y}, pipelineParam);
             hmdNode->setVRDevice(&hmdDevice);
 
-            HmdSceneView hmdCamera(110, float(RES_X)/RES_Y);
+            HmdSceneView hmdCamera(110, ratio, 100);
 
             /* physic and setup */
             BulletEngine physEngine;
@@ -81,7 +83,6 @@ int main(int, char**)
             DebugCamera freeFly(&input);
 
             // Setup and load scenes + multiple portals
-
             pipeline.setStereoView(hmdCamera.cullingView(), hmdCamera.eyeView(0), hmdCamera.eyeView(1), 0);
 
             MultipleSceneHelper portalManager(pipelineParam, pipeline);
@@ -91,28 +92,21 @@ int main(int, char**)
             portalManager.setStereoView(hmdCamera.eyeView(0), hmdCamera.eyeView(1));
 
             MultiSceneManager allSceneManager("configScene.txt", portalManager);
+            if(portalManager.curScene() == nullptr)
+            {
+                std::cout << "Unable to setup the first scene.\n";
+                return -1;
+            }
+            allSceneManager.instancePhysic(physEngine);
 
-//            MeshInstance* portal1 = nullptr;
-//            for(auto o : objInScene1)
-//            {
-//                if(o.name == "portal")
-//                {
-//                    portal1 = o.meshInstance;
-//                }
-//            }
+            interface::XmlMeshAssetLoader gameAssets;
+            gameAssets.load("gameAssets.xml");
 
-//            MeshInstance* portal2 = nullptr;
-//            for(auto o : objInScene2)
-//            {
-//                if(o.name == "portal")
-//                {
-//                    portal2 = o.meshInstance;
-//                }
-//            }
+            Controller controllerManager(gameAssets.getMesh("controller", interface::Texture::genParam(true,true,true, 4)), physEngine);
+            controllerManager.setControllerOffset(mat4::RotationX(toRad(-86.1672))*mat4::Translation({0, 0.121448f*0.6f, -0.020856f*0.6f}));
+            controllerManager.buildForScene(*portalManager.curScene(), allSceneManager.getSceneIndex(portalManager.curScene()));
 
-//            vec3 tr = portal2->matrix().translation() - portal1->matrix().translation();
-//            portalManager.addEdge(&scene1, &scene2, portal1, AssetManager<Geometry>::instance().load<false>("meshBank/portal1.obj", true).value(), tr);
-//            portalManager.addEdge(&scene2, &scene1, portal2, AssetManager<Geometry>::instance().load<false>("meshBank/portal1.obj", true).value(), -tr);
+            hmdDevice.sync();
 
 			while (!input.keyState(SDLK_ESCAPE).pressed)
 			{
@@ -129,10 +123,14 @@ int main(int, char**)
 
 				if (hmdDevice.isInit())
 				{
-                    hmdDevice.update();
-                    hmdCamera.update(hmdDevice, vec3());
+                    SDLTimer rup;
+                    hmdDevice.update(input.keyState(SDLK_y).pressed);
+                    std::cout<< "hmd update : " << rup.elapsed() << std::endl;
 
-                    // flush pipeline component
+                    hmdCamera.update(hmdDevice);
+
+                    if(hmdDevice.isControllerConnected(0) && hmdDevice.isControllerConnected(1))
+                        controllerManager.update(hmdCamera.offset(), hmdDevice.controllerPose(VR_Device::LEFT), hmdDevice.controllerPose(VR_Device::RIGHT));
 				}
 				else
 				{ 
@@ -141,7 +139,18 @@ int main(int, char**)
 				}
 
                 interface::Scene* switchScene = nullptr;
-                portalManager.update(switchScene);
+                mat4 o;
+                if(portalManager.update(switchScene, &o))
+                {
+                    hmdCamera.addOffset(o);
+                    if(hmdDevice.isInit())
+                    {
+                        controllerManager.buildForScene(*switchScene, allSceneManager.getSceneIndex(portalManager.curScene()));
+
+                        if(hmdDevice.isControllerConnected(0) && hmdDevice.isControllerConnected(1))
+                            controllerManager.update(hmdCamera.offset(), hmdDevice.controllerPose(VR_Device::LEFT), hmdDevice.controllerPose(VR_Device::RIGHT));
+                    }
+                }
 
                 /********************/
                 /******* Draw *******/
@@ -149,22 +158,12 @@ int main(int, char**)
 
                 pipeline.pipeline()->prepare();
                 pipeline.pipeline()->render();
-
                 swapBuffer();
-				GL_ASSERT();
+
+                GL_ASSERT();
 
                 if(input.keyState(SDLK_p).firstPress)
                     std::cout << "Cam pos:" << hmdCamera.cullingView().camera.pos << std::endl;
-//                else if(input.keyState(SDLK_n).firstPress)
-//                {
-//                    portalManager.setEnableEdge(false, scene1, portal1);
-//                    portalManager.setEnableEdge(false, scene2, portal2);
-//                }
-//                else if(input.keyState(SDLK_m).firstPress)
-//                {
-//                    portalManager.setEnableEdge(true, scene1, portal1);
-//                    portalManager.setEnableEdge(true, scene2, portal2);
-//                }
 
 				timeElapsed = timer.elapsed()*0.001;
 				totalTime += timeElapsed;

@@ -107,12 +107,11 @@ void MultipleSceneHelper::rebuild(interface::Scene& scene)
     vector<InternalEdge>& add = _graph[&scene];
 
     _currentScene = &scene;
-    _nbExtraPipeline = 0;
     _curNbEdge = 0;
 
     freeCamera();
 
-    for(size_t i=0 ; i<add.size() ; ++i)
+    for(size_t i=0 ; i<std::min<int>((int)add.size(), _portalLimit) ; ++i)
     {
         constructEdge(add[i]);
     }
@@ -125,7 +124,7 @@ void MultipleSceneHelper::rebuild(interface::Scene& scene)
     }
 }
 
-bool MultipleSceneHelper::update(interface::Scene*& sceneCrossed)
+bool MultipleSceneHelper::update(interface::Scene*& sceneCrossed, mat4* offset_in)
 {
     if(!_curCamera)
         return false;
@@ -158,13 +157,17 @@ bool MultipleSceneHelper::update(interface::Scene*& sceneCrossed)
 
                 rebuild(*sceneCrossed);
 
-                vec3 offset = curEdges[i].edge.destPortal->matrix().translation() - curEdges[i].edge.portal->matrix().translation();
-                _curCamera->offset(offset);
+                mat4 offset = curEdges[i].edge.destPortal->matrix() * curEdges[i].edge.portal->matrix().inverted();
+                mat4 o_inv = offset.inverted();
+
+                _curCamera->offset(offset, o_inv);
+                if(offset_in)
+                    *offset_in = offset;
 
                 if(_pipeline.isStereo())
                 {
-                    _curStereoCamera[0]->offset(offset);
-                    _curStereoCamera[1]->offset(offset);
+                    _curStereoCamera[0]->offset(offset, o_inv);
+                    _curStereoCamera[1]->offset(offset, o_inv);
                 }
 
                 interface::View* v = _dirLightView[sceneCrossed];
@@ -175,6 +178,7 @@ bool MultipleSceneHelper::update(interface::Scene*& sceneCrossed)
                 }
 
                 _pipeline.setScene(*sceneCrossed, 0);
+
                 break;
             }
         }
@@ -182,11 +186,21 @@ bool MultipleSceneHelper::update(interface::Scene*& sceneCrossed)
     }
 
     vector<InternalEdge>& curEdges = _graph[_currentScene];
+    vector<boost::tuple<float, int>> optimizePortalLimit;
 
     for(size_t i=0 ; i<_extraCameras.size() ; ++i)
     {
         if(!_extraCameras[i])
             continue;
+
+        if(!curEdges[i].enabled)
+        {
+            _pipeline.combineNode(0)->setEnableInput(i+2, false);
+            if(_pipeline.isStereo())
+                _pipeline.combineNode(1)->setEnableInput(i+2, false);
+
+            continue;
+        }
 
         *_extraCameras[i] = *_curCamera;
 
@@ -194,36 +208,28 @@ bool MultipleSceneHelper::update(interface::Scene*& sceneCrossed)
         if(view)
             _extraCameras[i]->dirLightView = view->dirLightView;
 
-        vec3 offset = curEdges[i].edge.destPortal->matrix().translation() - curEdges[i].edge.portal->matrix().translation();
-        _extraCameras[i]->offset(offset);
-        _extraCameras[i]->dirLightView.camPos =_extraCameras[i]->camera.pos;
+        mat4 offset = curEdges[i].edge.destPortal->matrix() * curEdges[i].edge.portal->matrix().inverted();
+        mat4 inv_o = offset.inverted();
+        _extraCameras[i]->offset(offset, inv_o);
+        _extraCameras[i]->dirLightView.camPos = _extraCameras[i]->camera.pos;
 
         if(_pipeline.isStereo())
         {
             *_extraStereoCameras[0][i] = *_curStereoCamera[0];
-            _extraStereoCameras[0][i]->offset(offset);
+            _extraStereoCameras[0][i]->offset(offset, inv_o);
 
             *_extraStereoCameras[1][i] = *_curStereoCamera[1];
-            _extraStereoCameras[1][i]->offset(offset);
-
-            if(!curEdges[i].enabled)
-            {
-                _pipeline.combineNode(0)->setEnableInput(i+2, false);
-                if(_pipeline.isStereo())
-                    _pipeline.combineNode(1)->setEnableInput(i+2, false);
-
-                continue;
-            }
-
-            optimizeExtraSceneRendering(curEdges[i], i);
+            _extraStereoCameras[1][i]->offset(offset, inv_o);
         }
-    }
 
-    for(size_t i=0 ; i<curEdges.size() ; ++i)
-    {
+        if(!optimizeExtraSceneRendering(curEdges[i], i))
+            continue;
+
         Plan transformedPlan = curEdges[i].portalPlan.transformed(curEdges[i].edge.portal->matrix());
         if(transformedPlan.distance(_curCamera->camera.pos) > 0)
             transformedPlan = Plan(transformedPlan.plan() * -1);
+
+        optimizePortalLimit.push_back(boost::make_tuple((curEdges[i].edge.portal->volume().center()-_curCamera->camera.pos).length2(), i));
 
         interface::Mesh m = curEdges[i].edge.portal->mesh();
         if(m.nbElements() > 0)
@@ -236,8 +242,7 @@ bool MultipleSceneHelper::update(interface::Scene*& sceneCrossed)
             curEdges[i].edge.portal->setMesh(m);
         }
 
-        vec3 offset = curEdges[i].edge.destPortal->matrix().translation() - curEdges[i].edge.portal->matrix().translation();
-        vec4 planNext = transformedPlan.transformed(mat4::Translation(offset)).plan();
+        vec4 planNext = transformedPlan.transformed(offset).plan();
         for(auto ptr : _pipeline.deferredRendererNode(i+1, 0))
         {
             ptr->setClipPlan(planNext, 0);
@@ -256,6 +261,21 @@ bool MultipleSceneHelper::update(interface::Scene*& sceneCrossed)
 
     _lastCameraPos = _curCamera->camera.pos;
 
+    if((int)optimizePortalLimit.size() > _portalLimit)
+    {
+        std::sort(optimizePortalLimit.begin(), optimizePortalLimit.end(),
+                  [](boost::tuple<float, int> const& a, boost::tuple<float, int> const& b) {
+            return a.get<0>() < b.get<0>();
+        });
+
+        for(size_t i=0 ; i<optimizePortalLimit.size() ; ++i)
+        {
+            _pipeline.combineNode(0)->setEnableInput(optimizePortalLimit[i].get<1>()+2, (int)i<_portalLimit);
+            if(_pipeline.isStereo())
+                _pipeline.combineNode(1)->setEnableInput(optimizePortalLimit[i].get<1>()+2, (int)i<_portalLimit);
+        }
+    }
+
     return res;
 }
 
@@ -264,11 +284,12 @@ void MultipleSceneHelper::constructEdge(const InternalEdge& edge)
     for(int i=_nbExtraPipeline ; i<_curNbEdge+1 ; ++i)
     {
         _pipeline.extendPipeline(_resolution, _param, i+1);
-        _extraCameras.push_back(nullptr);
-        _extraStereoCameras[0].push_back(nullptr);
-        _extraStereoCameras[1].push_back(nullptr);
         _nbExtraPipeline = i+1;
     }
+
+    _extraCameras.push_back(nullptr);
+    _extraStereoCameras[0].push_back(nullptr);
+    _extraStereoCameras[1].push_back(nullptr);
 
     _extraCameras[_curNbEdge] = new interface::View;
 
@@ -305,24 +326,29 @@ void MultipleSceneHelper::constructEdge(const InternalEdge& edge)
     edge.edge.portal->setMesh(m);
 }
 
-void MultipleSceneHelper::optimizeExtraSceneRendering(InternalEdge& curEdge, int i)
+bool MultipleSceneHelper::optimizeExtraSceneRendering(InternalEdge& curEdge, int i)
 {
     Box portalBox = curEdge.portalBox;
 
     mat4 portalMatrix = curEdge.edge.portal->matrix();
-    mat4 invPortalMatrix = portalMatrix.inverted();
+    //mat4 invPortalMatrix = portalMatrix.inverted();
 
     Frustum frust;
     Camera cam = _curCamera->camera;
-    cam.pos = invPortalMatrix * cam.pos;
-    cam.dir = invPortalMatrix * cam.dir;
-    cam.up = invPortalMatrix.down<1>() * cam.up;
-    frust.buildCameraFrustum(cam);
-    if(!frust.collide(portalBox))
+//    cam.pos = invPortalMatrix * cam.pos;
+//    cam.dir = invPortalMatrix * cam.dir;
+//    cam.up = invPortalMatrix.down<1>() * cam.up;
+    frust.buildCameraFrustum(_curCamera->camera);
+
+    Sphere s(portalBox.toSphere());
+    s.transform(portalMatrix);
+    if(!frust.collide(s))
     {
         _pipeline.combineNode(0)->setEnableInput(i+2, false);
         if(_pipeline.isStereo())
             _pipeline.combineNode(1)->setEnableInput(i+2, false);
+
+        return false;
     }
     else
     {
@@ -332,11 +358,12 @@ void MultipleSceneHelper::optimizeExtraSceneRendering(InternalEdge& curEdge, int
     }
 
     //frutum culling optimization
-    vec3 offset = curEdge.edge.destPortal->matrix().translation() - curEdge.edge.portal->matrix().translation();
+    mat4 offset = curEdge.edge.destPortal->matrix() * curEdge.edge.portal->matrix().inverted();
+
     cam = _curCamera->camera;
     cam.dir = portalMatrix * portalBox.center();
-    cam.pos += offset;
-    cam.dir += offset;
+    cam.pos = offset * cam.pos;
+    cam.dir = offset * cam.dir;
     vec3 dirView = (cam.dir-cam.pos).normalized();
 
     float maxAngle = 0;
@@ -347,7 +374,7 @@ void MultipleSceneHelper::optimizeExtraSceneRendering(InternalEdge& curEdge, int
         vec3 p = {portalBox.box()[0][x], portalBox.box()[1][y], portalBox.box()[2][z]};
         p = (portalMatrix * p);
 
-        p += offset;
+        p = offset * p;
         float angle = acosf(dirView.dot((p-cam.pos).normalized()));
         maxAngle = std::max(maxAngle, angle);
         near = std::min(near, (p-cam.pos).length());
@@ -377,6 +404,8 @@ void MultipleSceneHelper::optimizeExtraSceneRendering(InternalEdge& curEdge, int
         for(auto ptr : _pipeline.deferredRendererNode(i+1, 1))
             ptr->setScissorTest(useScissor, minV, maxV-minV);
     }
+
+    return true;
 }
 
 bool MultipleSceneHelper::getScreenBoundingBox(const Box& box, const mat4& boxMat, const mat4& projView, vec2& minV, vec2& maxV)
