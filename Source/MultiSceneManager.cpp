@@ -29,7 +29,8 @@ MultiSceneManager::MultiSceneManager(std::string file, MultipleSceneHelper& mult
 
         if(b)
         {
-            _scenes.push_back(scene);
+            sceneFile.resize(sceneFile.size()-3);
+            _scenes.push_back({sceneFile, scene});
             _objects.push_back(objInScene);
             _dirLightView.push_back(new interface::View());
 
@@ -46,6 +47,7 @@ MultiSceneManager::MultiSceneManager(std::string file, MultipleSceneHelper& mult
 
             multipleScene.registerDirLightView(scene, _dirLightView.back());
 
+            vector<GeometryShape::MeshInstance> staticGeom;
             for(XmlSceneLoader::ObjectLoaded& obj : objInScene)
             {
                 if(obj.type == XmlSceneLoader::ObjectLoaded::MESH_INSTANCE)
@@ -58,9 +60,30 @@ MultiSceneManager::MultiSceneManager(std::string file, MultipleSceneHelper& mult
                             continue;
 
                         nameEdge[w[0]] = {obj, w.size()>1?w[1]:"", scene};
+
+                        if(obj.isPhysic && obj.isStatic)
+                        {
+                            for(size_t i=1 ; i<obj.asset.size() ; ++i)
+                            {
+                                staticGeom.push_back({resource::AssetManager<Geometry>::instance().load<false>(obj.asset[i].geometry, true).value(),
+                                                      obj.meshInstance->matrix()});
+                            }
+                        }
+                    }
+
+                    else if(obj.isPhysic && obj.isStatic)
+                    {
+                        for(XmlMeshAssetLoader::MeshElementModel part : obj.asset)
+                        {
+                            staticGeom.push_back({resource::AssetManager<Geometry>::instance().load<false>(part.geometry, true).value(),
+                                                  obj.meshInstance->matrix()});
+                        }
                     }
                 }
             }
+
+             btBvhTriangleMeshShape* shape = GeometryShape::genStaticGeometryShape(staticGeom);
+             _staticGeom.push_back(shape);
 
             ++index;
         }
@@ -86,9 +109,41 @@ MultiSceneManager::MultiSceneManager(std::string file, MultipleSceneHelper& mult
 MultiSceneManager::~MultiSceneManager()
 {
     for(auto ptr : _scenes)
-        delete ptr;
+        delete ptr.second;
 
     for(auto ptr : _dirLightView)
         delete ptr;
+
+    for(auto ptr : _staticGeom)
+        delete ptr;
+
+    for(auto ptr : _staticGeomObj)
+        delete ptr;
+}
+
+void MultiSceneManager::instancePhysic(BulletEngine& bulletEngine)
+{
+    for(size_t i=0 ; i<_staticGeom.size() ; ++i)
+    {
+        if(i > 0)
+            bulletEngine.createWorld(i);
+
+        BulletObject* obj = new BulletObject(mat4::IDENTITY(), _staticGeom[i]);
+        bulletEngine.addObject(obj, i);
+        obj->body()->setRestitution(0.8);
+
+        _staticGeomObj.push_back(obj);
+    }
+}
+
+int MultiSceneManager::getSceneIndex(interface::Scene* sc) const
+{
+    for(size_t i=0 ; i<_scenes.size() ; ++i)
+    {
+        if(_scenes[i].second ==  sc)
+            return static_cast<int>(i);
+    }
+
+    return -1;
 }
 
