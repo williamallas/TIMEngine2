@@ -171,6 +171,8 @@ void SceneEditorWidget::flushItemUi(int index)
         ui->scale_x->setValue(1);
         ui->scale_y->setValue(1);
         ui->scale_z->setValue(1);
+        ui->meshc_isPhysic->setChecked(true);
+        ui->meshc_isStatic->setChecked(true);
     }
     else
     {
@@ -183,6 +185,9 @@ void SceneEditorWidget::flushItemUi(int index)
         ui->scale_x->setValue(_objects[_curSceneIndex][index].scale.x());
         ui->scale_y->setValue(_objects[_curSceneIndex][index].scale.y());
         ui->scale_z->setValue(_objects[_curSceneIndex][index].scale.z());
+
+        ui->meshc_isPhysic->setChecked(_objects[_curSceneIndex][index].isPhysic);
+        ui->meshc_isStatic->setChecked(_objects[_curSceneIndex][index].isStatic);
     }
 
 
@@ -345,6 +350,18 @@ void SceneEditorWidget::on_pastTransButton_clicked()
         _objects[_curSceneIndex][_curItemIndex].translate = copy_translate;
         updateSelectedMeshMatrix();
     }
+}
+
+void SceneEditorWidget::on_meshc_isStatic_clicked(bool b)
+{
+    if(_curItemIndex >= 0)
+        _objects[_curSceneIndex][_curItemIndex].isStatic = b;
+}
+
+void SceneEditorWidget::on_meshc_isPhysic_clicked(bool b)
+{
+    if(_curItemIndex >= 0)
+        _objects[_curSceneIndex][_curItemIndex].isPhysic = b;
 }
 
 float computeGrade(float dist, float ray)
@@ -741,7 +758,9 @@ void SceneEditorWidget::exportScene(QString filePath, int sceneIndex)
         stream << "\n";
         for(int i=0 ; i<_objects[sceneIndex].size() ; ++i)
         {
-            stream << "<Object name=\"" << _objects[sceneIndex][i].name << "\" model=" <<  _objects[sceneIndex][i].exportHelper << " >\n";
+            stream << "<Object name=\"" << _objects[sceneIndex][i].name << "\" model=" <<  _objects[sceneIndex][i].exportHelper <<
+                      " isStatic=" << _objects[sceneIndex][i].isStatic << " isPhysic=" << _objects[sceneIndex][i].isPhysic << " >\n";
+
             stream << "   <translate>" << _objects[sceneIndex][i].translate[0] << "," << _objects[sceneIndex][i].translate[1] << "," << _objects[sceneIndex][i].translate[2] << "</translate>\n";
             stream << "   <scale>" << _objects[sceneIndex][i].scale[0] << "," << _objects[sceneIndex][i].scale[1] << "," << _objects[sceneIndex][i].scale[2] << "</scale>\n";
 
@@ -826,6 +845,7 @@ void SceneEditorWidget::importScene(QString file, int sceneIndex)
 
     int nbObject=0;
     _renderer->getScene(sceneIndex+1).globalLight.dirLights.clear();
+    _directionalLights[sceneIndex].clear();
 
     while(elem)
     {
@@ -866,10 +886,17 @@ void SceneEditorWidget::importScene(QString file, int sceneIndex)
             if(index < 0 || !meshAssets.contains(index))
                 continue;
 
+            bool isStatic = true, isPhysic = true;
+            elem->QueryBoolAttribute("isStatic", &isStatic);
+            elem->QueryBoolAttribute("isPhysic", &isPhysic);
+
             vec3 tr, sc;
             mat3 rot;
             parseTransformation(elem, tr, sc, rot);
             addSceneObject(sceneIndex, false, QString::fromStdString(name), meshAssetsName[index], meshAssets[index], rot, tr, sc);
+            _objects[sceneIndex].back().isPhysic = isPhysic;
+            _objects[sceneIndex].back().isStatic = isStatic;
+
         }
         else if(elem->ValueStr() == std::string("Skybox"))
         {
@@ -888,6 +915,7 @@ void SceneEditorWidget::importScene(QString file, int sceneIndex)
             if(!strDir.empty()) dir = toVec<3>(strDir);
 
             _renderer->getScene(sceneIndex+1).globalLight.dirLights.push_back({dir, vec4(color,1), shadow==1});
+            _directionalLights[sceneIndex].push_back({dir, vec4(color,1), shadow==1});
         }
 
         elem=elem->NextSiblingElement();

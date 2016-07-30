@@ -68,7 +68,8 @@ HEADERS += TIM_SDL/*.h TIMEngine2/core/*.h TIMEngine2/renderer/*.h TIMEngine2/re
     OpenVR/VR_Device.h OpenVR/HmdSceneView.h OpenVR/OnHmdRenderer.h \
     AssimpLoader.h \
     MutlipleSceneHelper.h \
-    MultiSceneManager.h
+    MultiSceneManager.h \
+    PortalGame/Controller.h
 
 SOURCES += main2.cpp \
            MainHelper.cpp \
@@ -89,7 +90,6 @@ SOURCES += main2.cpp \
     TIMEngine2/renderer/MeshRenderer.cpp \
     TIMEngine2/renderer/DeferredRenderer.cpp \
     TIMEngine2/renderer/LightContextRenderer.cpp \
-    TIMEngine2/renderer/DirectionalLightRenderer.cpp \
     TIMEngine2/renderer/IndirectLightRenderer.cpp \
     TIMEngine2/renderer/TiledLightRenderer.cpp \
     TIMEngine2/renderer/PostReflexionRenderer.cpp \
@@ -129,6 +129,7 @@ SOURCES += main2.cpp \
     MultipleSceneHelper.cpp \
     TIMEngine2/interface/XmlMeshAssetLoader.cpp \
     TIMEngine2/interface/XmlSceneLoader.cpp \
-    MultiSceneManager.cpp
+    MultiSceneManager.cpp \
+    PortalGame/Controller.cpp
 
 

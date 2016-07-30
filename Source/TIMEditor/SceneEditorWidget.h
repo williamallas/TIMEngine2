@@ -48,14 +48,16 @@ protected:
     {
         QString name;
         QString baseModel;
+        QListWidgetItem* listItem;
 
         vec3 scale     = {1,1,1};
         mat3 rotate    = mat3::IDENTITY();
         vec3 translate = {0,0,0};
 
+        /* MESH object */
         interface::MeshInstance* node;
         QList<MeshElement> materials;
-        QListWidgetItem* listItem;
+        bool isStatic, isPhysic;
 
         int exportHelper;
     };
@@ -102,6 +104,9 @@ public slots:
 
     void on_copyTransButton_clicked();
     void on_pastTransButton_clicked();
+
+    void on_meshc_isStatic_clicked(bool);
+    void on_meshc_isPhysic_clicked(bool);
 
     void on_name_editingFinished();
     void selectSceneObject(vec3,vec3);
