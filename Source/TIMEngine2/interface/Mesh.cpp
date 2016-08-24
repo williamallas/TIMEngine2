@@ -1,4 +1,5 @@
 #include "Mesh.h"
+#include "interface/ShaderPool.h"
 
 #include "MemoryLoggerOn.h"
 namespace tim
@@ -57,6 +58,8 @@ void Mesh::Element::setDefault()
     _enable = 2;
     _castShadow = true;
     _state = renderer::DrawState();
+    _state.setShader(ShaderPool::instance().get("gPass"));
+
     for(int i=0 ; i<3 ; ++i)
         setTexture(Texture(), i);
 
