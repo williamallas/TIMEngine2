@@ -51,9 +51,10 @@ using namespace core;
             }
 
             mat4 m = _sceneObject->matrix();
-            worldTrans.setBasis(btMatrix3x3(m[0][0] / _scale,m[0][1],m[0][2],
-                                            m[1][0],m[1][1] / _scale,m[1][2],
-                                            m[2][0],m[2][1],m[2][2] / _scale));
+            m = m * mat4::Scale(vec3::construct(1.f/_scale));
+            worldTrans.setBasis(btMatrix3x3(m[0][0],m[0][1],m[0][2],
+                                            m[1][0],m[1][1],m[1][2],
+                                            m[2][0],m[2][1],m[2][2]));
 
             worldTrans.setOrigin(btVector3(m[0].w(), m[1].w(), m[2].w()));
         }
@@ -63,7 +64,9 @@ using namespace core;
             if(_sceneObject == nullptr)
                 return;
 
-            _sceneObject->setMatrix(fromBtTransform(worldTrans) * mat4::Scale(vec3::construct(_scale)));
+            mat4 m = fromBtTransform(worldTrans);
+
+            _sceneObject->setMatrix(m * mat4::Scale(vec3::construct(_scale)));
         }
 
     private:
