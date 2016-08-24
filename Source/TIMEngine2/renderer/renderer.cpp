@@ -16,6 +16,7 @@ namespace renderer
 uint textureSampler[static_cast<uint>(TextureMode::Last)];
 
 ThreadPool globalThreadPool(4);
+TextureBufferPool* texBufferPool = nullptr;
 
 void __stdcall debugOut(GLenum , GLenum , GLuint , GLenum severity , GLsizei , const GLchar* msg, GLvoid*)
 {
@@ -50,6 +51,8 @@ bool init()
 
     LOG("\nSupport of bindless_texture: ",glewGetExtension("GL_ARB_bindless_texture")==GL_TRUE);
     LOG("Support of sparse_texture: ",glewGetExtension("GL_ARB_sparse_texture")==GL_TRUE);
+
+    texBufferPool = new TextureBufferPool;
 
     vertexBufferPool = new VertexBufferPoolType(2 << 20, VertexFormat::VNCT, DrawMode::DYNAMIC);
     indexBufferPool = new IndexBufferPoolType(8 << 20, DrawMode::DYNAMIC);
@@ -123,6 +126,7 @@ bool close()
 {
     if(!hasBeenInit) return true;
 
+    delete texBufferPool;
     hasBeenInit = false;
 
     for(int i=0 ; i<TextureMode::Last ; ++i)
