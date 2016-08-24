@@ -1,11 +1,36 @@
 #ifndef POOLEDBUFFER_H
 #define POOLEDBUFFER_H
 
+#include "TextureBufferPool.h"
 
-class PooledBuffer
+#include "MemoryLoggerOn.h"
+namespace tim
 {
-public:
-    PooledBuffer();
-};
+    using namespace core;
+namespace renderer
+{
+    class PooledBuffer : boost::noncopyable
+    {
+    public:
+        PooledBuffer(TextureBufferPool*);
+
+        void setParameter(const TextureBufferPool::Key&);
+
+        Texture* buffer(int) const;
+        FrameBuffer* fbo() const;
+
+        void acquire();
+        void release();
+
+    protected:
+        TextureBufferPool* _pool = nullptr;
+
+        int _counter = 0;
+        TextureBufferPool::Key _param;
+        TextureBufferPool::Buffer _buffer;
+    };
+}
+}
+#include "MemoryLoggerOff.h"
 
 #endif // POOLEDBUFFER_H
