@@ -13,10 +13,15 @@
 #include <QDialog>
 #include <QVBoxLayout>
 #include <QPushButton>
+#include <QMenu>
+#include <QAction>
 #include "core/StringUtils.h"
+#include "resource/MeshLoader.h"
 
 ResourceViewWidget::ResourceViewWidget(QWidget* parent) : QListWidget(parent), _objIcon(":/icons/Icons/objIcon.png"), _timIcon(":/icons/Icons/timIcon")
 {
+    this->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(this, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(showContextMenu(const QPoint&)));
 }
 
 void ResourceViewWidget::addElement(Element e)
@@ -194,5 +199,58 @@ void ResourceViewWidget::mouseMoveEvent(QMouseEvent *event)
     drag->setMimeData(mimeData);
     drag->start(Qt::CopyAction | Qt::MoveAction);
 }
+
+void ResourceViewWidget::showContextMenu(const QPoint& pos)
+{
+    QPoint globalPos = this->mapToGlobal(pos);
+
+    if(this->currentItem() == nullptr)
+        return;
+
+    for(const ItemElement& elem : _items)
+    {
+        if(elem.item == this->currentItem())
+        {
+            if(elem.elem.type == Element::Geometry)
+            {
+                onGeometryRightClicked(elem, globalPos);
+                return;
+            }
+        }
+    }
+}
+
+void exportToTim(QString path)
+{
+    tim::renderer::MeshData mData = tim::resource::MeshLoader::importObj(path.toStdString());
+
+    path.resize(path.size()-3);
+    path += "tim";
+    tim::resource::MeshLoader::exportTim(mData, path.toStdString());
+    mData.clear();
+}
+
+void ResourceViewWidget::onGeometryRightClicked(const ItemElement& elem, const QPoint& pos)
+{
+    QMenu myMenu;
+    QAction* timConvert = myMenu.addAction("Convert to tim");
+
+    QString newPath;
+    QAction* ret = myMenu.exec(pos);
+    if(ret == timConvert)
+    {
+        newPath = elem.elem.path;
+        if(newPath.size() < 3)
+            return;
+        else if(StringUtils(newPath.toStdString()).extension() != "obj")
+            return;
+
+        exportToTim(newPath);
+        newPath.resize(newPath.size()-3);
+        addElement({newPath+"tim", Element::Geometry});
+    }
+}
+
+
 
 

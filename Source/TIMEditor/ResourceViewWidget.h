@@ -7,8 +7,10 @@
 
 class ResourceViewWidget : public QListWidget
 {
+    Q_OBJECT
 public:
     ResourceViewWidget(QWidget* parent);
+    virtual ~ResourceViewWidget() {}
 
     struct Element
     {
@@ -24,6 +26,9 @@ public:
     QIcon getResourceIconForPath(QString path);
 
     QList<QString> selectResources(int type, QWidget*, bool singleSelection, bool& emptySelected);
+
+protected slots:
+    void showContextMenu(const QPoint& pos);
 
 protected:
     struct ItemElement
@@ -44,6 +49,8 @@ protected:
 
     bool isTexture(QString) const;
     bool isGeometry(QString) const;
+
+    void onGeometryRightClicked(const ItemElement&, const QPoint&);
 
 };
 
