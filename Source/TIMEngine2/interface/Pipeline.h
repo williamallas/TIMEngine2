@@ -132,6 +132,8 @@ namespace interface
         {
         public:
             virtual void render() = 0;
+            virtual void acquire(int) = 0;
+            virtual void release(int) = 0;
 
         protected:
             mutable SpinLock _renderedlock;
@@ -183,15 +185,17 @@ namespace interface
 
                 InnerOutBufferNode(OutBuffersNode* parent, uint index) : _parent(parent), _index(index) {}
 
-                void prepare()
-                {
-                    _parent->prepare();
-                }
+                void prepare() override
+                { _parent->prepare(); }
 
-                void render()
-                { 
-                    _parent->render();
-                }
+                void render() override
+                { _parent->render(); }
+
+                void acquire(int) override
+                { _parent->acquire(_index); }
+
+                void release(int) override
+                { _parent->release(_index); }
 
                 renderer::Texture* buffer() const { return _parent->buffer(_index); }
 
@@ -295,7 +299,11 @@ namespace interface
             bool _useClipPlan[NB_CLIP_PLAN] = {false};
         };
 
-        class TerminalNode : public InBuffersNode, public RendererNode { };
+        class TerminalNode : public InBuffersNode, public RendererNode
+        {
+            void acquire(int) override {}
+            void release(int) override {}
+        };
 
         /* Methods */
         Pipeline();

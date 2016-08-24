@@ -14,7 +14,7 @@ Pipeline::DeferredRendererEntity& Pipeline::genDeferredRendererEntity(const uive
         return *(it->second.get());
     else
     {
-        DeferredRendererEntity* entity = new DeferredRendererEntity(res, _meshRenderer.frameState(), useLightRenderer, useReflexionRenderer);
+        DeferredRendererEntity* entity = new DeferredRendererEntity(res, _meshRenderer.frameState(), !useLightRenderer, useReflexionRenderer);
         _deferredRendererEntity[boost::make_tuple(res, useLightRenderer, useReflexionRenderer, entityId)]
                 = std::unique_ptr<DeferredRendererEntity>(entity);
 
@@ -56,6 +56,8 @@ void Pipeline::prepare()
 
 void Pipeline::render()
 {
+    renderer::openGL.bindFrameBuffer(0);
+
     if(_outputNode)
         _outputNode->render();
 
