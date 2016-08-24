@@ -69,14 +69,14 @@ namespace core
 
     static Logger& logger = Singleton<Logger>::instance();
 
-    #define LOG logger.setLoggerInfo(__FILE__,__LINE__).setEndlMode(true).log
-    #define LOG_EXT logger.setLoggerInfo(__FILE__,__LINE__).setEndlMode(true).log2
-    #define LOG_L logger.setLoggerInfo(__FILE__,__LINE__).setEndlMode(false).log
+    #define LOG tim::core::logger.setLoggerInfo(__FILE__,__LINE__).setEndlMode(true).log
+    #define LOG_EXT tim::core::logger.setLoggerInfo(__FILE__,__LINE__).setEndlMode(true).log2
+    #define LOG_L tim::core::logger.setLoggerInfo(__FILE__,__LINE__).setEndlMode(false).log
 
 #ifdef TIM_DEBUG
-    #define DLOG logger.setLoggerInfo(__FILE__,__LINE__).setEndlMode(true).log
-    #define DLOG_EXT logger.setLoggerInfo(__FILE__,__LINE__).setEndlMode(true).log2
-    #define DLOG_L logger.setLoggerInfo(__FILE__,__LINE__).setEndlMode(false).log
+    #define DLOG tim::core::logger.setLoggerInfo(__FILE__,__LINE__).setEndlMode(true).log
+    #define DLOG_EXT tim::core::logger.setLoggerInfo(__FILE__,__LINE__).setEndlMode(true).log2
+    #define DLOG_L tim::core::logger.setLoggerInfo(__FILE__,__LINE__).setEndlMode(false).log
 #else
     #define DLOG(...)
     #define DLOG_EXT(...)
