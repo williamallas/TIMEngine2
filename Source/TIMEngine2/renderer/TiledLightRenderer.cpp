@@ -47,7 +47,7 @@ void TiledLightRenderer::draw(const vector<Light>& lights)
     _computeShader->bind();
     _computeShader->setUniform(static_cast<int>(lights.size()), _nbLightUniformId);
 
-    openGL.bindImageTexture(_buffer->id(), 0, GL_WRITE_ONLY, Texture::toGLFormat(_buffer->format()));
+    openGL.bindImageTexture(_buffer.buffer(0)->id(), 0, GL_WRITE_ONLY, Texture::toGLFormat(_buffer.buffer(0)->format()));
 
     for(int i=0 ; i<4 ; ++i)
     {
