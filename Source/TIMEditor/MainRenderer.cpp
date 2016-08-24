@@ -20,8 +20,8 @@ MainRenderer::MainRenderer(RendererWidget* parent) : _parent(parent)
     _renderingParameter.useShadow = true;
     _renderingParameter.shadowCascad = {4,15,50};
     _renderingParameter.shadowResolution = 2048;
-    _renderingParameter.usePointLight = false;
-    _renderingParameter.useSSReflexion = true;
+    _renderingParameter.usePointLight = true;
+    _renderingParameter.useSSReflexion = false;
     _currentSize = {200,200};
     _newSize = true;
 
@@ -103,12 +103,12 @@ void MainRenderer::main()
     }
     }
 
-    _scenePortalsManager = new MultipleSceneHelper(_renderingParameter, _pipeline);
+    //_scenePortalsManager = new MultipleSceneHelper(_renderingParameter, _pipeline);
 
-    for(int i=0 ; i<NB_SCENE-1 ; ++i)
-    {
-        _scenePortalsManager->registerDirLightView(&_scene[i+1], &_dirLightView[i+1]);
-    }
+//    for(int i=0 ; i<NB_SCENE-1 ; ++i)
+//    {
+//        _scenePortalsManager->registerDirLightView(&_scene[i+1], &_dirLightView[i+1]);
+//    }
 
     resize();
 
@@ -215,14 +215,12 @@ void MainRenderer::resize()
     if(_newSize)
     {
         openGL.resetStates();
-        _pipeline.createExtensible(_currentSize, _renderingParameter);
+        openGL.applyAll();
+        _pipeline.create(_currentSize, _renderingParameter);
 
-        _scenePortalsManager->setResolution(_currentSize);
-        _scenePortalsManager->rebuild(_scene[_curScene]);
+//        _scenePortalsManager->setResolution(_currentSize);
+//        _scenePortalsManager->rebuild(_scene[_curScene]);
         //_pipeline.setScene(_scene[_curScene], _view[_curScene], 0);
-
-        for(auto ptr : _pipeline.rendererEntities())
-            ptr->envLightRenderer().setEnableGI(true);
 
         //_pipeline.rendererEntity->envLightRenderer().setSkybox(_scene[0].globalLight.skybox.first, _scene[0].globalLight.skybox.second);
     }
@@ -308,7 +306,12 @@ void MainRenderer::setSkybox(int sceneIndex, QList<QString> list)
 
 void MainRenderer::setDirectionalLight(uint sceneIndex, const tim::interface::Pipeline::DirectionalLight& l)
 {
-    getScene(sceneIndex).globalLight.dirLights.push_back(l);
+    if(getScene(sceneIndex).globalLight.dirLights.size() == 0)
+        getScene(sceneIndex).globalLight.dirLights.push_back(l);
+    else
+    {
+        getScene(sceneIndex).globalLight.dirLights[0] = l;
+    }
     if(l.projectShadow)
         _dirLightView[sceneIndex].dirLightView.lightDir = l.direction;
 }

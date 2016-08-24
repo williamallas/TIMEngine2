@@ -1,14 +1,16 @@
 #ifndef DEVICEFUN_H_INCLUDED
 #define DEVICEFUN_H_INCLUDED
 
+#ifdef USE_SDL
+#include <SDL.h>
+#endif
+
 namespace tim
 {
-    using namespace core;
 namespace renderer
 {
 
 #ifdef USE_SDL
-    #include <SDL.h>
     using ThreadID = SDL_threadID;
 #endif
 

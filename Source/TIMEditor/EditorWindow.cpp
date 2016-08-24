@@ -23,6 +23,7 @@ EditorWindow::EditorWindow(QWidget *parent) :
     this->setWindowTitle("TIMEditor - Scene 1");
 
     ui->resourceWidget->viewport()->setAcceptDrops(true);
+    ui->sceneEditorWidget->setLocalRotationCB(ui->localRot);
 
     _rendererThread = new RendererThread(ui->glWidget);
     _rendererThread->start();
@@ -46,10 +47,10 @@ EditorWindow::EditorWindow(QWidget *parent) :
 
     connect(ui->glWidget, SIGNAL(F11_pressed()), ui->viewDockWidget, SLOT(switchFullScreen()));
     connect(ui->glWidget, SIGNAL(pressedMouseMoved(int,int)), ui->meshEditorWidget, SLOT(rotateEditedMesh(int,int)));
-    connect(ui->glWidget, SIGNAL(clickInEditor(vec3,vec3)), ui->sceneEditorWidget, SLOT(selectSceneObject(vec3,vec3)));
+    connect(ui->glWidget, SIGNAL(clickInEditor(vec3,vec3,bool)), ui->sceneEditorWidget, SLOT(selectSceneObject(vec3,vec3,bool)));
     connect(ui->glWidget, SIGNAL(translateMouse(float,float,int)), ui->sceneEditorWidget, SLOT(translateMouse(float,float,int)));
     connect(ui->glWidget, SIGNAL(escapePressed()), ui->sceneEditorWidget, SLOT(cancelSelection()));
-    connect(ui->glWidget, SIGNAL(deleteCurrent()), ui->sceneEditorWidget, SLOT(deleteCurrentObject()));
+    connect(ui->glWidget, SIGNAL(deleteCurrent()), ui->sceneEditorWidget, SLOT(deleteCurrentObjects()));
 
     connect(ui->meshEditorWidget, SIGNAL(saveMeshClicked()), this, SLOT(addMeshToAsset()));
 
@@ -59,6 +60,7 @@ EditorWindow::EditorWindow(QWidget *parent) :
     connect(ui->glWidget, SIGNAL(startEdit()), ui->sceneEditorWidget, SLOT(saveCurMeshTrans()));
     connect(ui->glWidget, SIGNAL(cancelEdit()), ui->sceneEditorWidget, SLOT(restoreCurMeshTrans()));
     connect(ui->glWidget, SIGNAL(stateChanged(int)), ui->sceneEditorWidget, SLOT(flushUiAccordingState(int)));
+    connect(ui->sceneEditorWidget, SIGNAL(feedbackTransformation(QString)), this, SLOT(flushFeedbackTrans(QString)));
 
     _copySC = new QShortcut(QKeySequence("Ctrl+C"), ui->glWidget);
     connect(_copySC, SIGNAL(activated()), ui->sceneEditorWidget, SLOT(copyObject()));
@@ -82,6 +84,11 @@ QString EditorWindow::genTitle() const
 }
 
 /** SLOTS **/
+
+void EditorWindow::EditorWindow::flushFeedbackTrans(QString str)
+{
+    ui->feedbackTrans->setText(str);
+}
 
 void EditorWindow::addResourceFolder()
 {
@@ -114,6 +121,21 @@ void EditorWindow::on_actionAdd_folder_triggered()
 void EditorWindow::on_actionAdd_folder_recursively_triggered()
 {
     addResourceFolderRec();
+}
+
+void EditorWindow::on_actionSunDirection_triggered()
+{
+    int sceneIndex = _rendererThread->mainRenderer()->getCurSceneIndex();
+    if(!_rendererThread->mainRenderer()->getScene(sceneIndex).globalLight.dirLights.empty())
+    {
+        interface::Pipeline::DirectionalLight l = _rendererThread->mainRenderer()->getScene(sceneIndex).globalLight.dirLights[0];
+        l.direction = _rendererThread->mainRenderer()->getSceneView(sceneIndex).camera.dir - _rendererThread->mainRenderer()->getSceneView(sceneIndex).camera.pos;
+        _rendererThread->mainRenderer()->setDirectionalLight(sceneIndex, l);
+
+        if(sceneIndex > 0)
+            ui->sceneEditorWidget->setSunDirection(sceneIndex-1, l.direction);
+    }
+
 }
 
 void EditorWindow::on_actionSet_skybox_triggered()

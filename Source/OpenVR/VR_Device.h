@@ -1,16 +1,16 @@
-#ifndef VR_DEVICE_H
-#define VR_DEVICE_H
+#ifndef VR_DEVICE_H__
+#define VR_DEVICE_H__
 
 #include <openvr_mingw.hpp>
 #include "core/Matrix.h"
 
 #include "renderer/FrameBuffer.h"
 
+#include "core/MemoryLoggerOn.h"
 namespace tim {
 	class VR_Device
 	{
 		
-
 	public:
 		enum { LEFT = 0, RIGHT = 1 };
 
@@ -62,5 +62,6 @@ namespace tim {
         bool _hmdConnected = false;
 	};
 }
+#include "core/MemoryLoggerOff.h"
 
 #endif // VR_DEVICE_H

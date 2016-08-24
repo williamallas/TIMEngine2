@@ -55,11 +55,12 @@ private slots:
     void on_actionLoad_triggered();
     void on_actionSave_As_triggered();
     void on_actionNew_triggered();
+    void on_actionSunDirection_triggered();
 
     void addAssetToScene(QString);
     void addGeometryToScene(QString, QString);
 
-
+    void flushFeedbackTrans(QString);
 
 };
 

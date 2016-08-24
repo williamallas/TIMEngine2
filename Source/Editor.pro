@@ -46,7 +46,7 @@ QMAKE_CXXFLAGS_RELEASE += -flto
 QMAKE_LFLAGS += -O3
 QMAKE_LFLAGS += -flto
 
-DEFINES += GLEW_STATIC GLEW_NO_GLU TIXML_USE_STL USE_SDL
+DEFINES += GLEW_STATIC GLEW_NO_GLU TIXML_USE_STL USE_SDL NO_OPEN_AL
 debug: DEFINES += TIM_DEBUG
 
 # Input
@@ -131,6 +131,8 @@ SOURCES += mainEditor.cpp \
     TIMEditor/SceneEditorWidget.cpp \
     TIMEditor/SelectResourcesDialog.cpp \
     TIMEditor/SelectSkyboxDialog.cpp \
+    TIMEngine2/renderer/PooledBuffer.cpp \
+    TIMEngine2/renderer/TextureBufferPool.cpp \
     MultipleSceneHelper.cpp \
     TIMEditor/LightComponent.cpp
 

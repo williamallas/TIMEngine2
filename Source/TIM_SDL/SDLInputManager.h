@@ -1,5 +1,5 @@
-#ifndef SDLINPUTMANAGER_H
-#define SDLINPUTMANAGER_H
+#ifndef SDLINPUTMANAGER_H__
+#define SDLINPUTMANAGER_H__
 
 #include <SDL.h>
 #include "core/InputManager.h"

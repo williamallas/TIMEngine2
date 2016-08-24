@@ -48,9 +48,9 @@ namespace core
         Plan& transform(const mat4& mat)
         {
              vec3 p(0,0,0);
-             if(_plan[0] != 0) p[0] = -_plan[3] / _plan[0];
-             else if(_plan[1] != 0) p[1] = -_plan[3] / _plan[1];
-             else if(_plan[2] != 0) p[2] = -_plan[3] / _plan[2];
+             if(fabsf(_plan[0]) > 0.01) p[0] = -_plan[3] / _plan[0];
+             else if(fabsf(_plan[1]) > 0.01) p[1] = -_plan[3] / _plan[1];
+             else if(fabsf(_plan[2]) > 0.01) p[2] = -_plan[3] / _plan[2];
 
              p = mat*p;
              vec3 n = mat.to<3>() * _plan.to<3>();
@@ -64,6 +64,11 @@ namespace core
         {
             Plan p = *this;
             return p.transform(mat);
+        }
+
+        vec3 project(const vec3 p) const
+        {
+            return p -  _plan.to<3>() * distance(p);
         }
 
     private:

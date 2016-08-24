@@ -443,7 +443,7 @@ vec4 raytraceCamSpace(vec3 rayPos, vec3 rayDir, sampler2D ZBuffer, vec3 n, vec4 
 	return backColor;
 }
 
-const float BIAS[] = {0.015 / 1000, 0.04 / 1000, 0.16 / 1000, 0.5 / 1000};
+const float BIAS[] = {0.015 / 500, 0.04 / 500, 0.08 / 500, 0.2 / 500};
 
 float textureShadow3x3(sampler2DArrayShadow tex, vec4 coord, vec2 sizeTex)
 {

@@ -1,4 +1,5 @@
 #include "SDLTextureLoader.h"
+
 #include <SDL_image.h>
 
 #include "core/Matrix.h"

@@ -1,5 +1,6 @@
 #include "MainHelper.h"
 #include "renderer/GLState.h"
+#include <SDL_image.h>
 
 #undef interface
 using namespace tim;

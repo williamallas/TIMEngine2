@@ -3,7 +3,8 @@
 #ifdef STEREO_DISPLAY
 uniform sampler2D textures[2];
 #else
-uniform sampler2D textures[6];
+	const int PORTAL_LIMIT = 2;
+uniform sampler2D textures[2+PORTAL_LIMIT];
 uniform int nbScene;
 #endif
 
@@ -23,12 +24,16 @@ void main()
 	vec4 mat = texture(textures[0], texc); 
 	outColor0 = texture(textures[1], texc);
 	
-	if(mat.x==1&&mat.y==1) 
+	if(mat.x==1 && mat.y==1) 
 	{
-		if(mat.z < 0.1) outColor0 = texture(textures[2], texc);
-		else if(mat.z < 0.1+0.2) outColor0 = texture(textures[3], texc);
-		else if(mat.z < 0.1+0.4) outColor0 = texture(textures[4], texc);
-		else if(mat.z < 0.1+0.6) outColor0 = texture(textures[5], texc);
+		for(int i=0 ; i<PORTAL_LIMIT ; ++i)
+		{
+			if(mat.z < 0.05 + i*0.1) 
+			{
+				outColor0 = texture(textures[i+2], texc);
+				break;
+			}
+		}
 	}
 #endif
 

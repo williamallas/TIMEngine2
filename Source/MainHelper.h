@@ -1,7 +1,6 @@
 #ifndef MAINHELPER_H_INCLUDED
 #define MAINHELPER_H_INCLUDED
 
-#include <SDL_image.h>
 #include "TIM_SDL/SDLInputManager.h"
 #include "TIM_SDL/SDLTimer.h"
 #include "TIM_SDL/SDLTextureLoader.h"

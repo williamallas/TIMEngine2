@@ -39,7 +39,7 @@ public:
 
     tim::interface::Scene& getScene(int index) { return _scene[index]; }
 
-    MultipleSceneHelper* portalsManager() const { return _scenePortalsManager; }
+    //MultipleSceneHelper* portalsManager() const { return _scenePortalsManager; }
 
     int getCurSceneIndex() const { return _curScene; }
     void setCurSceneIndex(int index) { _curScene = index; }
@@ -72,7 +72,7 @@ private:
     tim::interface::View _view[NB_SCENE];
     tim::interface::View _dirLightView[NB_SCENE];
     tim::interface::Scene _scene[NB_SCENE];
-    MultipleSceneHelper* _scenePortalsManager = nullptr;
+    //MultipleSceneHelper* _scenePortalsManager = nullptr;
 
     int _curScene=0;
     bool _enableMove = false;

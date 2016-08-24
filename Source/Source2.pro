@@ -21,6 +21,8 @@ INCLUDEPATH += ../Lib/SDL2-2.0.3/include/
 INCLUDEPATH += ../Lib/bullet/include/
 INCLUDEPATH += ../../openvr/headers/
 INCLUDEPATH += ../Lib/tinyxml/
+INCLUDEPATH += ../Lib/openAL/include/
+INCLUDEPATH += ../Lib/OggVorbis/include/
 
 LIBS += -L./../Lib/lib/
 LIBS += -lboost_thread-mgw47-mt-1_55.dll
@@ -37,6 +39,8 @@ LIBS += -lSDL2_image.dll
 LIBS += -lBulletDynamics
 LIBS += -lBulletCollision -lLinearMath
 LIBS += -lopenvr_api
+LIBS += -lOpenAL32.dll
+LIBS += -logg.dll -lvorbis.dll -lvorbisenc.dll -lvorbisfile.dll
 
 QMAKE_CXXFLAGS_RELEASE -= -O
 QMAKE_CXXFLAGS_RELEASE -= -O1
@@ -65,11 +69,18 @@ HEADERS += TIM_SDL/*.h TIMEngine2/core/*.h TIMEngine2/renderer/*.h TIMEngine2/re
     RTSEngine/Graphic/TerrainRenderer.h \
     RTSEngine/Graphic/RTSCamera.h \
     RTSEngine/Game.h \
-    OpenVR/VR_Device.h OpenVR/HmdSceneView.h OpenVR/OnHmdRenderer.h \
+    OpenVR/VR_Device.h OpenVR/HmdSceneView.h OpenVR/OnHmdRenderer.h OpenVR/VRDebugCamera.h \
     AssimpLoader.h \
-    MutlipleSceneHelper.h \
+    MultipleSceneHelper.h \
     MultiSceneManager.h \
-    PortalGame/Controller.h
+    PortalGame/Controller.h \
+    TIMEngine2/renderer/PooledBuffer.h \
+    PortalGame/LevelSystem.h \
+    PortalGame/Level1.h \
+    PortalGame/ForestLevel.h PortalGame/SacredGroveLevel.h \
+    PortalGame/PortalGame.h \
+    openAL/*.hpp \
+
 
 SOURCES += main2.cpp \
            MainHelper.cpp \
@@ -130,6 +141,13 @@ SOURCES += main2.cpp \
     TIMEngine2/interface/XmlMeshAssetLoader.cpp \
     TIMEngine2/interface/XmlSceneLoader.cpp \
     MultiSceneManager.cpp \
-    PortalGame/Controller.cpp
+    PortalGame/Controller.cpp \
+    TIMEngine2/renderer/PooledBuffer.cpp \
+    TIMEngine2/renderer/TextureBufferPool.cpp \
+    PortalGame/LevelSystem.cpp \
+    PortalGame/Level1.cpp \
+    PortalGame/ForestLevel.cpp \
+    PortalGame/PortalGame.cpp PortalGame/SacredGroveLevel.cpp \
+    openAL/Listener.cpp openAL/Source.cpp openAL/Sampler.cpp openAL/Sound.cpp \
 
 
