@@ -30,19 +30,14 @@ namespace tim
 
             for(uint i=0 ; i<w->_innerPhysicTick.size() ; ++i)
             {
-
-                if(w->_innerPhysicTick[i].second == indexWorld)
+                if(w->_innerPhysicTick[i].second == indexWorld || w->_innerPhysicTick[i].second < 0)
                     w->_innerPhysicTick[i].first(static_cast<float>(time), w);
             }
         }
 
         BulletEngine()
-            : broadphase(new btDbvtBroadphase), collisionConfiguration(new btDefaultCollisionConfiguration),
-              dispatcher(new btCollisionDispatcher(collisionConfiguration)), solver(new btSequentialImpulseConstraintSolver)
         {
-            dynamicsWorld[0] = new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
-            dynamicsWorld[0]->setGravity(btVector3(0, 0, -9.87));
-            dynamicsWorld[0]->setInternalTickCallback(tickCallback, static_cast<void *>(this), true);
+            createWorld(0);
 			gContactBreakingThreshold = 0.005;
             //dynamicsWorld->getDispatchInfo().m_allowedCcdPenetration=0.0001f;
         }
@@ -50,27 +45,37 @@ namespace tim
         ~BulletEngine()
         {
             for(int i=0 ; i<NB_WORLD ; ++i)
+            {
                 delete dynamicsWorld[i];
-
-            delete solver;
-            delete dispatcher;
-            delete collisionConfiguration;
-            delete broadphase;
+                delete solver[i];
+                delete dispatcher[i];
+                delete collisionConfiguration[i];
+                delete broadphase[i];
+            }
         }
 
         void addObject(BulletObject* o, int worldId = 0)
         {
             dynamicsWorld[worldId]->addRigidBody(o->body());
+            o->body()->setDamping(0.3, 0.5);
             o->_world = dynamicsWorld[worldId];
+            o->_indexWorld = worldId;
         }
 
         void createWorld(int index)
         {
             if(dynamicsWorld[index] == nullptr)
             {
-                dynamicsWorld[index] = new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
+                broadphase[index] = new btDbvtBroadphase;
+                collisionConfiguration[index] = new btDefaultCollisionConfiguration;
+                dispatcher[index] = new btCollisionDispatcher(collisionConfiguration[index]);
+                solver[index] = new btSequentialImpulseConstraintSolver;
+
+                dynamicsWorld[index] = new btDiscreteDynamicsWorld(dispatcher[index], broadphase[index],
+                                                                   solver[index], collisionConfiguration[index]);
                 dynamicsWorld[index]->setGravity(btVector3(0, 0, -9.87));
                 dynamicsWorld[index]->setInternalTickCallback(tickCallback, static_cast<void *>(this), true);
+                //dynamicsWorld[index]->stepSimulation(0.00001, 1);
             }
         }
 
@@ -79,11 +84,10 @@ namespace tim
         void addInnerPhysicTask(const TickCallback&, int);
 
         /** Attributes */
-        btBroadphaseInterface* broadphase;
-        btDefaultCollisionConfiguration* collisionConfiguration;
-        btCollisionDispatcher* dispatcher;
-
-        btSequentialImpulseConstraintSolver* solver;
+        btBroadphaseInterface* broadphase[NB_WORLD] = {nullptr};
+        btDefaultCollisionConfiguration* collisionConfiguration[NB_WORLD] = {nullptr};
+        btCollisionDispatcher* dispatcher[NB_WORLD] = {nullptr};
+        btSequentialImpulseConstraintSolver* solver[NB_WORLD] = {nullptr};
 
         btDiscreteDynamicsWorld* dynamicsWorld[NB_WORLD] = {nullptr};
 
