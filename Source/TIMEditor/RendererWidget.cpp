@@ -173,19 +173,19 @@ void RendererWidget::keyPressEvent(QKeyEvent* event)
     }
     else if(_editMode == SCENE_EDITOR && _stateReady == NO_INTERACTION)
     {
-        if(event->key() == Qt::Key_G)
+        if(event->key() == Qt::Key_G && _stateReady != TRANSLATE_MODE)
         {
             _stateReady = TRANSLATE_MODE;
             emit startEdit();
             emit stateChanged(_stateReady);
         }
-        else if(event->key() == Qt::Key_F)
+        else if(event->key() == Qt::Key_F && _stateReady != SCALE_MODE)
         {
             _stateReady = SCALE_MODE;
             emit startEdit();
             emit stateChanged(_stateReady);
         }
-        else if(event->key() == Qt::Key_R)
+        else if(event->key() == Qt::Key_R && _stateReady != ROTATE_MODE)
         {
             _stateReady = ROTATE_MODE;
             emit startEdit();
@@ -199,40 +199,55 @@ void RendererWidget::keyPressEvent(QKeyEvent* event)
     }
     else if(_editMode == SCENE_EDITOR && _stateReady >= TRANSLATE_MODE && _stateReady <= TRANSLATE_Z_MODE)
     {
+        int newState = _stateReady;
         if(event->key() == Qt::Key_X)
-            _stateReady = TRANSLATE_X_MODE;
+            newState = TRANSLATE_X_MODE;
         else if(event->key() == Qt::Key_Y)
-            _stateReady = TRANSLATE_Y_MODE;
+            newState = TRANSLATE_Y_MODE;
         else if(event->key() == Qt::Key_Z)
-            _stateReady = TRANSLATE_Z_MODE;
+            newState = TRANSLATE_Z_MODE;
 
-        emit stateChanged(_stateReady);
+        if(newState != _stateReady)
+        {
+            _stateReady = newState;
+            emit stateChanged(_stateReady);
+        }
 
         event->accept();
     }
     else if(_editMode == SCENE_EDITOR && _stateReady >= SCALE_MODE && _stateReady <= SCALE_Z_MODE)
     {
+        int newState = _stateReady;
         if(event->key() == Qt::Key_X)
-            _stateReady = SCALE_X_MODE;
+            newState = SCALE_X_MODE;
         else if(event->key() == Qt::Key_Y)
-            _stateReady = SCALE_Y_MODE;
+            newState = SCALE_Y_MODE;
         else if(event->key() == Qt::Key_Z)
-            _stateReady = SCALE_Z_MODE;
+            newState = SCALE_Z_MODE;
 
-        emit stateChanged(_stateReady);
+        if(newState != _stateReady)
+        {
+            _stateReady = newState;
+            emit stateChanged(_stateReady);
+        }
 
         event->accept();
     }
     else if(_editMode == SCENE_EDITOR && _stateReady >= ROTATE_MODE && _stateReady <= ROTATE_Z_MODE)
     {
+        int newState = _stateReady;
         if(event->key() == Qt::Key_X)
-            _stateReady = ROTATE_X_MODE;
+            newState = ROTATE_X_MODE;
         else if(event->key() == Qt::Key_Y)
-            _stateReady = ROTATE_Y_MODE;
+            newState = ROTATE_Y_MODE;
         else if(event->key() == Qt::Key_Z)
-            _stateReady = ROTATE_Z_MODE;
+            newState = ROTATE_Z_MODE;
 
-        emit stateChanged(_stateReady);
+        if(newState != _stateReady)
+        {
+            _stateReady = newState;
+            emit stateChanged(_stateReady);
+        }
 
         event->accept();
     }
@@ -280,7 +295,7 @@ void RendererWidget::mousePressEvent(QMouseEvent * event)
             vec3 dir = v.to<3>() / v.w();
             dir = (dir-camera.pos).normalized();
 
-            emit clickInEditor(camera.pos, dir);
+            emit clickInEditor(camera.pos, dir, _shiftPressed);
         }
 
         event->accept();

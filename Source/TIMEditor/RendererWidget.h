@@ -88,7 +88,7 @@ signals:
     void pressedMouseMoved(int, int);
     void addAssetToScene(QString);
     void addGeometryToScene(QString, QString);
-    void clickInEditor(vec3, vec3);
+    void clickInEditor(vec3, vec3, bool);
     void translateMouse(float,float,int);
     void startEdit();
     void cancelEdit();
