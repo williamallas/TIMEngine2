@@ -36,7 +36,10 @@ void OnScreenRenderer::render()
     for(uint i=0 ; i<_input.size() ; ++i)
     {
         if(_input[i])
+        {
+            _input[i]->acquire(0);
             _input[i]->render();
+        }
     }
 
     renderer::openGL.bindFrameBuffer(0);
@@ -52,6 +55,12 @@ void OnScreenRenderer::render()
     renderer::quadMeshBuffers->draw(6, renderer::VertexMode::TRIANGLES, 1);
 
     renderer::openGL.finish();
+
+    for(uint i=0 ; i<_input.size() ; ++i)
+    {
+        if(_input[i])
+            _input[i]->release(0);
+    }
 }
 
 }

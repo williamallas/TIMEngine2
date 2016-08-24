@@ -81,7 +81,8 @@ void DeferredRendererNode::render()
     if(_sceneView)
         _meshDrawer.frameState().setCamera(_sceneView->camera);
 
-    _rendererEntity->deferredRenderer().frameBuffer().bind();
+    _rendererEntity->deferredRenderer().acquire();
+    _rendererEntity->deferredRenderer().frameBuffer()->bind();
 
     openGL.clearDepth();
     openGL.clearColor(vec4::construct(0));
@@ -184,6 +185,8 @@ void DeferredRendererNode::render()
     for(uint i=0 ; i<lights.size() ; ++i)
         lights[i] = _culledLight[i].get().get();
 
+    _rendererEntity->lightContext()->acquire();
+
     if (_rendererEntity->lightRenderer())
         _rendererEntity->lightRenderer()->draw(lights);
     else
@@ -195,7 +198,10 @@ void DeferredRendererNode::render()
         for(uint i=0 ; i<std::min(_dirLightDepthMapRenderer.size(),_globalLightInfo->dirLights.size()) ; ++i)
         {
             if(_dirLightDepthMapRenderer[i] && _globalLightInfo->dirLights[i].projectShadow)
+            {
+                _dirLightDepthMapRenderer[i]->acquire(0);
                 _dirLightDepthMapRenderer[i]->render();
+            }
         }
         openGL.scissorTest(_useScissor);
 
@@ -236,12 +242,49 @@ void DeferredRendererNode::render()
 
         _rendererEntity->envLightRenderer().setSkybox(_globalLightInfo->skybox.first, _globalLightInfo->skybox.second);
         _rendererEntity->envLightRenderer().draw(lights);
+
+        for(uint i=0 ; i<std::min(_dirLightDepthMapRenderer.size(),_globalLightInfo->dirLights.size()) ; ++i)
+            if(_dirLightDepthMapRenderer[i] && _globalLightInfo->dirLights[i].projectShadow)
+                _dirLightDepthMapRenderer[i]->release(0);
     }
 
     if(_rendererEntity->reflexionRenderer())
         _rendererEntity->reflexionRenderer()->draw();
 
+    _rendererEntity->lightContext()->release();
+    _rendererEntity->deferredRenderer().release();
+
     openGL.scissorTest(false);
+}
+
+void DeferredRendererNode::acquire(int index)
+{
+    if(_rendererEntity)
+    {
+        if(index == 0)
+            _rendererEntity->lightContext()->acquire();
+        else if(index > 0)
+            _rendererEntity->deferredRenderer().acquire();
+    }
+
+    for(uint i=0 ; i<std::min(_dirLightDepthMapRenderer.size(),_globalLightInfo->dirLights.size()) ; ++i)
+        if(_dirLightDepthMapRenderer[i] && _globalLightInfo->dirLights[i].projectShadow)
+            _dirLightDepthMapRenderer[i]->acquire(0);
+}
+
+void DeferredRendererNode::release(int index)
+{
+    if(_rendererEntity)
+    {
+        if(index == 0)
+            _rendererEntity->lightContext()->release();
+        else if(index > 0)
+            _rendererEntity->deferredRenderer().release();
+    }
+
+    for(uint i=0 ; i<std::min(_dirLightDepthMapRenderer.size(),_globalLightInfo->dirLights.size()) ; ++i)
+        if(_dirLightDepthMapRenderer[i] && _globalLightInfo->dirLights[i].projectShadow)
+            _dirLightDepthMapRenderer[i]->release(0);
 }
 
 void DeferredRendererNode::setRendererEntity(Pipeline::DeferredRendererEntity& entity)

@@ -11,25 +11,23 @@ namespace renderer
 
 LightContextRenderer::LightContextRenderer(const DeferredRenderer& gbuffers, bool hdr) : AbstractRenderer(gbuffers.resolution(), gbuffers.frameState()), _deferred(gbuffers)
 {
-    Texture::GenTexParam param;
-    param.size = uivec3(gbuffers.resolution(),0);
-    param.nbLevels = 1;
-    param.format = hdr ? Texture::RGBA16F : Texture::RGBA8;
+    TextureBufferPool::Key k;
+    k.type = TextureBufferPool::Key::NONE;
+    k.res = uivec3(gbuffers.resolution(), 1);
+    k.onlyTextures = false;
+    k.hdr = hdr;
 
-    _buffer = Texture::genTexture2D(param);
-
-    _fbo.attachTexture(0, _buffer);
-    _fbo.unbind();
+    _buffer.setParameter(k);
 }
 
 LightContextRenderer::~LightContextRenderer()
 {
-    delete _buffer;
+
 }
 
 void LightContextRenderer::clear() const
 {
-	_fbo.bind();
+    _buffer.fbo()->bind();
 	openGL.clearColor(vec4::construct(0));
 }
 

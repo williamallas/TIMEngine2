@@ -11,7 +11,7 @@ namespace pipeline
 {
 
 DirLightShadowNode::DirLightShadowNode(renderer::MeshRenderer& meshDrawer)
-    : Pipeline::DepthMapRendererNode(), _meshDrawer(meshDrawer)
+    : Pipeline::DepthMapRendererNode(), _meshDrawer(meshDrawer), _buffer(renderer::texBufferPool)
 {
     _defaultDrawState.setShader(renderer::depthPassShader);
     _defaultDrawState.setCullBackFace(true);
@@ -24,6 +24,27 @@ DirLightShadowNode::DirLightShadowNode(renderer::MeshRenderer& meshDrawer)
                                       -_sizeOrtho[i].y(), _sizeOrtho[i].y(),
                                       -_sizeOrtho[i].z(), _sizeOrtho[i].z());
     }
+}
+
+void DirLightShadowNode::acquire(int)
+{
+    if(_needUpdate)
+    {
+        _matrix.resize(_resolution.z());
+        _needUpdate = false;
+
+        renderer::TextureBufferPool::Key k;
+        k.type = renderer::TextureBufferPool::Key::DEPTH_MAP_ARRAY;
+        k.res = _resolution;
+        _buffer.setParameter(k);
+    }
+
+    _buffer.acquire();
+}
+
+void DirLightShadowNode::release(int)
+{
+    _buffer.release();
 }
 
 void DirLightShadowNode::setShadowLightRange(const vector<float>& r)
@@ -54,19 +75,12 @@ void DirLightShadowNode::setDepthMapResolution(uint res)
 
 DirLightShadowNode::~DirLightShadowNode()
 {
-    for(size_t i=0 ; i<_depthBuffer.size() ; ++i)
-        delete _depthBuffer[i];
+
 }
 
 renderer::Texture* DirLightShadowNode::buffer(uint index) const
 {
-    if(_depthBuffer.empty())
-        return nullptr;
-    else
-    {
-        index = std::min(0u, _depthBuffer.size()-1);
-        return _depthBuffer[index];
-    }
+    return _buffer.buffer(index);
 }
 
 void DirLightShadowNode::prepare()
@@ -106,35 +120,10 @@ void DirLightShadowNode::render()
     if(!_sceneView)
         return;
 
-    if(_needUpdate)
-    {
-        _matrix.resize(_resolution.z());
-        _needUpdate = false;
-
-        for(size_t i=0 ; i<_depthBuffer.size() ; ++i)
-            delete _depthBuffer[i];
-
-        _depthBuffer.clear();
-        //_depthBuffer.resize(_resolution.z());
-        _depthBuffer.resize(1); // we use 1 internal array texture
-
-        for(size_t i=0 ; i<_depthBuffer.size() ; ++i)
-        {
-            renderer::Texture::GenTexParam p;
-            p.format = renderer::Texture::Format::DEPTHCOMPONENT;
-            p.nbLevels = 1;
-            p.size = _resolution;
-
-            _depthBuffer[i] = renderer::Texture::genTextureArray2D(p);
-        }
-
-        _fbo.setResolution(_resolution.to<2>());
-    }
-
     for(size_t i=0 ; i<_resolution.z() ; ++i)
     {
-        _fbo.attachDepthTexture(_depthBuffer[0], i);
-        _fbo.bind();
+        _buffer.fbo()->attachDepthTexture(_buffer.buffer(0), i);
+        _buffer.fbo()->bind();
         renderer::openGL.clearDepth();
 
         if(!_toDraw[i].empty())
@@ -169,7 +158,7 @@ void DirLightShadowNode::render()
             }
         }
 
-        _fbo.unbind();
+        _buffer.fbo()->unbind();
     }
 }
 

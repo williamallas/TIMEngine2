@@ -1,5 +1,5 @@
-#ifndef FRAMEBUFFER_H
-#define FRAMEBUFFER_H
+#ifndef FRAMEBUFFER_H_LOL
+#define FRAMEBUFFER_H_LOL
 
 #include "GLState.h"
 #include "Texture.h"

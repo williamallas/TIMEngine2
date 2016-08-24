@@ -14,18 +14,18 @@ namespace renderer
     {
     public:
         DeferredRenderer(const uivec2&, const FrameParameter&);
-        ~DeferredRenderer();
+        ~DeferredRenderer() = default;
 
-        Texture* buffer(uint) const;
+        Texture* buffer(int) const;
 
     private:
-        vector<Texture*> _buffers;
+
 
     };
 
-    inline Texture* DeferredRenderer::buffer(size_t i) const
+    inline Texture* DeferredRenderer::buffer(int i) const
     {
-        return _buffers[i];
+        return _buffer.buffer(i);
     }
 }
 }

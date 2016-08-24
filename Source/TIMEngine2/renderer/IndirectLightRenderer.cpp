@@ -70,7 +70,7 @@ IndirectLightRenderer::~IndirectLightRenderer()
 
 void IndirectLightRenderer::draw(const vector<Light>& lights) const
 {
-    _context.frameBuffer().bind();
+    _context.frameBuffer()->bind();
     _stateFullScreenPass.bind();
 
     for(int i=0 ; i<4 ; ++i)
@@ -268,6 +268,9 @@ std::pair<Texture*, Texture*> IndirectLightRenderer::loadAndProcessSkybox(const 
 
     resource::TextureLoader::ImageFormat formatTex;
     vector<ubyte*> dataSkybox = resource::textureLoader->loadImageCube(files, formatTex);
+
+    if(dataSkybox.size() < 6)
+        return {nullptr, nullptr};
 
     renderer::Texture::GenTexParam skyboxParam;
     skyboxParam.format = renderer::Texture::RGBA8;

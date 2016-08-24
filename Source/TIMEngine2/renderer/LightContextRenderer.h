@@ -29,13 +29,12 @@ namespace renderer
         virtual ~LightContextRenderer();
 
         const DeferredRenderer& deferred() const { return _deferred; }
-        Texture* buffer() const { return _buffer; }
+        Texture* buffer() const { return _buffer.buffer(0); }
 
 		void clear() const;
 
     protected:
         const DeferredRenderer& _deferred;
-        Texture* _buffer;
     };
 
 

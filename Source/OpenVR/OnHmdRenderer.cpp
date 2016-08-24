@@ -42,7 +42,10 @@ namespace tim
 		for (uint i = 0; i<_input.size(); ++i)
 		{
 			if (_input[i])
+            {
+                _input[i]->acquire(0);
 				_input[i]->render();
+            }
 		}
 
         if (!_textureBuffer[0] && _input[0] && _input[1])
@@ -100,7 +103,13 @@ namespace tim
 			vr::VRCompositor()->Submit(vr::Eye_Right, &rightEyeTexture);
 
             _device->sync();
-            std::cout << "time submit : " << timeru.elapsed() << std::endl;
+            //std::cout << "time submit : " << timeru.elapsed() << std::endl;
+        }
+
+        for (uint i = 0; i<_input.size(); ++i)
+        {
+            if (_input[i])
+                _input[i]->release(0);
         }
 
 	}

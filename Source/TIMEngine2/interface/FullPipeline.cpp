@@ -25,19 +25,34 @@ const vector<pipeline::DeferredRendererNode*>& FullPipeline::deferredRendererNod
 void FullPipeline::setScene(Scene& scene, int sceneId)
 {
     for(size_t i=0 ; i<_deferredRendererNodes[0][sceneId].size() ; ++i)
-        _deferredRendererNodes[0][sceneId][i]->setGlobalLight(scene.globalLight);
+    {
+        if(_deferredRendererNodes[0][sceneId][i])
+            _deferredRendererNodes[0][sceneId][i]->setGlobalLight(scene.globalLight);
+    }
 
     for(size_t i=0 ; i<_deferredRendererNodes[1][sceneId].size() ; ++i)
-        _deferredRendererNodes[1][sceneId][i]->setGlobalLight(scene.globalLight);
+    {
+        if(_deferredRendererNodes[1][sceneId][i])
+            _deferredRendererNodes[1][sceneId][i]->setGlobalLight(scene.globalLight);
+    }
 
     for(size_t i=0 ; i<_meshCullingNodes[sceneId].size() ; ++i)
-        _meshCullingNodes[sceneId][i]->setScene(scene);
+    {
+        if(_meshCullingNodes[sceneId][i])
+            _meshCullingNodes[sceneId][i]->setScene(scene);
+    }
 
     for(size_t i=0 ; i<_lightCullingNodes[sceneId].size() ; ++i)
-        _lightCullingNodes[sceneId][i]->setScene(scene);
+    {
+        if(_lightCullingNodes[sceneId][i])
+            _lightCullingNodes[sceneId][i]->setScene(scene);
+    }
 
     for(size_t i=0 ; i<_dirLightCullingNodes[sceneId].size() ; ++i)
-        _dirLightCullingNodes[sceneId][i]->setScene(scene);
+    {
+        if(_dirLightCullingNodes[sceneId][i])
+            _dirLightCullingNodes[sceneId][i]->setScene(scene);
+    }
 }
 
 void FullPipeline::setScene(interface::Scene& scene, interface::View& view, int sceneId)
@@ -45,37 +60,64 @@ void FullPipeline::setScene(interface::Scene& scene, interface::View& view, int 
     setScene(scene, sceneId);
 
     for(size_t i=0 ; i<_deferredRendererNodes[0][sceneId].size() ; ++i)
-        _deferredRendererNodes[0][sceneId][i]->setSceneView(view);
+    {
+        if(_deferredRendererNodes[0][sceneId][i])
+            _deferredRendererNodes[0][sceneId][i]->setSceneView(view);
+    }
 
     for(size_t i=0 ; i<_meshCullingNodes[sceneId].size() ; ++i)
-        _meshCullingNodes[sceneId][i]->setSceneView(view);
+    {
+        if(_meshCullingNodes[sceneId][i])
+            _meshCullingNodes[sceneId][i]->setSceneView(view);
+    }
 
     for(size_t i=0 ; i<_lightCullingNodes[sceneId].size() ; ++i)
-        _lightCullingNodes[sceneId][i]->setSceneView(view);
+    {
+        if(_lightCullingNodes[sceneId][i])
+            _lightCullingNodes[sceneId][i]->setSceneView(view);
+    }
 }
 
 void FullPipeline::setStereoView(View& cullingView, View& eye1,  View& eye2, int sceneId)
 {
     for(size_t i=0 ; i<_deferredRendererNodes[0][sceneId].size() ; ++i)
-        _deferredRendererNodes[0][sceneId][i]->setSceneView(eye1);
+    {
+        if(_deferredRendererNodes[0][sceneId][i])
+            _deferredRendererNodes[0][sceneId][i]->setSceneView(eye1);
+    }
 
     for(size_t i=0 ; i<_deferredRendererNodes[1][sceneId].size() ; ++i)
-        _deferredRendererNodes[1][sceneId][i]->setSceneView(eye2);
+    {
+        if(_deferredRendererNodes[1][sceneId][i])
+            _deferredRendererNodes[1][sceneId][i]->setSceneView(eye2);
+    }
 
     for(size_t i=0 ; i<_meshCullingNodes[sceneId].size() ; ++i)
-        _meshCullingNodes[sceneId][i]->setSceneView(cullingView);
+    {
+        if(_meshCullingNodes[sceneId][i])
+            _meshCullingNodes[sceneId][i]->setSceneView(cullingView);
+    }
 
     for(size_t i=0 ; i<_lightCullingNodes[sceneId].size() ; ++i)
-        _lightCullingNodes[sceneId][i]->setSceneView(cullingView);
+    {
+        if(_lightCullingNodes[sceneId][i])
+            _lightCullingNodes[sceneId][i]->setSceneView(cullingView);
+    }
 }
 
 void FullPipeline::setDirLightView(interface::View& dirLightView, int sceneId)
 {
     for(size_t i=0 ; i<_dirLightCullingNodes[sceneId].size() ; ++i)
-        _dirLightCullingNodes[sceneId][i]->setSceneView(dirLightView);
+    {
+        if(_dirLightCullingNodes[sceneId][i])
+            _dirLightCullingNodes[sceneId][i]->setSceneView(dirLightView);
+    }
 
     for(size_t i=0 ; i<_shadowMapNodes[sceneId].size() ; ++i)
-        _shadowMapNodes[sceneId][i]->setSceneView(dirLightView);
+    {
+        if(_shadowMapNodes[sceneId][i])
+            _shadowMapNodes[sceneId][i]->setSceneView(dirLightView);
+    }
 }
 
 void FullPipeline::create(uivec2 res, const Parameter& param)

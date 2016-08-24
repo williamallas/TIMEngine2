@@ -13,7 +13,7 @@ namespace interface
 {
     struct FullPipeline : boost::noncopyable
     {
-        static const int NB_CHANEL = 8;
+        static const int NB_CHANEL = 32;
         ~FullPipeline();
 
         struct Parameter

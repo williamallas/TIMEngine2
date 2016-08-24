@@ -22,6 +22,9 @@ namespace pipeline
         void prepare() override;
         void render() override;
 
+        void acquire(int) override;
+        void release(int) override;
+
         void setRendererEntity(Pipeline::DeferredRendererEntity&);
         void setScissorTest(bool b, vec2 coord = {0,0}, vec2 size = {1,1});
 

@@ -22,6 +22,9 @@ namespace pipeline
         void prepare() override;
         void render() override;
 
+        void acquire(int) override;
+        void release(int) override;
+
         void setShadowLightRange(const vector<float>&);
         void setDepthMapResolution(uint);
 
@@ -38,8 +41,7 @@ namespace pipeline
         uivec3 _resolution = {1024,1024,3};
         renderer::DrawState _defaultDrawState;
 
-        vector<renderer::Texture*> _depthBuffer;
-        renderer::FrameBuffer _fbo;
+        renderer::PooledBuffer _buffer;
     };
 }
 

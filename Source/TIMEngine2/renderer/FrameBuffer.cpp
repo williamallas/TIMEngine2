@@ -134,6 +134,8 @@ void FrameBuffer::setupDefferedFBO(FrameBuffer& fbo, vector<Texture*>& buffers)
     buffers[3] = Texture::genTexture2D(param);
 
     glBindFramebuffer(GL_FRAMEBUFFER, fbo._id);
+    openGL.bindFrameBuffer(fbo._id);
+
     fbo.attachTexture(0, buffers[0]);
     fbo.attachTexture(1, buffers[1]);
     fbo.attachTexture(2, buffers[2]);
