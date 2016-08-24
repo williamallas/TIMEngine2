@@ -58,6 +58,7 @@ void MeshEditorWidget::activeEditMode()
 
     ui->meshPartView->clear();
     ui->meshName->setText("");
+    _curElementIndex = _editedMaterials->size()>0 ? 0:-1;
 
     for(int i=0 ; i<_editedMaterials->size() ; ++i)
     {
