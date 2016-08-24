@@ -83,17 +83,17 @@ void PostReflexionRenderer::draw()
 //    quadMeshBuffers->draw(6, VertexMode::TRIANGLES, 1);
 
 
-    _context.frameBuffer().bind();
-    _state.bind();
+//    _context.frameBuffer().bind();
+//    _state.bind();
 
-    for(int i=0 ; i<4 ; ++i)
-    {
-        openGL.bindTextureSampler(textureSampler[TextureMode::NoFilter], i);
-        _context.deferred().buffer(i)->bind(i);
-    }
+//    for(int i=0 ; i<4 ; ++i)
+//    {
+//        openGL.bindTextureSampler(textureSampler[TextureMode::NoFilter], i);
+//        _context.deferred().buffer(i)->bind(i);
+//    }
 
-    _context.frameState().bind(0);
-    quadMeshBuffers->draw(6, VertexMode::TRIANGLES, 1);
+//    _context.frameState().bind(0);
+//    quadMeshBuffers->draw(6, VertexMode::TRIANGLES, 1);
 }
 
 }
