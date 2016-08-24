@@ -17,8 +17,12 @@ using namespace core;
         BulletObject(mat4, btCollisionShape*, float mass = 0);
         virtual ~BulletObject();
 
+        void setMotionState(btMotionState* mt);
+
         btRigidBody* body() { return _body; }
         const btRigidBody* body() const { return _body; }
+
+        int indexWorld() const { return _indexWorld; }
 
        struct CollisionPoint
        {
@@ -34,6 +38,7 @@ using namespace core;
        bool firstCollision(const mat4& dest, CollisionPoint&) const;
        bool rayCastNotMe(const vec3& from, const vec3& to, CollisionPoint&) const;
        bool rayCast(const vec3& from, const vec3& to, CollisionPoint&) const;
+       static bool rayCastFirst(const vec3& from, const vec3& to, CollisionPoint&, btDiscreteDynamicsWorld&);
 
        static btTransform toBtTransform(const mat4& m)
        {
@@ -62,6 +67,7 @@ using namespace core;
         btMotionState* _motionState = nullptr;
         btRigidBody* _body = nullptr;
         btDiscreteDynamicsWorld* _world = nullptr;
+        int _indexWorld = -1;
     };
 }
 

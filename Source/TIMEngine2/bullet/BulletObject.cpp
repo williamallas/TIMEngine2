@@ -45,6 +45,13 @@ BulletObject::~BulletObject()
     delete _body;
 }
 
+void BulletObject::setMotionState(btMotionState* mt)
+{
+    _motionState = mt;
+    if(_body)
+        _body->setMotionState(mt);
+}
+
 vector<BulletObject::CollisionPoint> BulletObject::collideWorld() const
 {
     struct CollideCallback : public btCollisionWorld::ContactResultCallback
@@ -272,6 +279,34 @@ bool BulletObject::rayCast(const vec3& from, const vec3& to, CollisionPoint& poi
 
     Closest rayCallback(_body, from, to);
     _world->rayTest(btVector3(from[0], from[1], from[2]), btVector3(to[0], to[1], to[2]), rayCallback);
+
+    point.depth = rayCallback.m_closestHitFraction;
+    point.normal = vec3(rayCallback.m_hitNormalWorld.m_floats[0],
+                        rayCallback.m_hitNormalWorld.m_floats[1],
+                        rayCallback.m_hitNormalWorld.m_floats[2]);
+    point.pos = vec3(rayCallback.m_hitPointWorld.m_floats[0],
+                     rayCallback.m_hitPointWorld.m_floats[1],
+                     rayCallback.m_hitPointWorld.m_floats[2]);
+
+    return rayCallback.m_closestHitFraction < 1;
+}
+
+bool BulletObject::rayCastFirst(const vec3& from, const vec3& to, CollisionPoint& point, btDiscreteDynamicsWorld& world)
+{
+    class Closest : public btCollisionWorld::ClosestRayResultCallback
+    {
+    public:
+        Closest (const vec3& from, const vec3& to)
+            : btCollisionWorld::ClosestRayResultCallback(btVector3(from[0], from[1], from[2]), btVector3(to[0], to[1], to[2])){}
+
+        virtual btScalar addSingleResult(btCollisionWorld::LocalRayResult& rayResult, bool normalInWorldSpace)
+        {
+            return ClosestRayResultCallback::addSingleResult (rayResult, normalInWorldSpace);
+        }
+    };
+
+    Closest rayCallback(from, to);
+    world.rayTest(btVector3(from[0], from[1], from[2]), btVector3(to[0], to[1], to[2]), rayCallback);
 
     point.depth = rayCallback.m_closestHitFraction;
     point.normal = vec3(rayCallback.m_hitNormalWorld.m_floats[0],
