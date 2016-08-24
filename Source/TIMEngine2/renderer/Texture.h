@@ -1,5 +1,5 @@
-#ifndef TEXTURE_H
-#define TEXTURE_H
+#ifndef TEXTURE_H_RENDERER
+#define TEXTURE_H_RENDERER
 
 #include "GLState.h"
 
