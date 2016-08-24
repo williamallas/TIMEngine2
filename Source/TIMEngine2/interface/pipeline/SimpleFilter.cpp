@@ -11,7 +11,7 @@ namespace interface
 namespace pipeline
 {
 
-	SimpleFilter::SimpleFilter()
+    SimpleFilter::SimpleFilter() : _buffer(renderer::texBufferPool)
 	{
 		_state.setBlend(false);
 		_state.setCullFace(false);
@@ -21,8 +21,32 @@ namespace pipeline
 
 	SimpleFilter::~SimpleFilter()
 	{
-		delete _buffer;
+
 	}
+
+    void SimpleFilter::acquire(int)
+    {
+        if (_input.size() > 0 && _input[0])
+        {
+            _input[0]->acquire(0);
+
+            TextureBufferPool::Key k;
+            k.type = TextureBufferPool::Key::NONE;
+            k.onlyTextures = false;
+            k.hdr = false;
+            k.res = uivec3(_input[0]->buffer()->resolution(), 1);
+            _buffer.setParameter(k);
+
+            _input[0]->release(0);
+        }
+
+        _buffer.acquire();
+    }
+
+    void SimpleFilter::release(int)
+    {
+        _buffer.release();
+    }
 
 	void SimpleFilter::render()
 	{
@@ -34,7 +58,10 @@ namespace pipeline
             for (size_t i = 0; i < _input.size(); ++i)
             {
                 if(_input[i] && _enableInput[i])
+                {
+                    _input[i]->acquire(0);
                     _input[i]->render();
+                }
             }
         }
         else
@@ -42,37 +69,43 @@ namespace pipeline
             for (size_t i = _input.size() ; i >= 1; --i)
             {
                 if(_input[i-1] && _enableInput[i-1])
+                {
+                    _input[i-1]->acquire(0);
                     _input[i-1]->render();
+                }
             }
         }
 
-		if (_buffer == nullptr || _buffer->resolution() != _input[0]->buffer()->resolution())
-		{
-			if (_buffer)
-				delete _buffer;
-
-			renderer::Texture::GenTexParam param;
-			param.size = uivec3(_input[0]->buffer()->resolution(), 0);
-			param.nbLevels = 1;
-			param.format = renderer::Texture::Format::RGBA8;
-			_buffer = renderer::Texture::genTexture2D(param);
-			_fbo.attachTexture(0, _buffer);
-		}
-
 		_state.setShader(_filter);
-		_fbo.bind();
+        _buffer.fbo()->bind();
 		_state.bind();
 
+        int realIndex = 0;
         for (size_t i=0 ; i < _input.size() ; ++i)
 		{
             if (_input[i] && _enableInput[i])
 			{
-                openGL.bindTextureSampler(textureSampler[TextureMode::OnlyLinearNoRepeat], i);
-                _input[i]->buffer()->bind(i);
+                openGL.bindTextureSampler(textureSampler[TextureMode::OnlyLinearNoRepeat], realIndex);
+                _input[i]->buffer()->bind(realIndex);
+                realIndex++;
 			}
 		}
 
 		renderer::quadMeshBuffers->draw(6, VertexMode::TRIANGLES, 1);
+
+        if(!_invertRenderingOrder)
+        {
+            for (size_t i = 0; i < _input.size(); ++i)
+                if(_input[i] && _enableInput[i])
+                    _input[i]->release(0);
+        }
+        else
+        {
+            for (size_t i = _input.size() ; i >= 1; --i)
+                if(_input[i-1] && _enableInput[i-1])
+                    _input[i-1]->release(0);
+        }
+
 	}
 
 }

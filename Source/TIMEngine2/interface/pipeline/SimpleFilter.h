@@ -2,6 +2,7 @@
 #define SIMPLEFILTER_H
 
 #include "interface/Pipeline.h"
+#include "renderer/PooledBuffer.h"
 
 #include "MemoryLoggerOn.h"
 namespace tim
@@ -19,15 +20,18 @@ namespace pipeline
 
 		void setShader(renderer::Shader* sh) { _filter = sh; }
 
-        renderer::Texture* buffer() const override { return _buffer; }
+        renderer::Texture* buffer() const override { return _buffer.buffer(0); }
 
         void render() override;
 
+        void acquire(int) override;
+        void release(int) override;
+
     private:
 		renderer::Shader* _filter = nullptr;
-		renderer::Texture* _buffer = nullptr;
-		renderer::DrawState _state;
-		renderer::FrameBuffer _fbo;
+        renderer::DrawState _state;
+
+        renderer::PooledBuffer _buffer;
     };
 }
 }
