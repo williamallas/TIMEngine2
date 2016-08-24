@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>260</width>
-    <height>620</height>
+    <width>272</width>
+    <height>643</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -438,27 +438,133 @@
        <widget class="QWidget" name="meshComponent" native="true">
         <layout class="QVBoxLayout" name="verticalLayout_6">
          <item>
-          <widget class="QCheckBox" name="meshc_isStatic">
-           <property name="text">
-            <string>is Static</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-           <property name="tristate">
-            <bool>false</bool>
-           </property>
-          </widget>
+          <layout class="QHBoxLayout" name="horizontalLayout_9">
+           <item>
+            <widget class="QCheckBox" name="meshc_isStatic">
+             <property name="text">
+              <string>is Static</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+             <property name="tristate">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="meshc_isPhysic">
+             <property name="text">
+              <string>is Physic</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
          <item>
-          <widget class="QCheckBox" name="meshc_isPhysic">
-           <property name="text">
-            <string>is Physic</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-          </widget>
+          <layout class="QHBoxLayout" name="horizontalLayout_8">
+           <item>
+            <widget class="QLabel" name="label_6">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Collider:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="colliderList">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QGridLayout" name="gridLayout">
+           <item row="1" column="2">
+            <widget class="QLabel" name="label_10">
+             <property name="text">
+              <string>RollingFriction:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_7">
+             <property name="text">
+              <string>Mass:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_8">
+             <property name="text">
+              <string>Friction:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QDoubleSpinBox" name="mc_mass">
+             <property name="maximum">
+              <double>1000.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>1.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QDoubleSpinBox" name="mc_friction">
+             <property name="singleStep">
+              <double>0.500000000000000</double>
+             </property>
+             <property name="value">
+              <double>0.750000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="2">
+            <widget class="QLabel" name="label_9">
+             <property name="text">
+              <string>Restitution:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="3">
+            <widget class="QDoubleSpinBox" name="mc_restitution">
+             <property name="maximum">
+              <double>9.990000000000000</double>
+             </property>
+             <property name="singleStep">
+              <double>0.100000000000000</double>
+             </property>
+             <property name="value">
+              <double>0.800000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="3">
+            <widget class="QDoubleSpinBox" name="mc_rfriction">
+             <property name="singleStep">
+              <double>0.500000000000000</double>
+             </property>
+             <property name="value">
+              <double>0.100000000000000</double>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
         </layout>
        </widget>
@@ -477,8 +583,8 @@
    <slot>edit_cameraPosX(double)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>126</x>
-     <y>411</y>
+     <x>130</x>
+     <y>440</y>
     </hint>
     <hint type="destinationlabel">
      <x>275</x>
@@ -493,8 +599,8 @@
    <slot>edit_cameraPosY(double)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>187</x>
-     <y>411</y>
+     <x>194</x>
+     <y>440</y>
     </hint>
     <hint type="destinationlabel">
      <x>412</x>
@@ -509,28 +615,12 @@
    <slot>edit_cameraPosZ(double)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>247</x>
-     <y>411</y>
+     <x>259</x>
+     <y>440</y>
     </hint>
     <hint type="destinationlabel">
      <x>602</x>
      <y>356</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>deleteButton</sender>
-   <signal>clicked()</signal>
-   <receiver>SceneEditor</receiver>
-   <slot>deleteCurrentObject()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>222</x>
-     <y>120</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>303</x>
-     <y>104</y>
     </hint>
    </hints>
   </connection>
@@ -541,8 +631,8 @@
    <slot>resetRotation()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>132</x>
-     <y>119</y>
+     <x>247</x>
+     <y>162</y>
     </hint>
     <hint type="destinationlabel">
      <x>464</x>
@@ -566,6 +656,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>deleteButton</sender>
+   <signal>clicked()</signal>
+   <receiver>SceneEditor</receiver>
+   <slot>deleteCurrentObjects()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>153</x>
+     <y>119</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>391</x>
+     <y>115</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>itemSelectionChanged(QModelIndex)</slot>
@@ -575,7 +681,7 @@
   <slot>edit_cameraPosX(double)</slot>
   <slot>edit_cameraPosY(double)</slot>
   <slot>edit_cameraPosZ(double)</slot>
-  <slot>deleteCurrentObject()</slot>
+  <slot>deleteCurrentObjects()</slot>
   <slot>resetRotation()</slot>
   <slot>copyObject()</slot>
  </slots>

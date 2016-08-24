@@ -52,6 +52,12 @@ void SceneEditorWidget::setSkybox(uint sceneIndex, const QList<QString>& skyboxs
     _skyboxs[sceneIndex] = skyboxs;
 }
 
+void SceneEditorWidget::setSunDirection(int sceneIndex, vec3 dir)
+{
+    if(!_directionalLights[sceneIndex].empty())
+        _directionalLights[sceneIndex][0].direction = dir;
+}
+
 void SceneEditorWidget::addSceneObject(QString name, QString modelName, const QList<MeshElement>& model, mat4 trans)
 {
     vec3 tr = trans.translation();
@@ -82,6 +88,11 @@ void SceneEditorWidget::addSceneObject(int sceneIndex, bool lock, QString name, 
     obj.scale = scale;
     obj.translate = tr;
 
+    addSceneObject(sceneIndex, lock, obj);
+}
+
+void SceneEditorWidget::addSceneObject(int sceneIndex, bool lock, SceneObject obj)
+{
     mat4 trans = mat4::constructTransformation(obj.rotate, obj.translate, obj.scale);
 
     if(lock) _renderer->lock();
@@ -89,9 +100,9 @@ void SceneEditorWidget::addSceneObject(int sceneIndex, bool lock, QString name, 
     if(lock) _renderer->unlock();
 
     QString n;
-    if(name.isEmpty()) n = "model : " + modelName;
-    else if(model.isEmpty()) n = name;
-    else n = name + " (" + modelName + ")";
+    if(obj.name.isEmpty()) n = "model : " + obj.baseModel;
+    else if(obj.baseModel.isEmpty()) n = obj.name;
+    else n = obj.name + " (" + obj.baseModel + ")";
 
     obj.listItem = new QListWidgetItem(n, ui->listSceneObject);
     if(sceneIndex == _renderer->getCurSceneIndex()-1)
@@ -123,31 +134,51 @@ void SceneEditorWidget::addSceneObject(int sceneIndex, bool lock, QString name, 
     });
 }
 
-void SceneEditorWidget::activateObject(int index)
+void SceneEditorWidget::activateObject(int index, bool addSelection, bool lock)
 {
     if(index >= _objects[_curSceneIndex].size())
         return;
 
-    flushItemUi(index);
-
-    _curItemIndex = index;
-
-    _renderer->waitNoEvent();
-
-    _renderer->lock();
-    if(_highlightedMeshInstance == nullptr)
+    if(!addSelection)
     {
-        _highlightedMeshInstance = &_renderer->getScene(_renderer->getCurSceneIndex()).scene.add<MeshInstance>(mat4::IDENTITY());
+        cancelSelection();
     }
 
-    _highlightedMeshInstance->setEnable(true);
-    _highlightedMeshInstance->setMatrix(_objects[_curSceneIndex][index].node->matrix());
-    _highlightedMeshInstance->setMesh(MeshEditorWidget::highlightMesh(_objects[_curSceneIndex][index].node->mesh()));
+    Selection selection;
+    selection.index = index;
 
-    _renderer->unlock();
+    if(lock) _renderer->lock();
 
-    _meshEditor->setEditedMesh(_objects[_curSceneIndex][index].node, _highlightedMeshInstance,
-                               &_objects[_curSceneIndex][index].materials, _objects[_curSceneIndex][index].baseModel);
+    selection.highlightedMeshInstance =
+            &_renderer->getScene(_renderer->getCurSceneIndex()).scene.add<MeshInstance>(_objects[_curSceneIndex][index].node->matrix());
+    selection.highlightedMeshInstance->setMesh(MeshEditorWidget::highlightMesh(_objects[_curSceneIndex][index].node->mesh()));
+
+    if(lock) _renderer->unlock();
+
+    _selections += selection;
+
+    if(_selections.size() == 1)
+    {
+        _meshEditor->setEditedMesh(_objects[_curSceneIndex][index].node, selection.highlightedMeshInstance,
+                                   &_objects[_curSceneIndex][index].materials, _objects[_curSceneIndex][index].baseModel);
+        flushItemUi(index);
+    }
+}
+
+void SceneEditorWidget::cancelSelection()
+{
+    flushItemUi(-1);
+
+    int sceneIndex = _curSceneIndex+1;
+    for(Selection select : _selections)
+    {
+        _renderer->addEvent([=]{
+            _renderer->getScene(sceneIndex).scene.remove(*select.highlightedMeshInstance);
+        });
+    }
+
+    _selections.clear();
+    _meshEditor->setEditedMesh(nullptr, nullptr, nullptr, "");
 }
 
 void SceneEditorWidget::flushItemUi(int index)
@@ -159,6 +190,11 @@ void SceneEditorWidget::flushItemUi(int index)
     ui->scale_y->blockSignals(true);
     ui->scale_z->blockSignals(true);
     ui->name->blockSignals(true);
+    ui->colliderList->blockSignals(true);
+    ui->mc_friction->blockSignals(true);
+    ui->mc_mass->blockSignals(true);
+    ui->mc_rfriction->blockSignals(true);
+    ui->mc_restitution->blockSignals(true);
 
     if(index < 0)
     {
@@ -173,6 +209,12 @@ void SceneEditorWidget::flushItemUi(int index)
         ui->scale_z->setValue(1);
         ui->meshc_isPhysic->setChecked(true);
         ui->meshc_isStatic->setChecked(true);
+        ui->colliderList->clear();
+
+        ui->mc_friction->setValue(0.75);
+        ui->mc_mass->setValue(1);
+        ui->mc_rfriction->setValue(0.1);
+        ui->mc_restitution->setValue(0.8);
     }
     else
     {
@@ -188,6 +230,21 @@ void SceneEditorWidget::flushItemUi(int index)
 
         ui->meshc_isPhysic->setChecked(_objects[_curSceneIndex][index].isPhysic);
         ui->meshc_isStatic->setChecked(_objects[_curSceneIndex][index].isStatic);
+
+        ui->colliderList->clear();
+        ui->colliderList->addItem("None");
+        ui->colliderList->addItem("AutoBox");
+        ui->colliderList->addItem("AutoSphere");
+        ui->colliderList->addItem("ConvexHull");
+        if(_objects[_curSceneIndex][index].collider.type < Collider::USER_DEFINED)
+            ui->colliderList->setCurrentIndex(_objects[_curSceneIndex][index].collider.type);
+        else
+            LOG("Unsuported collider type for object ", _objects[_curSceneIndex][index].name.toStdString());
+
+        ui->mc_friction->setValue(_objects[_curSceneIndex][index].collider.friction);
+        ui->mc_mass->setValue(_objects[_curSceneIndex][index].collider.mass);
+        ui->mc_rfriction->setValue(_objects[_curSceneIndex][index].collider.rollingFriction);
+        ui->mc_restitution->setValue(_objects[_curSceneIndex][index].collider.restitution);
     }
 
 
@@ -198,16 +255,24 @@ void SceneEditorWidget::flushItemUi(int index)
     ui->scale_y->blockSignals(false);
     ui->scale_z->blockSignals(false);
     ui->name->blockSignals(false);
+    ui->colliderList->blockSignals(false);
+    ui->mc_friction->blockSignals(false);
+    ui->mc_mass->blockSignals(false);
+    ui->mc_rfriction->blockSignals(false);
+    ui->mc_restitution->blockSignals(false);
 }
 
 void SceneEditorWidget::updateSelectedMeshMatrix()
 {
     _renderer->addEvent([=]{
-        mat4 m = mat4::constructTransformation(_objects[_curSceneIndex][_curItemIndex].rotate,
-                                               _objects[_curSceneIndex][_curItemIndex].translate,
-                                               _objects[_curSceneIndex][_curItemIndex].scale);
-        _objects[_curSceneIndex][_curItemIndex].node->setMatrix(m);
-        _highlightedMeshInstance->setMatrix(m);
+        for(int i=0 ; i<_selections.size() ; ++i)
+        {
+            mat4 m = mat4::constructTransformation(_objects[_curSceneIndex][_selections[i].index].rotate,
+                                                   _objects[_curSceneIndex][_selections[i].index].translate,
+                                                   _objects[_curSceneIndex][_selections[i].index].scale);
+            _objects[_curSceneIndex][_selections[i].index].node->setMatrix(m);
+            _selections[i].highlightedMeshInstance->setMatrix(m);
+        }
     });
 }
 
@@ -215,7 +280,7 @@ void SceneEditorWidget::activateLastAdded()
 {
     if(_objects[_curSceneIndex].isEmpty()) return;
 
-    activateObject(_objects[_curSceneIndex].size()-1);
+    activateObject(_objects[_curSceneIndex].size()-1, false, true);
 }
 
 /* slots */
@@ -225,7 +290,7 @@ void SceneEditorWidget::sceneItemActivated(QListWidgetItem* item)
     {
         if(_objects[_curSceneIndex][i].listItem == item)
         {
-            activateObject(i);
+            activateObject(i, false, true);
             return;
         }
     }
@@ -233,55 +298,55 @@ void SceneEditorWidget::sceneItemActivated(QListWidgetItem* item)
 
 void SceneEditorWidget::on_translate_x_editingFinished()
 {
-    if(_curItemIndex < 0)
+    if(!hasCurrentSelection())
         return;
 
-    _objects[_curSceneIndex][_curItemIndex].translate.set(ui->translate_x->value(), 0);
+    _objects[_curSceneIndex][_selections[0].index].translate.set(ui->translate_x->value(), 0);
     updateSelectedMeshMatrix();
 }
 
 void SceneEditorWidget::on_translate_y_editingFinished()
 {
-    if(_curItemIndex < 0)
+    if(!hasCurrentSelection())
         return;
 
-    _objects[_curSceneIndex][_curItemIndex].translate.set(ui->translate_y->value(), 1);
+    _objects[_curSceneIndex][_selections[0].index].translate.set(ui->translate_y->value(), 1);
     updateSelectedMeshMatrix();
 }
 
 void SceneEditorWidget::on_translate_z_editingFinished()
 {
-    if(_curItemIndex < 0)
+    if(!hasCurrentSelection())
         return;
 
-    _objects[_curSceneIndex][_curItemIndex].translate.set(ui->translate_z->value(), 2);
+    _objects[_curSceneIndex][_selections[0].index].translate.set(ui->translate_z->value(), 2);
     updateSelectedMeshMatrix();
 }
 
 void SceneEditorWidget::on_scale_x_editingFinished()
 {
-    if(_curItemIndex < 0 && ui->scale_x->value() != 0)
+    if(!hasCurrentSelection() || ui->scale_x->value() == 0)
         return;
 
-    _objects[_curSceneIndex][_curItemIndex].scale.set(ui->scale_x->value(), 0);
+    _objects[_curSceneIndex][_selections[0].index].scale.set(ui->scale_x->value(), 0);
     updateSelectedMeshMatrix();
 }
 
 void SceneEditorWidget::on_scale_y_editingFinished()
 {
-    if(_curItemIndex < 0 && ui->scale_y->value() != 0)
+    if(!hasCurrentSelection() || ui->scale_y->value() == 0)
         return;
 
-    _objects[_curSceneIndex][_curItemIndex].scale.set(ui->scale_y->value(), 1);
+    _objects[_curSceneIndex][_selections[0].index].scale.set(ui->scale_y->value(), 1);
     updateSelectedMeshMatrix();
 }
 
 void SceneEditorWidget::on_scale_z_editingFinished()
 {
-    if(_curItemIndex < 0 && ui->scale_z->value() != 0)
+    if(!hasCurrentSelection() || ui->scale_z->value() == 0)
         return;
 
-    _objects[_curSceneIndex][_curItemIndex].scale.set(ui->scale_z->value(), 2);
+    _objects[_curSceneIndex][_selections[0].index].scale.set(ui->scale_z->value(), 2);
     updateSelectedMeshMatrix();
 }
 
@@ -314,54 +379,93 @@ void SceneEditorWidget::edit_cameraPosZ(double z)
 
 void SceneEditorWidget::on_name_editingFinished()
 {
-    if(_curItemIndex < 0)
+    if(!hasCurrentSelection())
         return;
 
-    _objects[_curSceneIndex][_curItemIndex].name = ui->name->text();
+    for(int i=0 ; i<_selections.size() ; ++i)
+    {
+        _objects[_curSceneIndex][_selections[i].index].name = ui->name->text();
 
-    QString n;
-    if(_objects[_curSceneIndex][_curItemIndex].name.isEmpty())
-        n = "model : " + _objects[_curSceneIndex][_curItemIndex].baseModel;
-    else if(_objects[_curSceneIndex][_curItemIndex].baseModel.isEmpty())
-        n = _objects[_curSceneIndex][_curItemIndex].name;
-    else
-        n = _objects[_curSceneIndex][_curItemIndex].name + " (" + _objects[_curSceneIndex][_curItemIndex].baseModel + ")";
+        QString n;
+        if(_objects[_curSceneIndex][_selections[i].index].name.isEmpty())
+            n = "model : " + _objects[_curSceneIndex][_selections[i].index].baseModel;
+        else if(_objects[_curSceneIndex][_selections[i].index].baseModel.isEmpty())
+            n = _objects[_curSceneIndex][_selections[i].index].name;
+        else
+            n = _objects[_curSceneIndex][_selections[i].index].name + " (" + _objects[_curSceneIndex][_selections[i].index].baseModel + ")";
 
-    _objects[_curSceneIndex][_curItemIndex].listItem->setText(n);
+        _objects[_curSceneIndex][_selections[i].index].listItem->setText(n);
+    }
+}
+
+void SceneEditorWidget::on_colliderList_currentIndexChanged(int index)
+{
+    if(!hasCurrentSelection())
+        return;
+
+    if(index < Collider::USER_DEFINED)
+    {
+        for(int i=0 ; i<_selections.size() ; ++i)
+            _objects[_curSceneIndex][_selections[i].index].collider.type = Collider::NONE + index;
+    }
 }
 
 void SceneEditorWidget::on_copyTransButton_clicked()
 {
-    if(_curItemIndex >= 0)
+    if(hasCurrentSelection())
     {
-        copy_rotate = _objects[_curSceneIndex][_curItemIndex].rotate;
-        copy_scale = _objects[_curSceneIndex][_curItemIndex].scale;
-        copy_translate = _objects[_curSceneIndex][_curItemIndex].translate;
+        copy_rotate = _objects[_curSceneIndex][_selections[0].index].rotate;
+        copy_scale = _objects[_curSceneIndex][_selections[0].index].scale;
+        copy_translate = _objects[_curSceneIndex][_selections[0].index].translate;
         somethingCopied = true;
     }
 }
 
 void SceneEditorWidget::on_pastTransButton_clicked()
 {
-    if(_curItemIndex >= 0 && somethingCopied)
+    if(hasCurrentSelection() && somethingCopied)
     {
-        _objects[_curSceneIndex][_curItemIndex].rotate = copy_rotate;
-        _objects[_curSceneIndex][_curItemIndex].scale = copy_scale;
-        _objects[_curSceneIndex][_curItemIndex].translate = copy_translate;
+        _objects[_curSceneIndex][_selections[0].index].rotate = copy_rotate;
+        _objects[_curSceneIndex][_selections[0].index].scale = copy_scale;
+        _objects[_curSceneIndex][_selections[0].index].translate = copy_translate;
         updateSelectedMeshMatrix();
     }
 }
 
 void SceneEditorWidget::on_meshc_isStatic_clicked(bool b)
 {
-    if(_curItemIndex >= 0)
-        _objects[_curSceneIndex][_curItemIndex].isStatic = b;
+    for(int i=0 ; i<_selections.size() ; ++i)
+        _objects[_curSceneIndex][_selections[i].index].isStatic = b;
 }
 
 void SceneEditorWidget::on_meshc_isPhysic_clicked(bool b)
 {
-    if(_curItemIndex >= 0)
-        _objects[_curSceneIndex][_curItemIndex].isPhysic = b;
+    for(int i=0 ; i<_selections.size() ; ++i)
+        _objects[_curSceneIndex][_selections[i].index].isPhysic = b;
+}
+
+void SceneEditorWidget::on_mc_mass_editingFinished()
+{
+    for(int i=0 ; i<_selections.size() ; ++i)
+        _objects[_curSceneIndex][_selections[i].index].collider.mass = ui->mc_mass->value();
+}
+
+void SceneEditorWidget::on_mc_restitution_editingFinished()
+{
+    for(int i=0 ; i<_selections.size() ; ++i)
+        _objects[_curSceneIndex][_selections[i].index].collider.restitution = ui->mc_restitution->value();
+}
+
+void SceneEditorWidget::on_mc_friction_editingFinished()
+{
+    for(int i=0 ; i<_selections.size() ; ++i)
+        _objects[_curSceneIndex][_selections[i].index].collider.friction = ui->mc_friction->value();
+}
+
+void SceneEditorWidget::on_mc_rfriction_editingFinished()
+{
+    for(int i=0 ; i<_selections.size() ; ++i)
+        _objects[_curSceneIndex][_selections[i].index].collider.rollingFriction = ui->mc_rfriction->value();
 }
 
 float computeGrade(float dist, float ray)
@@ -371,11 +475,20 @@ float computeGrade(float dist, float ray)
     return 100.f / (dist * ray);
 }
 
-void SceneEditorWidget::selectSceneObject(vec3 pos, vec3 dir)
+bool SceneEditorWidget::isHighlightedInstance(interface::MeshInstance* inst) const
+{
+    for(int i=0 ; i<_selections.size() ; ++i)
+        if(_selections[i].highlightedMeshInstance == inst)
+            return true;
+
+    return false;
+}
+
+void SceneEditorWidget::selectSceneObject(vec3 pos, vec3 dir, bool shiftPressed)
 {
     vector<std::reference_wrapper<MeshInstance>> result;
     _renderer->getScene(_renderer->getCurSceneIndex()).scene.query<MeshInstance>(RayCast(pos, dir),
-                                                                                  VectorInserter<vector<std::reference_wrapper<MeshInstance>>>(result));
+                                                                                 VectorInserter<vector<std::reference_wrapper<MeshInstance>>>(result));
 
     if(result.empty())
         return;
@@ -386,18 +499,28 @@ void SceneEditorWidget::selectSceneObject(vec3 pos, vec3 dir)
     for(size_t i=0 ; i<result.size() ; ++i)
     {
         float grade = computeGrade((pos-result[i].get().volume().center()).length(), result[i].get().volume().radius());
-        if(grade > curGrade && &result[i].get() != _highlightedMeshInstance)
+        if(grade > curGrade && !isHighlightedInstance(&result[i].get()))
         {
             curGrade = grade;
             index = i;
         }
     }
 
+    #warning Manage_unselection_1253154
+    if(shiftPressed)
+    {
+        for(int i=0 ; i<_selections.size() ; ++i)
+            if(_objects[_curSceneIndex][_selections[i].index].node == &result[index].get())
+                return;
+    }
+    else
+        cancelSelection();
+
     for(int i=0 ; i<_objects[_curSceneIndex].size() ; ++i)
     {
         if(_objects[_curSceneIndex][i].node == &result[index].get())
         {
-            activateObject(i);
+            activateObject(i, shiftPressed, true);
             _objects[_curSceneIndex][i].listItem->setSelected(true);
             return;
         }
@@ -421,12 +544,12 @@ float combine(float x, float y)
 
 void SceneEditorWidget::translateMouse(float x, float y, int mode)
 {
-    if(_curItemIndex == -1)
+    if(!hasCurrentSelection())
         return;
 
     Camera& cam = _renderer->getSceneView(_renderer->getCurSceneIndex()).camera;
 
-    float hsize = (_objects[_curSceneIndex][_curItemIndex].translate - cam.pos).length() * tanf(toRad(cam.fov));
+    float hsize = (_objects[_curSceneIndex][_selections[0].index].translate - cam.pos).length() * tanf(toRad(cam.fov));
 
     const float SCALE_FACTOR = 5;
     const float ROTATE_FACTOR = 8;
@@ -435,45 +558,81 @@ void SceneEditorWidget::translateMouse(float x, float y, int mode)
     vec3 x_dir = forward.cross(cam.up).normalized();
     vec3 y_dir = x_dir.cross(forward).normalized();
 
+    QString feedbackTrans;
+
     if(mode == RendererWidget::TRANSLATE_MODE)
     {
-        _objects[_curSceneIndex][_curItemIndex].translate -= x_dir * x * hsize;
-        _objects[_curSceneIndex][_curItemIndex].translate += y_dir * y * (hsize/cam.ratio);
+        for(int i=0 ; i<_selections.size() ; ++i)
+        {
+            _objects[_curSceneIndex][_selections[i].index].translate -= x_dir * x * hsize;
+            _objects[_curSceneIndex][_selections[i].index].translate += y_dir * y * (hsize/cam.ratio);
+        }
     }
     else if(mode == RendererWidget::TRANSLATE_X_MODE)
     {
         if(x_dir.x() > 0) x *= -1;
         if(y_dir.x() < 0) y *= -1;
-        _objects[_curSceneIndex][_curItemIndex].translate.x() += combine(x,y) * hsize;
+
+        for(int i=0 ; i<_selections.size() ; ++i)
+            _objects[_curSceneIndex][_selections[i].index].translate.x() += combine(x,y) * hsize;
+
+        _accumulator += combine(x,y) * hsize;
+        feedbackTrans = "TranslationX : " + QString::number(_accumulator-1);
     }
     else if(mode == RendererWidget::TRANSLATE_Y_MODE)
     {
         if(x_dir.y() > 0) x *= -1;
         if(y_dir.y() < 0) y *= -1;
-        _objects[_curSceneIndex][_curItemIndex].translate.y() += combine(x,y) * hsize;
+
+        for(int i=0 ; i<_selections.size() ; ++i)
+            _objects[_curSceneIndex][_selections[i].index].translate.y() += combine(x,y) * hsize;
+
+        _accumulator += combine(x,y) * hsize;
+        feedbackTrans = "TranslationY : " + QString::number(_accumulator-1);
     }
     else if(mode == RendererWidget::TRANSLATE_Z_MODE)
     {
         if(x_dir.z() > 0) x *= -1;
         if(y_dir.z() < 0) y *= -1;
-        _objects[_curSceneIndex][_curItemIndex].translate.z() += combine(x,y) * hsize;
+
+        for(int i=0 ; i<_selections.size() ; ++i)
+            _objects[_curSceneIndex][_selections[i].index].translate.z() += combine(x,y) * hsize;
+
+        _accumulator += combine(x,y) * hsize;
+        feedbackTrans = "TranslationZ : " + QString::number(_accumulator-1);
     }
 
     else if(mode == RendererWidget::SCALE_MODE)
     {
-        _objects[_curSceneIndex][_curItemIndex].scale *= (1.f + combine(x,y)*SCALE_FACTOR);
+        for(int i=0 ; i<_selections.size() ; ++i)
+            _objects[_curSceneIndex][_selections[i].index].scale *= (1.f + combine(x,y)*SCALE_FACTOR);
+
+        _accumulator *= (1.f + combine(x,y)*SCALE_FACTOR);
+        feedbackTrans = "Scale : " + QString::number(_accumulator);
     }
     else if(mode == RendererWidget::SCALE_X_MODE)
     {
-        _objects[_curSceneIndex][_curItemIndex].scale.x() *= (1.f + combine(x,y)*SCALE_FACTOR);
+        for(int i=0 ; i<_selections.size() ; ++i)
+            _objects[_curSceneIndex][_selections[i].index].scale.x() *= (1.f + combine(x,y)*SCALE_FACTOR);
+
+        _accumulator *= (1.f + combine(x,y)*SCALE_FACTOR);
+        feedbackTrans = "ScaleX : " + QString::number(_accumulator);
     }
     else if(mode == RendererWidget::SCALE_Y_MODE)
     {
-        _objects[_curSceneIndex][_curItemIndex].scale.y() *= (1.f + combine(x,y)*SCALE_FACTOR);
+        for(int i=0 ; i<_selections.size() ; ++i)
+            _objects[_curSceneIndex][_selections[i].index].scale.y() *= (1.f + combine(x,y)*SCALE_FACTOR);
+
+        _accumulator *= (1.f + combine(x,y)*SCALE_FACTOR);
+        feedbackTrans = "ScaleY : " + QString::number(_accumulator);
     }
     else if(mode == RendererWidget::SCALE_Z_MODE)
     {
-        _objects[_curSceneIndex][_curItemIndex].scale.z() *= (1.f + combine(x,y)*SCALE_FACTOR);
+        for(int i=0 ; i<_selections.size() ; ++i)
+            _objects[_curSceneIndex][_selections[i].index].scale.z() *= (1.f + combine(x,y)*SCALE_FACTOR);
+
+        _accumulator *= (1.f + combine(x,y)*SCALE_FACTOR);
+        feedbackTrans = "ScaleZ : " + QString::number(_accumulator);
     }
 
     else if(mode == RendererWidget::ROTATE_MODE)
@@ -482,23 +641,64 @@ void SceneEditorWidget::translateMouse(float x, float y, int mode)
                                                      toDeg(combine(x,y)*ROTATE_FACTOR)).toRotationMatrix();
         mat3 tim_mat(m.constData());
 
-        _objects[_curSceneIndex][_curItemIndex].rotate = tim_mat * _objects[_curSceneIndex][_curItemIndex].rotate;
+        for(int i=0 ; i<_selections.size() ; ++i)
+            _objects[_curSceneIndex][_selections[i].index].rotate = tim_mat * _objects[_curSceneIndex][_selections[i].index].rotate;
+
+        _accumulator += toDeg(combine(x,y)*ROTATE_FACTOR);
+        feedbackTrans = "Rotation : " + QString::number(_accumulator-1);
     }
     else if(mode == RendererWidget::ROTATE_X_MODE)
     {
-        _objects[_curSceneIndex][_curItemIndex].rotate = mat3::RotationX(combine(x,y)*ROTATE_FACTOR) * _objects[_curSceneIndex][_curItemIndex].rotate;
+        for(int i=0 ; i<_selections.size() ; ++i)
+            if(_localRotation->isChecked())
+            {
+                _objects[_curSceneIndex][_selections[i].index].rotate =
+                        _objects[_curSceneIndex][_selections[i].index].rotate * mat3::RotationX(combine(x,y)*ROTATE_FACTOR);
+            }
+            else
+            {
+                _objects[_curSceneIndex][_selections[i].index].rotate =
+                        mat3::RotationX(combine(x,y)*ROTATE_FACTOR) * _objects[_curSceneIndex][_selections[i].index].rotate;
+            }
+
+        _accumulator += toDeg(combine(x,y)*ROTATE_FACTOR);
+        feedbackTrans = "RotationX : " + QString::number(_accumulator-1);
     }
     else if(mode == RendererWidget::ROTATE_Y_MODE)
     {
-        _objects[_curSceneIndex][_curItemIndex].rotate = mat3::RotationY(combine(x,y)*ROTATE_FACTOR) * _objects[_curSceneIndex][_curItemIndex].rotate;
+        for(int i=0 ; i<_selections.size() ; ++i)
+            if(_localRotation->isChecked())
+            {
+                _objects[_curSceneIndex][_selections[i].index].rotate =
+                        _objects[_curSceneIndex][_selections[i].index].rotate * mat3::RotationY(combine(x,y)*ROTATE_FACTOR);
+            }
+            else
+            {
+                _objects[_curSceneIndex][_selections[i].index].rotate =
+                        mat3::RotationY(combine(x,y)*ROTATE_FACTOR) * _objects[_curSceneIndex][_selections[i].index].rotate;
+            }
+
+        _accumulator += toDeg(combine(x,y)*ROTATE_FACTOR);
+        feedbackTrans = "RotationY : " + QString::number(_accumulator-1);
     }
     else if(mode == RendererWidget::ROTATE_Z_MODE)
     {
-        _objects[_curSceneIndex][_curItemIndex].rotate = mat3::RotationZ(combine(x,y)*ROTATE_FACTOR) * _objects[_curSceneIndex][_curItemIndex].rotate;
+        for(int i=0 ; i<_selections.size() ; ++i)
+            if(_localRotation->isChecked())
+                _objects[_curSceneIndex][_selections[i].index].rotate =
+                        _objects[_curSceneIndex][_selections[i].index].rotate * mat3::RotationZ(combine(x,y)*ROTATE_FACTOR);
+            else
+                _objects[_curSceneIndex][_selections[i].index].rotate =
+                        mat3::RotationZ(combine(x,y)*ROTATE_FACTOR) * _objects[_curSceneIndex][_selections[i].index].rotate;
+
+        _accumulator += toDeg(combine(x,y)*ROTATE_FACTOR);
+        feedbackTrans = "RotationZ : " + QString::number(_accumulator-1);
     }
 
+    emit feedbackTransformation(feedbackTrans);
+
     updateSelectedMeshMatrix();
-    flushItemUi(_curItemIndex);
+    flushItemUi(_selections[0].index);
 }
 
 void SceneEditorWidget::flushState()
@@ -522,41 +722,40 @@ void SceneEditorWidget::flushState()
     ui->camera_dir_z->setText(QString::number(dir.z(), 'g', 4));
 }
 
-void SceneEditorWidget::cancelSelection()
-{
-    flushItemUi(-1);
-    _curItemIndex = -1;
-
-    if(_highlightedMeshInstance != nullptr)
-        _highlightedMeshInstance->setEnable(false);
-
-    _meshEditor->setEditedMesh(nullptr, nullptr, nullptr, "");
-}
-
 void SceneEditorWidget::saveCurMeshTrans()
 {
-    if(_curItemIndex == -1)
+    if(!hasCurrentSelection())
         return;
 
-    saved_rotate = _objects[_curSceneIndex][_curItemIndex].rotate;
-    saved_translate = _objects[_curSceneIndex][_curItemIndex].translate;
-    saved_scale = _objects[_curSceneIndex][_curItemIndex].scale;
+    for(int i=0 ; i<_selections.size() ; ++i)
+    {
+        _selections[i].saved_rotate = _objects[_curSceneIndex][_selections[i].index].rotate;
+        _selections[i].saved_translate = _objects[_curSceneIndex][_selections[i].index].translate;
+        _selections[i].saved_scale = _objects[_curSceneIndex][_selections[i].index].scale;
+    }
+
+    _accumulator = 1;
 }
 
 void SceneEditorWidget::restoreCurMeshTrans()
 {
-    if(_curItemIndex == -1)
+    if(!hasCurrentSelection())
         return;
 
-    _objects[_curSceneIndex][_curItemIndex].rotate = saved_rotate;
-    _objects[_curSceneIndex][_curItemIndex].translate = saved_translate;
-    _objects[_curSceneIndex][_curItemIndex].scale = saved_scale;
+    for(int i=0 ; i<_selections.size() ; ++i)
+    {
+        _objects[_curSceneIndex][_selections[i].index].rotate = _selections[i].saved_rotate;
+        _objects[_curSceneIndex][_selections[i].index].translate = _selections[i].saved_translate;
+        _objects[_curSceneIndex][_selections[i].index].scale = _selections[i].saved_scale;
+    }
 
     updateSelectedMeshMatrix();
 }
 
 void SceneEditorWidget::flushUiAccordingState(int state)
 {
+    _accumulator = 1;
+
     for(int i=0 ; i<3 ; ++i)
     {
         if(_translateLine[i] != nullptr)
@@ -565,7 +764,7 @@ void SceneEditorWidget::flushUiAccordingState(int state)
 
     if(state >= RendererWidget::TRANSLATE_X_MODE && state <= RendererWidget::TRANSLATE_Z_MODE)
     {
-        if(_curItemIndex < 0)
+        if(!hasCurrentSelection())
             return;
 
         int index = state - static_cast<int>(RendererWidget::TRANSLATE_X_MODE);
@@ -577,13 +776,13 @@ void SceneEditorWidget::flushUiAccordingState(int state)
             _renderer->unlock();
         }
 
-        _translateLine[index]->setMatrix(mat4::Translation(_objects[_curSceneIndex][_curItemIndex].translate));
+        _translateLine[index]->setMatrix(mat4::Translation(_objects[_curSceneIndex][_selections[0].index].translate));
         _translateLine[index]->setEnable(true);
 
     }
     else if(state >= RendererWidget::SCALE_X_MODE && state <= RendererWidget::SCALE_Z_MODE)
     {
-        if(_curItemIndex < 0)
+        if(!hasCurrentSelection())
             return;
 
         int index = state - static_cast<int>(RendererWidget::SCALE_X_MODE);
@@ -595,13 +794,13 @@ void SceneEditorWidget::flushUiAccordingState(int state)
             _renderer->unlock();
         }
 
-        _translateLine[index]->setMatrix(_objects[_curSceneIndex][_curItemIndex].node->matrix());
+        _translateLine[index]->setMatrix(_objects[_curSceneIndex][_selections[0].index].node->matrix());
         _translateLine[index]->setEnable(true);
 
     }
     else if(state >= RendererWidget::ROTATE_X_MODE && state <= RendererWidget::ROTATE_Z_MODE)
     {
-        if(_curItemIndex < 0)
+        if(!hasCurrentSelection())
             return;
 
         int index = state - static_cast<int>(RendererWidget::ROTATE_X_MODE);
@@ -613,64 +812,86 @@ void SceneEditorWidget::flushUiAccordingState(int state)
             _renderer->unlock();
         }
 
-        _translateLine[index]->setMatrix(mat4::Translation(_objects[_curSceneIndex][_curItemIndex].translate));
+        mat4 m = (_localRotation->isChecked() ?
+                      _objects[_curSceneIndex][_selections[0].index].rotate.to<4>() :
+                      mat4::IDENTITY());
+        m.setTranslation(_objects[_curSceneIndex][_selections[0].index].translate);
+        _translateLine[index]->setMatrix(m);
         _translateLine[index]->setEnable(true);
 
     }
 
     if(state >= RendererWidget::TRANSLATE_MODE && state <= RendererWidget::ROTATE_Z_MODE)
     {
-        if(_highlightedMeshInstance)
+        for(int i=0 ; i<_selections.size() ; ++i)
         {
-            Mesh m = _highlightedMeshInstance->mesh();
+            Mesh m = _selections[i].highlightedMeshInstance->mesh();
             for(uint i=0 ; i<m.nbElements() ; ++i)
                 m.element(i).drawState().setShader(ShaderPool::instance().get("highlightedMoving"));
-            _highlightedMeshInstance->setMesh(m);
+            _selections[i].highlightedMeshInstance->setMesh(m);
         }
     }
     else
     {
-        if(_highlightedMeshInstance)
+        for(int i=0 ; i<_selections.size() ; ++i)
         {
-            Mesh m = _highlightedMeshInstance->mesh();
+            Mesh m = _selections[i].highlightedMeshInstance->mesh();
             for(uint i=0 ; i<m.nbElements() ; ++i)
                 m.element(i).drawState().setShader(ShaderPool::instance().get("highlighted"));
-            _highlightedMeshInstance->setMesh(m);
+            _selections[i].highlightedMeshInstance->setMesh(m);
         }
     }
+
+    if(state == RendererWidget::NO_INTERACTION)
+        emit feedbackTransformation("");
 }
 
 void SceneEditorWidget::resetRotation()
 {
-    if(_curItemIndex < 0)
+    if(!hasCurrentSelection())
         return;
 
-    _objects[_curSceneIndex][_curItemIndex].rotate = mat3::IDENTITY();
+    _objects[_curSceneIndex][_selections[0].index].rotate = mat3::IDENTITY();
     updateSelectedMeshMatrix();
 }
 
 
-void SceneEditorWidget::deleteCurrentObject()
+void SceneEditorWidget::deleteCurrentObjects()
 {
-    if(_curItemIndex < 0)
+    if(!hasCurrentSelection())
         return;
 
-    if(_objects[_curSceneIndex][_curItemIndex].node)
-        _renderer->getScene(_renderer->getCurSceneIndex()).scene.remove(*_objects[_curSceneIndex][_curItemIndex].node);
+    _renderer->lock();
+    for(int i=0 ; i<_selections.size() ; ++i)
+    {
+        if(_objects[_curSceneIndex][_selections[i].index].node)
+            _renderer->getScene(_renderer->getCurSceneIndex()).scene.remove(*_objects[_curSceneIndex][_selections[i].index].node);
 
-    delete _objects[_curSceneIndex][_curItemIndex].listItem;
+        delete _objects[_curSceneIndex][_selections[i].index].listItem;
+    }
+    _renderer->unlock();
 
-    _objects[_curSceneIndex].removeAt(_curItemIndex);
+    QList<SceneObject> tmp;
+    for(int i=0 ; i<_objects[_curSceneIndex].size() ; ++i)
+    {
+        bool isInSelection = false;
+        for(int j=0 ; j<_selections.size() ; ++j)
+        {
+            if(_selections[j].index == i)
+                isInSelection  = true;
+                break;
+        }
+
+        if(!isInSelection)
+            tmp += _objects[_curSceneIndex][i];
+    }
+    _objects[_curSceneIndex] = tmp;
+
     cancelSelection();
-
 }
 
-void SceneEditorWidget::copyObject()
+QString genCopyName(QString n)
 {
-    if(_curItemIndex < 0 || _renderer->getCurSceneIndex() == 0)
-        return;
-
-    QString n = _objects[_curSceneIndex][_curItemIndex].name;
     if(!n.isEmpty())
     {
         int index = n.lastIndexOf('_');
@@ -688,15 +909,33 @@ void SceneEditorWidget::copyObject()
             }
         }
     }
+    return n;
+}
+void SceneEditorWidget::copyObject()
+{
+    if(!hasCurrentSelection() || _renderer->getCurSceneIndex() == 0)
+        return;
 
-    addSceneObject(n, _objects[_curSceneIndex][_curItemIndex].baseModel,
-                      _objects[_curSceneIndex][_curItemIndex].materials,
-                      _objects[_curSceneIndex][_curItemIndex].rotate,
-                      _objects[_curSceneIndex][_curItemIndex].translate,
-                      _objects[_curSceneIndex][_curItemIndex].scale);
+    QList<int> indexAdded;
+
+    _renderer->lock();
+    for(int i=0 ; i<_selections.size() ; ++i)
+    {
+        SceneObject obj = _objects[_curSceneIndex][_selections[i].index];
+        obj.name = genCopyName(_objects[_curSceneIndex][_selections[i].index].name);
+        addSceneObject(_curSceneIndex, false, obj);
+        indexAdded += (int)_objects[_curSceneIndex].size()-1;
+    }
+    _renderer->unlock();
+
+    cancelSelection();
 
     _renderer->waitNoEvent();
-    activateObject(_objects[_curSceneIndex].size()-1);
+
+    _renderer->lock();
+    for(int i : indexAdded)
+        activateObject(i, true, false);
+    _renderer->unlock();
 
     emit editTransformation(0);
 }
@@ -768,13 +1007,16 @@ void SceneEditorWidget::exportScene(QString filePath, int sceneIndex)
             for(int j=0 ; j<9 ; ++j)
                 stream << _objects[sceneIndex][i].rotate.get(j) << ((j!=8)?",":"");
             stream << "</rotate>\n";
+            stream << "   <collider type=" << _objects[sceneIndex][i].collider.type << " mass=" << _objects[sceneIndex][i].collider.mass <<
+                      " restitution=" << _objects[sceneIndex][i].collider.restitution << " friction=" << _objects[sceneIndex][i].collider.friction <<
+                      " rollingFriction=" << _objects[sceneIndex][i].collider.rollingFriction << "/>\n";
             stream << "</Object>\n";
         }
 
     }
 }
 
-void SceneEditorWidget::parseTransformation(TiXmlElement* elem, vec3& tr, vec3& sc, mat3& rot)
+void SceneEditorWidget::parseTransformation(TiXmlElement* elem, vec3& tr, vec3& sc, mat3& rot, Collider* collider)
 {
     tr={0,0,0};
     sc={1,1,1};
@@ -794,6 +1036,21 @@ void SceneEditorWidget::parseTransformation(TiXmlElement* elem, vec3& tr, vec3& 
 
             for(int i=0 ; i<9 ; ++i)
                 rot.get(i) = r[i];
+        }
+        else if(elem->ValueStr() == std::string("collider") && collider)
+        {
+            int col = Collider::NONE;
+            elem->QueryIntAttribute("type", &col);
+
+            elem->QueryFloatAttribute("mass", &collider->mass);
+            elem->QueryFloatAttribute("restitution", &collider->restitution);
+            elem->QueryFloatAttribute("friction", &collider->friction);
+            elem->QueryFloatAttribute("rollingFriction", &collider->rollingFriction);
+
+            if(col < Collider::USER_DEFINED)
+                collider->type = col;
+            else
+                collider->type = Collider::NONE;
         }
 
         elem = elem->NextSiblingElement();
@@ -892,11 +1149,17 @@ void SceneEditorWidget::importScene(QString file, int sceneIndex)
 
             vec3 tr, sc;
             mat3 rot;
-            parseTransformation(elem, tr, sc, rot);
-            addSceneObject(sceneIndex, false, QString::fromStdString(name), meshAssetsName[index], meshAssets[index], rot, tr, sc);
-            _objects[sceneIndex].back().isPhysic = isPhysic;
-            _objects[sceneIndex].back().isStatic = isStatic;
-
+            SceneObject obj;
+            parseTransformation(elem, tr, sc, rot, &obj.collider);
+            obj.name = QString::fromStdString(name);
+            obj.baseModel = meshAssetsName[index];
+            obj.materials = meshAssets[index];
+            obj.rotate = rot;
+            obj.translate = tr;
+            obj.scale = sc;
+            obj.isPhysic = isPhysic;
+            obj.isStatic = isStatic;
+            addSceneObject(sceneIndex, false, obj);
         }
         else if(elem->ValueStr() == std::string("Skybox"))
         {
@@ -965,12 +1228,6 @@ void SceneEditorWidget::switchScene(int index)
         return;
 
     cancelSelection();
-
-    if(_highlightedMeshInstance)
-    {
-        _renderer->getScene(_curSceneIndex).scene.remove(*_highlightedMeshInstance);
-        _highlightedMeshInstance = nullptr;
-    }
 
     _curSceneIndex = index;
 

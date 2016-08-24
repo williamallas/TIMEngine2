@@ -26,8 +26,10 @@ public:
 
     void setMainRenderer(tim::MainRenderer* r);
     void setMeshEditor(MeshEditorWidget* r) { _meshEditor = r; }
+    void setLocalRotationCB(QCheckBox* cb) { _localRotation = cb; }
 
     void setSkybox(uint sceneIndex, const QList<QString>&);
+    void setSunDirection(int sceneIndex, vec3 dir);
 
     void addSceneObject(QString name, QString model, const QList<MeshElement>&, mat4);
     void addSceneObject(QString name, QString model, const QList<MeshElement>&, const mat3&, const vec3&, const vec3&);
@@ -43,6 +45,19 @@ protected:
     Ui::SceneEditor *ui;
     tim::MainRenderer* _renderer;
     MeshEditorWidget* _meshEditor;
+    QCheckBox* _localRotation = nullptr;
+
+    struct Collider
+    {
+        enum { NONE, AUTO_BOX, AUTO_SPHERE, CONVEX_HULL, USER_DEFINED };
+        int type = NONE;
+
+        float mass=1,
+              friction=0.75,
+              rollingFriction=0.1,
+              restitution=0.8;
+        // todo add list of user defined shape (multishape component)
+    };
 
     struct SceneObject
     {
@@ -54,40 +69,52 @@ protected:
         mat3 rotate    = mat3::IDENTITY();
         vec3 translate = {0,0,0};
 
+        /* collider */
+        Collider collider;
+
         /* MESH object */
         interface::MeshInstance* node;
         QList<MeshElement> materials;
-        bool isStatic, isPhysic;
+        bool isStatic = true, isPhysic = true;
 
         int exportHelper;
     };
     QList<SceneObject> _objects[NB_SCENE];
     int _curSceneIndex = 0;
-    int _curItemIndex = -1;
-
 
     QList<tim::interface::Pipeline::DirectionalLight> _directionalLights[NB_SCENE];
     QList<QString> _skyboxs[NB_SCENE];
 
-    vec3 saved_scale     = {1,1,1};
-    mat3 saved_rotate    = mat3::IDENTITY();
-    vec3 saved_translate = {0,0,0};
+    struct Selection
+    {
+        int index = -1;
+        vec3 saved_scale     = {1,1,1};
+        mat3 saved_rotate    = mat3::IDENTITY();
+        vec3 saved_translate = {0,0,0};
+        tim::interface::MeshInstance* highlightedMeshInstance = nullptr;
+    };
+    QList<Selection> _selections;
+    float _accumulator = 0;
 
+    tim::interface::MeshInstance* _translateLine[3] = {nullptr};
+
+    /* copy past trans */
     vec3 copy_scale     = {1,1,1};
     mat3 copy_rotate    = mat3::IDENTITY();
     vec3 copy_translate = {0,0,0};
     bool somethingCopied = false;
 
-    tim::interface::MeshInstance* _translateLine[3] = {nullptr};
-    tim::interface::MeshInstance* _highlightedMeshInstance = nullptr;
-
     void addSceneObject(bool lock, QString name, QString model, const QList<MeshElement>&, const mat3&, const vec3&, const vec3&);
     void addSceneObject(int scene, bool lock, QString name, QString model, const QList<MeshElement>&, const mat3&, const vec3&, const vec3&);
-    void activateObject(int);
+    void addSceneObject(int scene, bool lock, SceneObject);
+
+    void activateObject(int, bool, bool lock);
     void flushItemUi(int);
     void updateSelectedMeshMatrix();
-    static void parseTransformation(TiXmlElement*, vec3& tr, vec3& sc, mat3&);
+    static void parseTransformation(TiXmlElement*, vec3& tr, vec3& sc, mat3&, Collider* collider);
     static QList<QString> parseSkyboxXmlElement(TiXmlElement*);
+    bool hasCurrentSelection() const;
+    bool isHighlightedInstance(interface::MeshInstance*) const;
 
     QTimer _flushState;
 
@@ -108,8 +135,14 @@ public slots:
     void on_meshc_isStatic_clicked(bool);
     void on_meshc_isPhysic_clicked(bool);
 
+    void on_mc_mass_editingFinished();
+    void on_mc_restitution_editingFinished();
+    void on_mc_friction_editingFinished();
+    void on_mc_rfriction_editingFinished();
+
     void on_name_editingFinished();
-    void selectSceneObject(vec3,vec3);
+    void on_colliderList_currentIndexChanged(int);
+    void selectSceneObject(vec3,vec3,bool);
     void translateMouse(float,float,int);
     void saveCurMeshTrans();
     void restoreCurMeshTrans();
@@ -118,7 +151,7 @@ public slots:
     void cancelSelection();
 
     void resetRotation();
-    void deleteCurrentObject();
+    void deleteCurrentObjects();
     void copyObject();
 
     void edit_cameraPosX(double);
@@ -131,6 +164,12 @@ public slots:
 
 signals:
     void editTransformation(int);
+    void feedbackTransformation(QString);
 };
+
+inline bool SceneEditorWidget::hasCurrentSelection() const
+{
+    return !_selections.empty() && _selections[0].index >= 0;
+}
 
 #endif // MESHEDITORWIDGET_H
