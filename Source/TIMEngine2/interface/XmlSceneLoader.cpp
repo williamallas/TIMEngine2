@@ -78,15 +78,16 @@ bool XmlSceneLoader::loadScene(std::string file, interface::Scene& scene, vector
 
             vec3 tr, sc;
             mat3 rot;
-            parseTransformation(elem, tr, sc, rot);
-
             ObjectLoaded obj;
+            parseTransformation(elem, tr, sc, rot, &obj.collider);
+
             obj.name = name;
             obj.model = meshAssetsName[index];
             obj.type = ObjectLoaded::MESH_INSTANCE;
             obj.asset = meshAssets[index];
             obj.isPhysic = isPhysic;
             obj.isStatic = isStatic;
+            obj.scale = sc;
 
             obj.meshInstance = &scene.scene.add<MeshInstance>(XmlMeshAssetLoader::constructMesh(meshAssets[index], Texture::genParam(true,true,true, 0), false),
                                                               mat4::constructTransformation(rot, tr, sc));
@@ -108,7 +109,7 @@ bool XmlSceneLoader::loadScene(std::string file, interface::Scene& scene, vector
     return true;
 }
 
-void XmlSceneLoader::parseTransformation(TiXmlElement* elem, vec3& tr, vec3& sc, mat3& rot)
+void XmlSceneLoader::parseTransformation(TiXmlElement* elem, vec3& tr, vec3& sc, mat3& rot, Collider* collider)
 {
     tr={0,0,0};
     sc={1,1,1};
@@ -128,6 +129,21 @@ void XmlSceneLoader::parseTransformation(TiXmlElement* elem, vec3& tr, vec3& sc,
 
             for(int i=0 ; i<9 ; ++i)
                 rot.get(i) = r[i];
+        }
+        else if(elem->ValueStr() == std::string("collider") && collider)
+        {
+            int col = Collider::NONE;
+            elem->QueryIntAttribute("type", &col);
+
+            elem->QueryFloatAttribute("mass", &collider->mass);
+            elem->QueryFloatAttribute("restitution", &collider->restitution);
+            elem->QueryFloatAttribute("friction", &collider->friction);
+            elem->QueryFloatAttribute("rollingFriction", &collider->rollingFriction);
+
+            if(col < Collider::USER_DEFINED)
+                collider->type = col;
+            else
+                collider->type = Collider::NONE;
         }
 
         elem = elem->NextSiblingElement();
