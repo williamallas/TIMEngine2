@@ -64,6 +64,7 @@ namespace core
         Box operator+(const vec3&) const;
 
         Plan extractOptimalPlan() const;
+        Box extractOriginAlignedBox() const;
 
         /* out */
         std::string str() const;

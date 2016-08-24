@@ -241,6 +241,15 @@ Box Box::computeBox(const real* ptr, uint size, uint stride)
     return Box(minV, maxV);
 }
 
+Box Box::extractOriginAlignedBox() const
+{
+    vec3 axe;
+    for(int i=0 ; i<3 ; ++i)
+        axe[i] = std::max(fabsf(_box[i].x()), fabsf(_box[i].y()));
+
+    return Box(-axe, axe);
+}
+
 
 }
 }
