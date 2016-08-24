@@ -37,7 +37,12 @@ public:
     bool update(interface::Scene*&, mat4* offset);
     void rebuild(interface::Scene&);
 
+    std::pair<interface::Scene*, interface::MeshInstance*> closestPortal(const Sphere&, mat4&);
+    int hasCrossedPortal(vec3, vec3, interface::MeshInstance*, float radius);
+    std::pair<interface::Scene*, interface::MeshInstance*> communicatingPortal(interface::Scene*, interface::MeshInstance*);
+
     void setEnableEdge(bool b, interface::Scene&, interface::MeshInstance*);
+    void setCrossableEdge(bool b, interface::Scene&, interface::MeshInstance*);
 
 private:
     struct InternalEdge
@@ -47,6 +52,7 @@ private:
         Plan portalPlan;
         Box portalBox;
         bool enabled = true;
+        bool crossable = true;
     };
 
     uivec2 _resolution;

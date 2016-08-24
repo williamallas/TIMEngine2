@@ -1,5 +1,6 @@
 #include "MultipleSceneHelper.h"
 
+#include "MemoryLoggerOn.h"
 MultipleSceneHelper::MultipleSceneHelper(const interface::FullPipeline::Parameter& param, interface::FullPipeline& pipe)
     : _param(param), _pipeline(pipe)
 {
@@ -18,7 +19,26 @@ void MultipleSceneHelper::setEnableEdge(bool b, interface::Scene& sceneFrom, int
     for(InternalEdge& e : candidat)
     {
         if(e.edge.portal == inst)
+        {
+            interface::Mesh m=e.edge.portal->mesh();
+            if(!b && m.nbElements() > 0)
+                m.element(0).setEnable(0);
+            e.edge.portal->setMesh(m);
+
             e.enabled = b;
+        }
+    }
+}
+
+void MultipleSceneHelper::setCrossableEdge(bool b, interface::Scene& sceneFrom, interface::MeshInstance* inst)
+{
+    vector<InternalEdge>& candidat = _graph[&sceneFrom];
+    for(InternalEdge& e : candidat)
+    {
+        if(e.edge.portal == inst)
+        {
+            e.crossable = b;
+        }
     }
 }
 
@@ -85,7 +105,11 @@ void MultipleSceneHelper::addEdge(Edge edge)
     else
     {
         interface::Mesh m=edge.portal->mesh();
-        if(m.nbElements() > 0) m.element(0).setEnable(1);
+        if(m.nbElements() > 0)
+        {
+            m.element(0).setEnable(1);
+            m.element(0).setCastShadow(false);
+        }
         edge.portal->setMesh(m);
     }
 }
@@ -111,7 +135,7 @@ void MultipleSceneHelper::rebuild(interface::Scene& scene)
 
     freeCamera();
 
-    for(size_t i=0 ; i<std::min<int>((int)add.size(), _portalLimit) ; ++i)
+    for(size_t i=0 ; i<add.size() ; ++i)
     {
         constructEdge(add[i]);
     }
@@ -136,7 +160,7 @@ bool MultipleSceneHelper::update(interface::Scene*& sceneCrossed, mat4* offset_i
 
     for(size_t i=0 ; i<curEdges.size() ; ++i)
     {
-        if(!curEdges[i].enabled)
+        if(!curEdges[i].enabled || !curEdges[i].crossable)
             continue;
 
         Plan transformedPlan = curEdges[i].portalPlan.transformed(curEdges[i].edge.portal->matrix());
@@ -187,6 +211,7 @@ bool MultipleSceneHelper::update(interface::Scene*& sceneCrossed, mat4* offset_i
 
     vector<InternalEdge>& curEdges = _graph[_currentScene];
     vector<boost::tuple<float, int>> optimizePortalLimit;
+    int realIndex = 0;
 
     for(size_t i=0 ; i<_extraCameras.size() ; ++i)
     {
@@ -234,18 +259,19 @@ bool MultipleSceneHelper::update(interface::Scene*& sceneCrossed, mat4* offset_i
         interface::Mesh m = curEdges[i].edge.portal->mesh();
         if(m.nbElements() > 0)
         {
-            m.element(0).setEnable(curEdges[i].enabled ? 1:0);
+            m.element(0).setEnable(1);
             m.element(0).setMaterial(transformedPlan.plan());
-            m.element(0).setTextureScale(0.2 * i);
+            m.element(0).setTextureScale(0.1 * realIndex);
             m.element(0).drawState().setCullFace(false);
             m.element(0).drawState().setShader(interface::ShaderPool::instance().get("portalShader"));
             curEdges[i].edge.portal->setMesh(m);
         }
 
-        vec4 planNext = transformedPlan.transformed(offset).plan();
+        Plan planNext = transformedPlan.transformed(offset);
+
         for(auto ptr : _pipeline.deferredRendererNode(i+1, 0))
         {
-            ptr->setClipPlan(planNext, 0);
+            ptr->setClipPlan(planNext.plan(), 0);
             ptr->setUseClipPlan(true, 0);
         }
 
@@ -253,10 +279,12 @@ bool MultipleSceneHelper::update(interface::Scene*& sceneCrossed, mat4* offset_i
         {
             for(auto ptr : _pipeline.deferredRendererNode(i+1, 1))
             {
-                ptr->setClipPlan(planNext, 0);
+                ptr->setClipPlan(planNext.plan(), 0);
                 ptr->setUseClipPlan(true, 0);
             }
         }
+
+        realIndex++;
     }
 
     _lastCameraPos = _curCamera->camera.pos;
@@ -268,15 +296,112 @@ bool MultipleSceneHelper::update(interface::Scene*& sceneCrossed, mat4* offset_i
             return a.get<0>() < b.get<0>();
         });
 
+
         for(size_t i=0 ; i<optimizePortalLimit.size() ; ++i)
         {
             _pipeline.combineNode(0)->setEnableInput(optimizePortalLimit[i].get<1>()+2, (int)i<_portalLimit);
             if(_pipeline.isStereo())
                 _pipeline.combineNode(1)->setEnableInput(optimizePortalLimit[i].get<1>()+2, (int)i<_portalLimit);
+
+            interface::Mesh m = curEdges[optimizePortalLimit[i].get<1>()].edge.portal->mesh();
+            if(m.nbElements() == 0) continue;
+
+            if((int)i<_portalLimit)
+            {
+                int indexReal=0;
+                for(int j=0 ; j<_portalLimit ; ++j)
+                {
+                    if(optimizePortalLimit[j].get<1>() < optimizePortalLimit[i].get<1>())
+                        indexReal++;
+                }
+                m.element(0).setTextureScale(0.1 * indexReal);
+            }
+            else
+                m.element(0).setEnable(0);
+
+            curEdges[optimizePortalLimit[i].get<1>()].edge.portal->setMesh(m);
         }
     }
 
     return res;
+}
+
+std::pair<interface::Scene*, interface::MeshInstance*> MultipleSceneHelper::closestPortal(const Sphere& sphere, mat4& offset)
+{
+    const vector<InternalEdge>& curEdges = _graph[_currentScene];
+
+    for(size_t i=0 ; i<curEdges.size() ; ++i)
+    {
+        if(!curEdges[i].enabled)
+            continue;
+
+        Plan transformedPlan = curEdges[i].portalPlan.transformed(curEdges[i].edge.portal->matrix());
+        float d = fabsf(transformedPlan.distance(sphere.center()));
+
+        if(d < sphere.radius()) // candidat
+        {
+            vec3 pInter = transformedPlan.project(sphere.center());
+
+            if(curEdges[i].portalBox.inside(curEdges[i].edge.portal->matrix().inverted()*pInter))
+            {
+                offset = curEdges[i].edge.destPortal->matrix() * curEdges[i].edge.portal->matrix().inverted();
+                return {curEdges[i].edge.sceneTo, curEdges[i].edge.portal};
+            }
+        }
+    }
+
+    return {nullptr, nullptr};
+}
+
+std::pair<interface::Scene*, interface::MeshInstance*> MultipleSceneHelper::communicatingPortal(interface::Scene* sc, interface::MeshInstance* portal)
+{
+    const vector<InternalEdge>& curEdges = _graph[sc];
+
+    for(size_t i=0 ; i<curEdges.size() ; ++i)
+    {
+       if(curEdges[i].edge.portal == portal)
+       {
+           return {curEdges[i].edge.sceneTo, curEdges[i].edge.destPortal};
+       }
+    }
+
+    return {nullptr, nullptr};
+}
+
+int MultipleSceneHelper::hasCrossedPortal(vec3 p1, vec3 p2, interface::MeshInstance* portal, float radius)
+{
+    const vector<InternalEdge>& curEdges = _graph[_currentScene];
+
+    for(size_t i=0 ; i<curEdges.size() ; ++i)
+    {
+        if(curEdges[i].edge.portal == portal)
+        {
+            if(!curEdges[i].enabled)
+                return -1;
+
+            Plan transformedPlan = curEdges[i].portalPlan.transformed(curEdges[i].edge.portal->matrix());
+
+            float d1 = transformedPlan.distance(p1);
+            float d2 = transformedPlan.distance(p2);
+            float d = fabsf(d1);
+
+            if(d < radius)
+            {
+                vec3 pInter = transformedPlan.project(p1);
+
+                if(curEdges[i].portalBox.inside(curEdges[i].edge.portal->matrix().inverted()*pInter))
+                {
+                   if(d1*d2 <= 0) // crossed
+                       return 1;
+                   else return 0;
+                }
+                else
+                    return -1;
+            }
+            else return -1;
+        }
+    }
+    return -1;
 }
 
 void MultipleSceneHelper::constructEdge(const InternalEdge& edge)

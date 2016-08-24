@@ -1,15 +1,11 @@
 #include "MainHelper.h"
-#include "DebugCamera.h"
-#include "MultiSceneManager.h"
-#include "resource/AssetManager.h"
-
-#include "interface/FullPipeline.h"
-#include "MultipleSceneHelper.h"
-#include "bullet/BulletEngine.h"
 
 #include "OpenVR/OnHmdRenderer.h"
 #include "OpenVR/HmdSceneView.h"
-#include "PortalGame/Controller.h"
+#include "OpenVR/VRDebugCamera.h"
+#include "resource/AssetManager.h"
+
+#include "PortalGame/PortalGame.h"
 
 #undef interface
 using namespace tim::core;
@@ -41,6 +37,8 @@ int main(int, char**)
             ShaderPool::instance().add("processSpecularCubeMap", "shader/processCubemap.vert", "shader/processCubemap.frag").value();
 
             VR_Device hmdDevice;
+            SDLInputManager input;
+
 			if (hmdDevice.isInit())
 			{
 				RES_X = hmdDevice.hmdResolution().x();
@@ -55,12 +53,12 @@ int main(int, char**)
 			/* Pipeline entity */
 			FullPipeline pipeline;
 			FullPipeline::Parameter pipelineParam;
-            pipelineParam.useShadow = false;
+            pipelineParam.useShadow = true;
             pipelineParam.usePointLight = false;
-            pipelineParam.shadowCascad = vector<float>({5, 20});
+            pipelineParam.shadowCascad = vector<float>({5, 25});
             pipelineParam.shadowResolution = 1024;
             pipelineParam.useSSReflexion = false;
-            pipelineParam.useFxaa = false;
+            pipelineParam.useFxaa = true;
 
             OnHmdRenderer* hmdNode = new OnHmdRenderer;
             hmdNode->setDrawOnScreen(2);
@@ -72,41 +70,27 @@ int main(int, char**)
             hmdNode->setVRDevice(&hmdDevice);
 
             HmdSceneView hmdCamera(110, ratio, 100);
+            pipeline.setStereoView(hmdCamera.cullingView(), hmdCamera.eyeView(0), hmdCamera.eyeView(1), 0);
+
+            VRDebugCamera debugCamera(&input, vec3(10,10,2));
 
             /* physic and setup */
             BulletEngine physEngine;
             ThreadPool threadPool(4);
 
-            SDLInputManager input;
-            float timeElapsed = 0, totalTime = 0;
-
-            DebugCamera freeFly(&input);
-
-            // Setup and load scenes + multiple portals
-            pipeline.setStereoView(hmdCamera.cullingView(), hmdCamera.eyeView(0), hmdCamera.eyeView(1), 0);
-
             MultipleSceneHelper portalManager(pipelineParam, pipeline);
-
             portalManager.setResolution({RES_X,RES_Y});
             portalManager.setView(hmdCamera.cullingView());
             portalManager.setStereoView(hmdCamera.eyeView(0), hmdCamera.eyeView(1));
 
-            MultiSceneManager allSceneManager("configScene.txt", portalManager);
-            if(portalManager.curScene() == nullptr)
-            {
-                std::cout << "Unable to setup the first scene.\n";
-                return -1;
-            }
-            allSceneManager.instancePhysic(physEngine);
+            PortalGame portalGame(physEngine, portalManager, hmdCamera, hmdDevice);
 
-            interface::XmlMeshAssetLoader gameAssets;
-            gameAssets.load("gameAssets.xml");
+            if (hmdDevice.isInit()) hmdDevice.sync();
 
-            Controller controllerManager(gameAssets.getMesh("controller", interface::Texture::genParam(true,true,true, 4)), physEngine);
-            controllerManager.setControllerOffset(mat4::RotationX(toRad(-86.1672))*mat4::Translation({0, 0.121448f*0.6f, -0.020856f*0.6f}));
-            controllerManager.buildForScene(*portalManager.curScene(), allSceneManager.getSceneIndex(portalManager.curScene()));
+            float freqphys = 1000;
+            btSphereShape ballShape(0.075);
 
-            hmdDevice.sync();
+            float timeElapsed = 0, totalTime = 0;
 
 			while (!input.keyState(SDLK_ESCAPE).pressed)
 			{
@@ -115,42 +99,93 @@ int main(int, char**)
                 input.getEvent();
                 threadPool.wait();	
 
+                if(input.keyState(SDLK_n).firstPress && !input.keyState(SDLK_r).pressed)
+                {
+                    portalGame.controllers().DAMPING -= 10;
+                    std::cout << "DAMPING:" << portalGame.controllers().DAMPING << std::endl;
+                }
+                if(input.keyState(SDLK_m).firstPress && !input.keyState(SDLK_r).pressed)
+                {
+                    portalGame.controllers().DAMPING += 10;
+                    std::cout << "DAMPING:" << portalGame.controllers().DAMPING << std::endl;
+                }
+
+                if(input.keyState(SDLK_k).firstPress && !input.keyState(SDLK_r).pressed)
+                {
+                    portalGame.controllers().STRENGTH -= 50;
+                    std::cout << "STRENGTH:" << portalGame.controllers().STRENGTH << std::endl;
+                }
+                if(input.keyState(SDLK_l).firstPress && !input.keyState(SDLK_r).pressed)
+                {
+                    portalGame.controllers().STRENGTH += 50;
+                    std::cout << "STRENGTH:" << portalGame.controllers().STRENGTH << std::endl;
+                }
+
+
+                if(input.keyState(SDLK_n).firstPress && input.keyState(SDLK_r).pressed)
+                {
+                    portalGame.controllers().DAMPING_R -= 0.1;
+                    std::cout << "DAMPING_R:" << portalGame.controllers().DAMPING_R << std::endl;
+                }
+                if(input.keyState(SDLK_m).firstPress && input.keyState(SDLK_r).pressed)
+                {
+                    portalGame.controllers().DAMPING_R += 0.1;
+                    std::cout << "DAMPING_R:" << portalGame.controllers().DAMPING_R << std::endl;
+                }
+
+                if(input.keyState(SDLK_k).firstPress && input.keyState(SDLK_r).pressed)
+                {
+                    portalGame.controllers().STRENGTH_R -= 1;
+                    std::cout << "STRENGTH_R:" << portalGame.controllers().STRENGTH_R << std::endl;
+                }
+                if(input.keyState(SDLK_l).firstPress && input.keyState(SDLK_r).pressed)
+                {
+                    portalGame.controllers().STRENGTH_R += 1;
+                    std::cout << "STRENGTH_R:" << portalGame.controllers().STRENGTH_R << std::endl;
+                }
+
+                if(input.keyState(SDLK_p).firstPress)
+                {
+                    freqphys += 10;
+                    std::cout << "PHYSIQUE_FREQ:" << freqphys << std::endl;
+                }
+                if(input.keyState(SDLK_o).firstPress)
+                {
+                    freqphys -= 10;
+                    std::cout << "PHYSIQUE_FREQ:" << freqphys << std::endl;
+                }
+
+                if(input.keyState(SDLK_b).firstPress)
+                {
+                    portalGame.popBoxDebug();
+                }
+
+
                 /*********************/
                 /******* Flush *******/
                 /*********************/
 
-                //threadPool.schedule([&physEngine, timeElapsed]() { physEngine.dynamicsWorld->stepSimulation(timeElapsed, 5, 1 / 200.f); });
-
-				if (hmdDevice.isInit())
-				{
-                    SDLTimer rup;
-                    hmdDevice.update(input.keyState(SDLK_y).pressed);
-                    std::cout<< "hmd update : " << rup.elapsed() << std::endl;
-
-                    hmdCamera.update(hmdDevice);
-
-                    if(hmdDevice.isControllerConnected(0) && hmdDevice.isControllerConnected(1))
-                        controllerManager.update(hmdCamera.offset(), hmdDevice.controllerPose(VR_Device::LEFT), hmdDevice.controllerPose(VR_Device::RIGHT));
-				}
-				else
-				{ 
-                    freeFly.update(timeElapsed, hmdCamera.cullingView().camera);
-                    hmdCamera.update(hmdCamera.cullingView().camera);
-				}
-
-                interface::Scene* switchScene = nullptr;
-                mat4 o;
-                if(portalManager.update(switchScene, &o))
+                if (hmdDevice.isInit())
                 {
-                    hmdCamera.addOffset(o);
-                    if(hmdDevice.isInit())
-                    {
-                        controllerManager.buildForScene(*switchScene, allSceneManager.getSceneIndex(portalManager.curScene()));
-
-                        if(hmdDevice.isControllerConnected(0) && hmdDevice.isControllerConnected(1))
-                            controllerManager.update(hmdCamera.offset(), hmdDevice.controllerPose(VR_Device::LEFT), hmdDevice.controllerPose(VR_Device::RIGHT));
-                    }
+                    hmdDevice.update(false);
+                    hmdCamera.update(hmdDevice);
                 }
+                else
+                {
+                    debugCamera.update(timeElapsed);
+                    hmdCamera.update(debugCamera, ratio);
+                }
+
+                portalGame.update(timeElapsed);
+                portalGame.setDebugControllerPose(debugCamera.pos() + debugCamera.dir()*0.5);
+
+                int sceneIndex = portalGame.curSceneIndex();
+                threadPool.schedule([&physEngine, timeElapsed, sceneIndex, freqphys]()
+                {
+                    for(int i=0 ; i<4 ; ++i)
+                        if(physEngine.dynamicsWorld[i])
+                            physEngine.dynamicsWorld[i]->stepSimulation(std::min(timeElapsed, 1.f/60), 10, 1 / freqphys);
+               });
 
                 /********************/
                 /******* Draw *******/
@@ -173,7 +208,10 @@ int main(int, char**)
 					float fps = countTime<0>(timeElapsed);
                    
                     if (fps > 0)
+                    {
                         std::cout << "Fps:" << 1.f / fps << "  Ms:" << 1000 * fps << std::endl;
+                        std::cout << debugCamera.pos() << std::endl << std::endl;
+                    }
                    
 				}
 			}
@@ -184,12 +222,12 @@ int main(int, char**)
             AssetManager<Geometry>::freeInstance();
             AssetManager<interface::Texture>::freeInstance();
             ShaderPool::freeInstance();
-			openGL.execAllGLTask();
+            openGL.execAllGLTask();
 		}
 
 		delete resource::textureLoader;
 		tim::renderer::close();
-		delContextSDL();
+        delContextSDL();
 	}
 	tim::core::quit();
 	LOG("Quit\n");
