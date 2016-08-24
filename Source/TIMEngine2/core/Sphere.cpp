@@ -125,5 +125,12 @@ bool Sphere::collide(const vec3& o, const vec3& l, vec3& res) const
     return true;
 }
 
+Sphere Sphere::extractOriginAlignedSphere() const
+{
+    Sphere res(vec3(0,0,0),1);
+    res.setRadius(_center.length() + _radius);
+    return res;
+}
+
 }
 }

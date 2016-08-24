@@ -48,6 +48,8 @@ namespace core
 
         void transform(const mat4&);
 
+        Sphere extractOriginAlignedSphere() const;
+
         /* out */
         std::string str() const;
         friend std::ostream& operator<< (std::ostream& stream, const Sphere& t) { stream << t.str(); return stream; }
