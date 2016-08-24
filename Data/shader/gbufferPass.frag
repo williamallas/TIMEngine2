@@ -54,6 +54,7 @@ void main()
 {  	
 	vec4 texColor = vec4(1);
 	vec3 n = normalize(v_normal);
+	vec4 material_tex = vec4(1,1,1,1);
 	
 	if(materials[v_drawId].header.y > 0)
 	{
@@ -79,6 +80,10 @@ void main()
 			vec3 t = normalize(v_tangent);
 			mat3 tbn = mat3(t, cross(t,n), n);
 			n = tbn*(texture(sampler2D(materials[v_drawId].tex1), tCoord * texScale).xyz*2-1);
+			if(materials[v_drawId].header.y > 2)
+			{
+				material_tex = texture(sampler2D(materials[v_drawId].tex2), tCoord * texScale);
+			}
 		#endif
 		}
 	}
@@ -91,7 +96,7 @@ void main()
 	#ifdef WATER_SHADER
 	outMaterial = vec4(0, 1, 1,0);
 	#else
-	outMaterial = vec4(materials[v_drawId].parameter);
+	outMaterial = vec4(materials[v_drawId].parameter) * material_tex;
 	#endif
 	#endif
 }
