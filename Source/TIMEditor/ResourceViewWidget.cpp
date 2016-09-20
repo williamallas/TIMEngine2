@@ -14,6 +14,7 @@
 #include <QVBoxLayout>
 #include <QPushButton>
 #include <QMenu>
+#include <QFileDialog>
 #include <QAction>
 #include "core/StringUtils.h"
 #include "resource/MeshLoader.h"
@@ -216,6 +217,11 @@ void ResourceViewWidget::showContextMenu(const QPoint& pos)
                 onGeometryRightClicked(elem, globalPos);
                 return;
             }
+            else if(elem.elem.type == Element::Texture)
+            {
+                onImageRightClicked(elem, globalPos);
+                return;
+            }
         }
     }
 }
@@ -248,6 +254,42 @@ void ResourceViewWidget::onGeometryRightClicked(const ItemElement& elem, const Q
         exportToTim(newPath);
         newPath.resize(newPath.size()-3);
         addElement({newPath+"tim", Element::Geometry});
+    }
+}
+
+void replaceAlpha(const QImage& src, const QImage& alphaImg, QString filename)
+{
+    QImage image(src.convertToFormat(QImage::Format_ARGB32));
+
+
+    for (int x(0); x < image.width(); ++x)
+    {
+        for (int y(0) ; y < image.height() ; ++y)
+        {
+            QColor color(image.pixel(x,y));
+            color.setAlpha(QColor(alphaImg.pixel(x,y)).red());
+            image.setPixel(x, y, color.rgba());
+        }
+    }
+
+    image.save(filename, "PNG", 9);
+}
+
+void ResourceViewWidget::onImageRightClicked(const ItemElement& elem, const QPoint& pos)
+{
+    QMenu myMenu;
+    QAction* setAlphaCanal = myMenu.addAction("Set alpha canal");
+
+    QAction* ret = myMenu.exec(pos);
+    if(ret == setAlphaCanal)
+    {
+        QString fileName = QFileDialog::getOpenFileName(this, "Open Image", "", "Images (*.png *.tga *.jpg *.bmp)");
+        QImage alphaImg(fileName);
+        QImage originalImg(elem.elem.path, "PNG");
+        if(alphaImg.isNull() || originalImg.isNull() || alphaImg.size() != originalImg.size())
+            return;
+
+        replaceAlpha(originalImg, alphaImg, elem.elem.path);
     }
 }
 

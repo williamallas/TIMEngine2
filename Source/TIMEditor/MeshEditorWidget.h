@@ -91,10 +91,17 @@ public slots:
     void on_normalTex_clicked();
     void on_materialTex_clicked();
 
+//    void on_advancedMaterial_clicked(bool);
+//    void on_cullFace_clicked(bool);
+//    void on_cullBackFace_clicked(bool);
+//    void on_castShadow_clicked(bool);
+//    void on_shaderList_currentIndexChanged(QString);
+
     void on_saveMeshButton_pressed();
 
 signals:
     void saveMeshClicked();
+    void changeCurBaseModelName(QString);
 };
 
 #endif // MESHEDITORWIDGET_H

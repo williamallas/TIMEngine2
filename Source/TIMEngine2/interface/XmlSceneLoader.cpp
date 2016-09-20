@@ -63,6 +63,14 @@ bool XmlSceneLoader::loadScene(std::string file, interface::Scene& scene, vector
     {
         if(elem->ValueStr() == std::string("Object"))
         {
+            bool isVisible = true;
+            elem->QueryBoolAttribute("isVisible", &isVisible);
+            if(!isVisible)
+            {
+                elem=elem->NextSiblingElement();
+                continue;
+            }
+
             std::string name;
             elem->QueryStringAttribute("name", &name);
 
@@ -70,7 +78,10 @@ bool XmlSceneLoader::loadScene(std::string file, interface::Scene& scene, vector
             elem->QueryIntAttribute("model", &index);
 
             if(index < 0 || meshAssets.find(index)==meshAssets.end())
+            {
+                elem=elem->NextSiblingElement();
                 continue;
+            }
 
             bool isStatic = true, isPhysic = true;
             elem->QueryBoolAttribute("isStatic", &isStatic);
@@ -87,7 +98,10 @@ bool XmlSceneLoader::loadScene(std::string file, interface::Scene& scene, vector
             obj.asset = meshAssets[index];
             obj.isPhysic = isPhysic;
             obj.isStatic = isStatic;
+            obj.isVisible = isVisible;
             obj.scale = sc;
+            obj.translation = tr;
+            obj.rotation = rot;
 
             obj.meshInstance = &scene.scene.add<MeshInstance>(XmlMeshAssetLoader::constructMesh(meshAssets[index], Texture::genParam(true,true,true, 0), false),
                                                               mat4::constructTransformation(rot, tr, sc));

@@ -51,6 +51,7 @@ protected:
     bool isGeometry(QString) const;
 
     void onGeometryRightClicked(const ItemElement&, const QPoint&);
+    void onImageRightClicked(const ItemElement&, const QPoint&);
 
 };
 

@@ -35,10 +35,12 @@ namespace interface
             int type = MESH_INSTANCE;
 
             MeshInstance* meshInstance;
-            bool isStatic, isPhysic;
+            bool isStatic, isPhysic, isVisible;
             Collider collider;
 
             vector<XmlMeshAssetLoader::MeshElementModel> asset;
+            mat3 rotation = mat3::IDENTITY();
+            vec3 translation;
             vec3 scale = {1,1,1};
         };
 

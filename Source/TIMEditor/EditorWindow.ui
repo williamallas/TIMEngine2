@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>962</width>
-    <height>580</height>
+    <width>1068</width>
+    <height>759</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -55,7 +55,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>962</width>
+     <width>1068</width>
      <height>21</height>
     </rect>
    </property>
@@ -136,7 +136,7 @@
    </property>
    <property name="minimumSize">
     <size>
-     <width>151</width>
+     <width>166</width>
      <height>95</height>
     </size>
    </property>
@@ -228,6 +228,13 @@
           <widget class="QCheckBox" name="localRot">
            <property name="text">
             <string>Local rot</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="localTrans">
+           <property name="text">
+            <string>Local trans</string>
            </property>
           </widget>
          </item>

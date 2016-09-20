@@ -209,6 +209,7 @@ void SceneEditorWidget::flushItemUi(int index)
         ui->scale_z->setValue(1);
         ui->meshc_isPhysic->setChecked(true);
         ui->meshc_isStatic->setChecked(true);
+        ui->meshc_isVisible->setChecked(true);
         ui->colliderList->clear();
 
         ui->mc_friction->setValue(0.75);
@@ -230,6 +231,7 @@ void SceneEditorWidget::flushItemUi(int index)
 
         ui->meshc_isPhysic->setChecked(_objects[_curSceneIndex][index].isPhysic);
         ui->meshc_isStatic->setChecked(_objects[_curSceneIndex][index].isStatic);
+        ui->meshc_isVisible->setChecked(_objects[_curSceneIndex][index].isVisible);
 
         ui->colliderList->clear();
         ui->colliderList->addItem("None");
@@ -294,6 +296,14 @@ void SceneEditorWidget::sceneItemActivated(QListWidgetItem* item)
             return;
         }
     }
+}
+
+void SceneEditorWidget::changeBaseModelName(QString name)
+{
+    if(!hasCurrentSelection())
+        return;
+
+    _objects[_curSceneIndex][_selections[0].index].baseModel = name;
 }
 
 void SceneEditorWidget::on_translate_x_editingFinished()
@@ -444,6 +454,12 @@ void SceneEditorWidget::on_meshc_isPhysic_clicked(bool b)
         _objects[_curSceneIndex][_selections[i].index].isPhysic = b;
 }
 
+void SceneEditorWidget::on_meshc_isVisible_clicked(bool b)
+{
+    for(int i=0 ; i<_selections.size() ; ++i)
+        _objects[_curSceneIndex][_selections[i].index].isVisible = b;
+}
+
 void SceneEditorWidget::on_mc_mass_editingFinished()
 {
     for(int i=0 ; i<_selections.size() ; ++i)
@@ -542,6 +558,47 @@ float combine(float x, float y)
     }
 }
 
+void scaleRelPos(vec3& pos, const vec3& relpos, const vec3& scale)
+{
+    vec3 v = (pos - relpos)*scale;
+    pos = relpos + v;
+}
+
+void SceneEditorWidget::applyRelRot(const mat3& tim_mat, bool local)
+{
+    if(_selections.size() > 0)
+    {
+        if(_selections.size() > 1)
+        {
+            mat4 m0 = mat4::constructTransformation(_objects[_curSceneIndex][_selections[0].index].rotate,
+                                                    _objects[_curSceneIndex][_selections[0].index].translate,
+                                                    vec3(1,1,1));
+            mat4 m0_inv = m0.inverted();
+            vec3 t0 = m0.translation();
+
+            for(int i=1 ; i<_selections.size() ; ++i)
+            {
+                mat4 m = mat4::constructTransformation(_objects[_curSceneIndex][_selections[i].index].rotate,
+                                                       _objects[_curSceneIndex][_selections[i].index].translate,
+                                                       vec3(1,1,1));
+
+                if(local)
+                    m = m0 * tim_mat.to<4>() * m0_inv * m;
+                else
+                    m =  mat4::Translation(t0) * tim_mat.to<4>() * mat4::Translation(-t0) * m;
+
+                _objects[_curSceneIndex][_selections[i].index].rotate = m.to<3>();
+                _objects[_curSceneIndex][_selections[i].index].translate = m.translation();
+            }
+        }
+
+        if(local)
+            _objects[_curSceneIndex][_selections[0].index].rotate = _objects[_curSceneIndex][_selections[0].index].rotate * tim_mat;
+        else
+            _objects[_curSceneIndex][_selections[0].index].rotate = tim_mat * _objects[_curSceneIndex][_selections[0].index].rotate;
+    }
+}
+
 void SceneEditorWidget::translateMouse(float x, float y, int mode)
 {
     if(!hasCurrentSelection())
@@ -573,8 +630,12 @@ void SceneEditorWidget::translateMouse(float x, float y, int mode)
         if(x_dir.x() > 0) x *= -1;
         if(y_dir.x() < 0) y *= -1;
 
+        vec3 axe(combine(x,y) * hsize,0,0);
+        if(_localTranslation->isChecked() && !_selections.empty())
+            axe = _objects[_curSceneIndex][_selections[0].index].rotate * axe;
+
         for(int i=0 ; i<_selections.size() ; ++i)
-            _objects[_curSceneIndex][_selections[i].index].translate.x() += combine(x,y) * hsize;
+            _objects[_curSceneIndex][_selections[i].index].translate += axe;
 
         _accumulator += combine(x,y) * hsize;
         feedbackTrans = "TranslationX : " + QString::number(_accumulator-1);
@@ -584,8 +645,12 @@ void SceneEditorWidget::translateMouse(float x, float y, int mode)
         if(x_dir.y() > 0) x *= -1;
         if(y_dir.y() < 0) y *= -1;
 
+        vec3 axe(0,combine(x,y) * hsize,0);
+        if(_localTranslation->isChecked() && !_selections.empty())
+            axe = _objects[_curSceneIndex][_selections[0].index].rotate * axe;
+
         for(int i=0 ; i<_selections.size() ; ++i)
-            _objects[_curSceneIndex][_selections[i].index].translate.y() += combine(x,y) * hsize;
+            _objects[_curSceneIndex][_selections[i].index].translate += axe;
 
         _accumulator += combine(x,y) * hsize;
         feedbackTrans = "TranslationY : " + QString::number(_accumulator-1);
@@ -595,8 +660,12 @@ void SceneEditorWidget::translateMouse(float x, float y, int mode)
         if(x_dir.z() > 0) x *= -1;
         if(y_dir.z() < 0) y *= -1;
 
+        vec3 axe(0,0, combine(x,y) * hsize);
+        if(_localTranslation->isChecked() && !_selections.empty())
+            axe = _objects[_curSceneIndex][_selections[0].index].rotate * axe;
+
         for(int i=0 ; i<_selections.size() ; ++i)
-            _objects[_curSceneIndex][_selections[i].index].translate.z() += combine(x,y) * hsize;
+            _objects[_curSceneIndex][_selections[i].index].translate += axe;
 
         _accumulator += combine(x,y) * hsize;
         feedbackTrans = "TranslationZ : " + QString::number(_accumulator-1);
@@ -604,8 +673,12 @@ void SceneEditorWidget::translateMouse(float x, float y, int mode)
 
     else if(mode == RendererWidget::SCALE_MODE)
     {
+        float s = (1.f + combine(x,y)*SCALE_FACTOR);
         for(int i=0 ; i<_selections.size() ; ++i)
-            _objects[_curSceneIndex][_selections[i].index].scale *= (1.f + combine(x,y)*SCALE_FACTOR);
+        {
+            _objects[_curSceneIndex][_selections[i].index].scale *= s;
+            scaleRelPos(_objects[_curSceneIndex][_selections[i].index].translate, _objects[_curSceneIndex][_selections[0].index].translate, vec3(s,s,s));
+        }
 
         _accumulator *= (1.f + combine(x,y)*SCALE_FACTOR);
         feedbackTrans = "Scale : " + QString::number(_accumulator);
@@ -639,57 +712,29 @@ void SceneEditorWidget::translateMouse(float x, float y, int mode)
     {
         QMatrix3x3 m = QQuaternion::fromAxisAndAngle(QVector3D(forward[0], forward[1], forward[2]).normalized(),
                                                      toDeg(combine(x,y)*ROTATE_FACTOR)).toRotationMatrix();
-        mat3 tim_mat(m.constData());
 
-        for(int i=0 ; i<_selections.size() ; ++i)
-            _objects[_curSceneIndex][_selections[i].index].rotate = tim_mat * _objects[_curSceneIndex][_selections[i].index].rotate;
+        applyRelRot(m.constData(), false);
 
         _accumulator += toDeg(combine(x,y)*ROTATE_FACTOR);
         feedbackTrans = "Rotation : " + QString::number(_accumulator-1);
     }
     else if(mode == RendererWidget::ROTATE_X_MODE)
-    {
-        for(int i=0 ; i<_selections.size() ; ++i)
-            if(_localRotation->isChecked())
-            {
-                _objects[_curSceneIndex][_selections[i].index].rotate =
-                        _objects[_curSceneIndex][_selections[i].index].rotate * mat3::RotationX(combine(x,y)*ROTATE_FACTOR);
-            }
-            else
-            {
-                _objects[_curSceneIndex][_selections[i].index].rotate =
-                        mat3::RotationX(combine(x,y)*ROTATE_FACTOR) * _objects[_curSceneIndex][_selections[i].index].rotate;
-            }
+    {   
+        applyRelRot(mat3::RotationX(combine(x,y)*ROTATE_FACTOR), _localRotation->isChecked());
 
         _accumulator += toDeg(combine(x,y)*ROTATE_FACTOR);
         feedbackTrans = "RotationX : " + QString::number(_accumulator-1);
     }
     else if(mode == RendererWidget::ROTATE_Y_MODE)
     {
-        for(int i=0 ; i<_selections.size() ; ++i)
-            if(_localRotation->isChecked())
-            {
-                _objects[_curSceneIndex][_selections[i].index].rotate =
-                        _objects[_curSceneIndex][_selections[i].index].rotate * mat3::RotationY(combine(x,y)*ROTATE_FACTOR);
-            }
-            else
-            {
-                _objects[_curSceneIndex][_selections[i].index].rotate =
-                        mat3::RotationY(combine(x,y)*ROTATE_FACTOR) * _objects[_curSceneIndex][_selections[i].index].rotate;
-            }
+        applyRelRot(mat3::RotationY(combine(x,y)*ROTATE_FACTOR), _localRotation->isChecked());
 
         _accumulator += toDeg(combine(x,y)*ROTATE_FACTOR);
         feedbackTrans = "RotationY : " + QString::number(_accumulator-1);
     }
     else if(mode == RendererWidget::ROTATE_Z_MODE)
     {
-        for(int i=0 ; i<_selections.size() ; ++i)
-            if(_localRotation->isChecked())
-                _objects[_curSceneIndex][_selections[i].index].rotate =
-                        _objects[_curSceneIndex][_selections[i].index].rotate * mat3::RotationZ(combine(x,y)*ROTATE_FACTOR);
-            else
-                _objects[_curSceneIndex][_selections[i].index].rotate =
-                        mat3::RotationZ(combine(x,y)*ROTATE_FACTOR) * _objects[_curSceneIndex][_selections[i].index].rotate;
+        applyRelRot(mat3::RotationZ(combine(x,y)*ROTATE_FACTOR), _localRotation->isChecked());
 
         _accumulator += toDeg(combine(x,y)*ROTATE_FACTOR);
         feedbackTrans = "RotationZ : " + QString::number(_accumulator-1);
@@ -776,9 +821,12 @@ void SceneEditorWidget::flushUiAccordingState(int state)
             _renderer->unlock();
         }
 
-        _translateLine[index]->setMatrix(mat4::Translation(_objects[_curSceneIndex][_selections[0].index].translate));
+        mat4 m = (_localTranslation->isChecked() ?
+                      _objects[_curSceneIndex][_selections[0].index].rotate.to<4>() :
+                      mat4::IDENTITY());
+        m.setTranslation(_objects[_curSceneIndex][_selections[0].index].translate);
+        _translateLine[index]->setMatrix(m);
         _translateLine[index]->setEnable(true);
-
     }
     else if(state >= RendererWidget::SCALE_X_MODE && state <= RendererWidget::SCALE_Z_MODE)
     {
@@ -851,7 +899,11 @@ void SceneEditorWidget::resetRotation()
     if(!hasCurrentSelection())
         return;
 
+    mat3 inv_rot = _objects[_curSceneIndex][_selections[0].index].rotate.inverted();
+    applyRelRot(inv_rot, false);
+
     _objects[_curSceneIndex][_selections[0].index].rotate = mat3::IDENTITY();
+
     updateSelectedMeshMatrix();
 }
 
@@ -976,7 +1028,7 @@ void SceneEditorWidget::exportScene(QString filePath, int sceneIndex)
         for(int i=0 ; i<_objects[sceneIndex].size() ; ++i)
         {
             QList<MeshElement> sortedElem = _objects[sceneIndex][i].materials;
-            qSort(sortedElem);
+            //qSort(sortedElem);
             int index = alreadySaved.indexOf(sortedElem);
             if(index == -1)
             {
@@ -998,7 +1050,9 @@ void SceneEditorWidget::exportScene(QString filePath, int sceneIndex)
         for(int i=0 ; i<_objects[sceneIndex].size() ; ++i)
         {
             stream << "<Object name=\"" << _objects[sceneIndex][i].name << "\" model=" <<  _objects[sceneIndex][i].exportHelper <<
-                      " isStatic=" << _objects[sceneIndex][i].isStatic << " isPhysic=" << _objects[sceneIndex][i].isPhysic << " >\n";
+                      " isStatic=" << _objects[sceneIndex][i].isStatic <<
+                      " isPhysic=" << _objects[sceneIndex][i].isPhysic <<
+                      " isVisible=" << _objects[sceneIndex][i].isVisible << " >\n";
 
             stream << "   <translate>" << _objects[sceneIndex][i].translate[0] << "," << _objects[sceneIndex][i].translate[1] << "," << _objects[sceneIndex][i].translate[2] << "</translate>\n";
             stream << "   <scale>" << _objects[sceneIndex][i].scale[0] << "," << _objects[sceneIndex][i].scale[1] << "," << _objects[sceneIndex][i].scale[2] << "</scale>\n";
@@ -1143,9 +1197,10 @@ void SceneEditorWidget::importScene(QString file, int sceneIndex)
             if(index < 0 || !meshAssets.contains(index))
                 continue;
 
-            bool isStatic = true, isPhysic = true;
+            bool isStatic = true, isPhysic = true, isVisible = true;
             elem->QueryBoolAttribute("isStatic", &isStatic);
             elem->QueryBoolAttribute("isPhysic", &isPhysic);
+            elem->QueryBoolAttribute("isVisible", &isVisible);
 
             vec3 tr, sc;
             mat3 rot;
@@ -1159,6 +1214,7 @@ void SceneEditorWidget::importScene(QString file, int sceneIndex)
             obj.scale = sc;
             obj.isPhysic = isPhysic;
             obj.isStatic = isStatic;
+            obj.isVisible = isVisible;
             addSceneObject(sceneIndex, false, obj);
         }
         else if(elem->ValueStr() == std::string("Skybox"))

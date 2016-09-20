@@ -26,7 +26,7 @@ public:
 
     void setMainRenderer(tim::MainRenderer* r);
     void setMeshEditor(MeshEditorWidget* r) { _meshEditor = r; }
-    void setLocalRotationCB(QCheckBox* cb) { _localRotation = cb; }
+    void setLocalCB(QCheckBox* rot, QCheckBox* trans) { _localRotation = rot; _localTranslation = trans; }
 
     void setSkybox(uint sceneIndex, const QList<QString>&);
     void setSunDirection(int sceneIndex, vec3 dir);
@@ -45,7 +45,9 @@ protected:
     Ui::SceneEditor *ui;
     tim::MainRenderer* _renderer;
     MeshEditorWidget* _meshEditor;
+
     QCheckBox* _localRotation = nullptr;
+    QCheckBox* _localTranslation = nullptr;
 
     struct Collider
     {
@@ -75,7 +77,7 @@ protected:
         /* MESH object */
         interface::MeshInstance* node;
         QList<MeshElement> materials;
-        bool isStatic = true, isPhysic = true;
+        bool isStatic = true, isPhysic = true, isVisible = true;
 
         int exportHelper;
     };
@@ -115,6 +117,7 @@ protected:
     static QList<QString> parseSkyboxXmlElement(TiXmlElement*);
     bool hasCurrentSelection() const;
     bool isHighlightedInstance(interface::MeshInstance*) const;
+    void applyRelRot(const mat3&, bool);
 
     QTimer _flushState;
 
@@ -134,6 +137,7 @@ public slots:
 
     void on_meshc_isStatic_clicked(bool);
     void on_meshc_isPhysic_clicked(bool);
+    void on_meshc_isVisible_clicked(bool);
 
     void on_mc_mass_editingFinished();
     void on_mc_restitution_editingFinished();
@@ -153,6 +157,7 @@ public slots:
     void resetRotation();
     void deleteCurrentObjects();
     void copyObject();
+    void changeBaseModelName(QString);
 
     void edit_cameraPosX(double);
     void edit_cameraPosY(double);

@@ -17,6 +17,10 @@ MeshEditorWidget::MeshEditorWidget(QWidget* parent) : QWidget(parent), ui(new Ui
     setMinimumWidth(320);
     updateColorButton();
 
+    ui->shaderList->addItem("gPass");
+    ui->shaderList->addItem("gPassAlphaTest");
+    ui->shaderList->addItem("water");
+
     connect(ui->dm_roughnessSlider, SIGNAL(sliderMoved(int)), this, SLOT(dm_roughnessSlider_sliderMoved(int)));
     connect(ui->dm_metallicSlider, SIGNAL(sliderMoved(int)), this, SLOT(dm_metallicSlider_sliderMoved(int)));
     connect(ui->dm_specularSlider, SIGNAL(sliderMoved(int)), this, SLOT(dm_specularSlider_sliderMoved(int)));
@@ -89,6 +93,8 @@ void MeshEditorWidget::setEditedMesh(MeshInstance* node, MeshInstance* highlight
         ui->diffuseTex->setIcon(QIcon());
         ui->normalTex->setIcon(QIcon());
         ui->materialTex->setIcon(QIcon());
+
+        ui->advancedMaterial->setChecked(false);
 
         return;
     }
@@ -234,6 +240,7 @@ void MeshEditorWidget::setMesh(QString name, const QList<MeshElement>& elements)
     _renderer->unlock();
 
     ui->meshName->setText(name);
+    emit changeCurBaseModelName(name);
 
     for(int i=0 ; i<elements.size() ; ++i)
     {
@@ -437,6 +444,15 @@ void MeshEditorWidget::updateMaterial()
 
     (*_editedMaterials)[_curElementIndex].material = material;
     (*_editedMaterials)[_curElementIndex].color = QColor(ui->dm_colorR->value(), ui->dm_colorG->value(), ui->dm_colorB->value());
+    (*_editedMaterials)[_curElementIndex].castShadow = ui->castShadow->isChecked();
+
+    (*_editedMaterials)[_curElementIndex].useAdvanced = ui->advancedMaterial->isChecked();
+    if((*_editedMaterials)[_curElementIndex].useAdvanced)
+    {
+        (*_editedMaterials)[_curElementIndex].advancedShader = ui->shaderList->currentText();
+        (*_editedMaterials)[_curElementIndex].advanced.setCullFace(ui->cullFace->isChecked());
+        (*_editedMaterials)[_curElementIndex].advanced.setCullBackFace(ui->cullBackFace->isChecked());
+    }
 
     vec4 color = vec4((*_editedMaterials)[_curElementIndex].color.red(),
                       (*_editedMaterials)[_curElementIndex].color.green(),
@@ -467,14 +483,19 @@ void MeshEditorWidget::updateMaterial()
         mesh.element(index).setTextureScale(texScale);
         mesh.element(index).setCastShadow(castShadow);
 
-        mesh.element(index).drawState().setShader(ShaderPool::instance().get("gPass"));
         if(useAdvanced)
         {
             mesh.element(index).drawState() = adv;
             if(!advShader.empty())
                 mesh.element(index).drawState().setShader(ShaderPool::instance().get(advShader));
+            else
+                mesh.element(index).drawState().setShader(ShaderPool::instance().get("gPass"));
         }
-
+        else
+        {
+            mesh.element(index).drawState() = renderer::DrawState();
+            mesh.element(index).drawState().setShader(ShaderPool::instance().get("gPass"));
+        }
 
         editedMesh->setMesh(mesh);
 
@@ -514,6 +535,11 @@ void MeshEditorWidget::setUi(const MeshElement& mat)
     ui->dm_specularSlider->blockSignals(true);
     ui->dm_emissiveSlider->blockSignals(true);
     ui->dm_textureScaleSlider->blockSignals(true);
+    ui->advancedMaterial->blockSignals(true);
+    ui->castShadow->blockSignals(true);
+    ui->cullBackFace->blockSignals(true);
+    ui->cullFace->blockSignals(true);
+    ui->shaderList->blockSignals(true);
 
     ui->dm_colorR->setValue(mat.color.red());
     ui->dm_colorG->setValue(mat.color.green());
@@ -535,6 +561,15 @@ void MeshEditorWidget::setUi(const MeshElement& mat)
     ui->normalTex->setIcon(mat.texturesIcon[1]);
     ui->materialTex->setIcon(mat.texturesIcon[2]);
 
+    ui->advancedMaterial->setChecked(mat.useAdvanced);
+    ui->castShadow->setChecked(mat.castShadow);
+    ui->cullBackFace->setChecked(mat.advanced.cullBackFace());
+    ui->cullFace->setChecked(mat.advanced.cullFace());
+    if(mat.advancedShader.isEmpty())
+        ui->shaderList->setCurrentIndex(0);
+    else
+        ui->shaderList->setCurrentText(mat.advancedShader);
+
     ui->dm_colorR->blockSignals(false);
     ui->dm_colorG->blockSignals(false);
     ui->dm_colorB->blockSignals(false);
@@ -548,6 +583,11 @@ void MeshEditorWidget::setUi(const MeshElement& mat)
     ui->dm_specularSlider->blockSignals(false);
     ui->dm_emissiveSlider->blockSignals(false);
     ui->dm_textureScaleSlider->blockSignals(false);
+    ui->advancedMaterial->blockSignals(false);
+    ui->castShadow->blockSignals(false);
+    ui->cullBackFace->blockSignals(false);
+    ui->cullFace->blockSignals(false);
+    ui->shaderList->blockSignals(false);
 }
 
 void MeshEditorWidget::selectGeometryFromResources()

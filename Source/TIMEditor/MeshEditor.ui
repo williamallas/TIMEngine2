@@ -379,6 +379,16 @@
        </layout>
       </item>
       <item>
+       <widget class="QCheckBox" name="castShadow">
+        <property name="text">
+         <string>castShadow</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="Line" name="line">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -560,6 +570,89 @@
         </item>
        </layout>
       </item>
+      <item>
+       <widget class="Line" name="line_6">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="advancedMaterial">
+        <property name="title">
+         <string>Advanced</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_2">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_7">
+           <item>
+            <widget class="QLabel" name="label_7">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Shader :</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="shaderList"/>
+           </item>
+           <item>
+            <widget class="Line" name="line_5">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="moreAdvancedMat">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>More</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_6">
+           <item>
+            <widget class="QCheckBox" name="cullFace">
+             <property name="text">
+              <string>cullFace</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="cullBackFace">
+             <property name="text">
+              <string>cullBackFace</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
@@ -593,7 +686,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>148</x>
-     <y>342</y>
+     <y>244</y>
     </hint>
     <hint type="destinationlabel">
      <x>252</x>
@@ -609,7 +702,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>224</x>
-     <y>342</y>
+     <y>244</y>
     </hint>
     <hint type="destinationlabel">
      <x>252</x>
@@ -625,7 +718,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>300</x>
-     <y>342</y>
+     <y>244</y>
     </hint>
     <hint type="destinationlabel">
      <x>252</x>
@@ -641,7 +734,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>260</x>
-     <y>276</y>
+     <y>178</y>
     </hint>
     <hint type="destinationlabel">
      <x>369</x>
@@ -657,11 +750,91 @@
    <hints>
     <hint type="sourcelabel">
      <x>301</x>
-     <y>276</y>
+     <y>178</y>
     </hint>
     <hint type="destinationlabel">
      <x>349</x>
      <y>241</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>advancedMaterial</sender>
+   <signal>clicked()</signal>
+   <receiver>MeshEditor</receiver>
+   <slot>updateMaterial()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>32</x>
+     <y>538</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>419</x>
+     <y>536</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>shaderList</sender>
+   <signal>currentTextChanged(QString)</signal>
+   <receiver>MeshEditor</receiver>
+   <slot>updateMaterial()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>96</x>
+     <y>568</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>368</x>
+     <y>584</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>castShadow</sender>
+   <signal>clicked()</signal>
+   <receiver>MeshEditor</receiver>
+   <slot>updateMaterial()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>62</x>
+     <y>590</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>70</x>
+     <y>670</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cullFace</sender>
+   <signal>clicked()</signal>
+   <receiver>MeshEditor</receiver>
+   <slot>updateMaterial()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>150</x>
+     <y>590</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>153</x>
+     <y>681</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cullBackFace</sender>
+   <signal>clicked()</signal>
+   <receiver>MeshEditor</receiver>
+   <slot>updateMaterial()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>264</x>
+     <y>599</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>259</x>
+     <y>657</y>
     </hint>
    </hints>
   </connection>

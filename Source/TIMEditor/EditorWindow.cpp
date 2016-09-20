@@ -23,7 +23,7 @@ EditorWindow::EditorWindow(QWidget *parent) :
     this->setWindowTitle("TIMEditor - Scene 1");
 
     ui->resourceWidget->viewport()->setAcceptDrops(true);
-    ui->sceneEditorWidget->setLocalRotationCB(ui->localRot);
+    ui->sceneEditorWidget->setLocalCB(ui->localRot, ui->localTrans);
 
     _rendererThread = new RendererThread(ui->glWidget);
     _rendererThread->start();
@@ -53,6 +53,7 @@ EditorWindow::EditorWindow(QWidget *parent) :
     connect(ui->glWidget, SIGNAL(deleteCurrent()), ui->sceneEditorWidget, SLOT(deleteCurrentObjects()));
 
     connect(ui->meshEditorWidget, SIGNAL(saveMeshClicked()), this, SLOT(addMeshToAsset()));
+    connect(ui->meshEditorWidget, SIGNAL(changeCurBaseModelName(QString)), ui->sceneEditorWidget, SLOT(changeBaseModelName(QString)));
 
     connect(ui->glWidget, SIGNAL(addAssetToScene(QString)), this, SLOT(addAssetToScene(QString)));
     connect(ui->glWidget, SIGNAL(addGeometryToScene(QString,QString)), this, SLOT(addGeometryToScene(QString,QString)));
