@@ -6,8 +6,6 @@ using namespace resource;
 
 #include "MemoryLoggerOn.h"
 
-
-
 PortalGame::PortalGame(BulletEngine& phys, MultipleSceneHelper& multiscene, HmdSceneView& hmdCam, VR_Device& vrdevice)
     : _physEngine(phys), _multiSceneHelper(multiscene), _hmdCamera(hmdCam), _vrDevice(vrdevice),
       _multiScene("configScene.txt", _multiSceneHelper), _vrControllers(phys), _levels(phys, _listener, _vrControllers)
@@ -21,6 +19,8 @@ PortalGame::PortalGame(BulletEngine& phys, MultipleSceneHelper& multiscene, HmdS
     _soundEffects[SoundEffects::WOOD3] = AssetManager<SoundAsset>::instance().load<false>("soundBank/wood3.wav", false, Sampler::NONE).value();
     _soundEffects[SoundEffects::PLASTIC1] = AssetManager<SoundAsset>::instance().load<false>("soundBank/plastic1.wav", false, Sampler::NONE).value();
     _soundEffects[SoundEffects::PLASTIC2] = AssetManager<SoundAsset>::instance().load<false>("soundBank/plastic2.wav", false, Sampler::NONE).value();
+    _soundEffects[SoundEffects::METAL1] = AssetManager<SoundAsset>::instance().load<false>("soundBank/metal1.wav", false, Sampler::NONE).value();
+    _soundEffects[SoundEffects::ARTIFACT1] = AssetManager<SoundAsset>::instance().load<false>("soundBank/artifact.wav", false, Sampler::NONE).value();
 
     _gameAssets.load("gameAssets.xml");
     _vrControllers.setControllerMesh(_gameAssets.getMesh("controller", interface::Texture::genParam(true,true,true, 4)));
@@ -44,8 +44,10 @@ PortalGame::PortalGame(BulletEngine& phys, MultipleSceneHelper& multiscene, HmdS
             _levels.setStrategy(new SacredGroveAux(i, &_levels, _physEngine, "blue"), i);
         else if(_levels.getLevel(i).name == "sacredGrove_white")
             _levels.setStrategy(new SacredGroveAux(i, &_levels, _physEngine, "white"), i);
-        else if(_levels.getLevel(i).name == "sacredGrove")
+        else if(_levels.getLevel(i).name == "sacredGrove" || _levels.getLevel(i).name == "sacredGrove_final")
             _levels.setStrategy(new SacredGroveMain(i, &_levels, _physEngine), i);
+        else if(_levels.getLevel(i).name == "ocean")
+            _levels.setStrategy(new OceanLevel(i, &_levels, _physEngine), i);
         else
             _levels.setStrategy(new Level1(i, &_levels), i);
     }
@@ -63,6 +65,8 @@ void PortalGame::update(float time)
     if(_multiSceneHelper.update(switchScene, &o))
     {
         _hmdCamera.addOffset(o);
+        //std::cout << "Offset:" << _hmdCamera.offset().translation() << std::endl;
+
         int index = _multiScene.getSceneIndex(switchScene);
 
          _vrControllers.buildForScene(*switchScene, index);
@@ -236,6 +240,8 @@ for(int index=0 ; index < _levels.nbLevels() ; ++index)
     }, index);
 }
 
+#include "PortalGame/CollisionMask.h"
+
 void PortalGame::popBoxDebug()
 {
     static btBoxShape b_shape(btVector3(0.25,0.25,0.25));
@@ -243,6 +249,7 @@ void PortalGame::popBoxDebug()
     m.setMesh(_gameAssets.getMesh("caisse", interface::Texture::genParam(true,true,true, 4)));
 
     BulletObject* bo = new BulletObject(new SceneMotionState<interface::MeshInstance>(m, 1), &b_shape, 0.5);
-    _physEngine.addObject(bo, _levels.getCurLevelIndex());
+
+    _physEngine.addObject(bo, _levels.getCurLevelIndex(), COL_PHYS, PHYS_COLLISION);
 }
 

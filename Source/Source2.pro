@@ -77,9 +77,10 @@ HEADERS += TIM_SDL/*.h TIMEngine2/core/*.h TIMEngine2/renderer/*.h TIMEngine2/re
     TIMEngine2/renderer/PooledBuffer.h \
     PortalGame/LevelSystem.h \
     PortalGame/Level1.h \
-    PortalGame/ForestLevel.h PortalGame/SacredGroveLevel.h \
+    PortalGame/ForestLevel.h PortalGame/SacredGroveLevel.h PortalGame/OceanLevel.h \
     PortalGame/PortalGame.h \
     openAL/*.hpp \
+    PortalGame/CollisionMask.h
 
 
 SOURCES += main2.cpp \
@@ -118,6 +119,7 @@ SOURCES += main2.cpp \
     TIMEngine2/resource/Image.cpp \
     TIMEngine2/interface/Mesh.cpp \
     TIMEngine2/interface/MeshInstance.cpp \
+    TIMEngine2/interface/Particle.cpp TIMEngine2/interface/ParticleMesh.cpp \
     TIMEngine2/interface/Pipeline.cpp \
     TIMEngine2/interface/pipeline/DeferredRendererNode.cpp \
     TIMEngine2/interface/pipeline/OnScreenRenderer.cpp \
@@ -147,7 +149,7 @@ SOURCES += main2.cpp \
     PortalGame/LevelSystem.cpp \
     PortalGame/Level1.cpp \
     PortalGame/ForestLevel.cpp \
-    PortalGame/PortalGame.cpp PortalGame/SacredGroveLevel.cpp \
+    PortalGame/PortalGame.cpp PortalGame/SacredGroveLevel.cpp PortalGame/OceanLevel.cpp \
     openAL/Listener.cpp openAL/Source.cpp openAL/Sampler.cpp openAL/Sound.cpp \
 
 

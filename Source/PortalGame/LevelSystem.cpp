@@ -83,8 +83,8 @@ void LevelSystem::changeLevel(int index)
     if(_curLevel >= 0)
     {
         manageTraversableObjOnSwitch(_levels[index].first.levelScene);
-        if(_levelStrategy[_curLevel] && _levelStrategy[_curLevel]->_ambientSound)
-            _levelStrategy[_curLevel]->_ambientSound->stop();
+        if(_levelStrategy[_curLevel])
+            _levelStrategy[_curLevel]->beforeLeave();
     }
 
     if(_curLevel == -1 || _levels[index].second)
@@ -102,8 +102,16 @@ void LevelSystem::changeLevel(int index)
     {
         _levelStrategy[index]->prepareEnter();
 
-        if(_levelStrategy[index]->_ambientSound)
-            _levelStrategy[index]->_ambientSound->play();
+        if(_curSoundName != _levelStrategy[index]->_soundName)
+        {
+            if(_curAmbientSound)
+                _curAmbientSound->stop();
+
+            if(_levelStrategy[index]->_ambientSound)
+                _levelStrategy[index]->_ambientSound->play();
+            _curSoundName = _levelStrategy[index]->_soundName;
+            _curAmbientSound = _levelStrategy[index]->_ambientSound;
+        }
     }
 }
 
@@ -129,6 +137,17 @@ void LevelSystem::update(float time)
             {
                 mat4 offset;
                 auto scene_portal = _portalsHelper->closestPortal(x.instIn->volume(), offset);
+
+                if(scene_portal.second && std::find(x.forbiddenPortals.begin(), x.forbiddenPortals.end(), scene_portal.second) != x.forbiddenPortals.end())
+                {
+                    #warning CHANGE_FORBIDEN_PORTAL_REACTION
+                    vec3 v = x.instIn->volume().center() - scene_portal.second->volume().center();
+                    v.z() = 0;
+                    v.resize(5);
+                    x.physObj->body()->applyCentralForce(btVector3(v.x(), v.y(), v.z()));
+                    break;
+                }
+
                 if(scene_portal.first)
                 {
                     x.state = PortalTraversableObject::ENGAGED_IN;
@@ -172,12 +191,19 @@ void LevelSystem::update(float time)
                     x.physObj->body()->setRollingFriction(old->body()->getRollingFriction());
                     x.physObj->body()->setCcdMotionThreshold(old->body()->getCcdMotionThreshold());
                     x.physObj->body()->setCcdSweptSphereRadius(old->body()->getCcdSweptSphereRadius());
-                    x.physObj->body()->setLinearVelocity(old->body()->getLinearVelocity());
-                    x.physObj->body()->setAngularVelocity(old->body()->getAngularVelocity());
+
+                    vec3 v(old->body()->getLinearVelocity().getX(), old->body()->getLinearVelocity().getY(), old->body()->getLinearVelocity().getZ());
+                    v = x.offset.to<3>() * v;
+                    x.physObj->body()->setLinearVelocity(btVector3(v.x(), v.y(), v.z()));
+
+                    v = vec3(old->body()->getAngularVelocity().getX(), old->body()->getAngularVelocity().getY(), old->body()->getAngularVelocity().getZ());
+                    v = x.offset.to<3>() * v;
+                    x.physObj->body()->setAngularVelocity(btVector3(v.x(), v.y(), v.z()));
+
                     x.physObj->body()->setUserIndex(old->body()->getUserIndex());
                     delete old;
 
-                    _physEngine.addObject(x.physObj, getLevelIndex(x.sceneOut));
+                    _physEngine.addObject(x.physObj, getLevelIndex(x.sceneOut), old->colMask(), old->colWithMask());
                     x.state = PortalTraversableObject::ENGAGED_OUT;
 
                     if(x.indexObject >= 0)
@@ -220,13 +246,20 @@ void LevelSystem::update(float time)
                     x.physObj->body()->setRollingFriction(old->body()->getRollingFriction());
                     x.physObj->body()->setCcdMotionThreshold(old->body()->getCcdMotionThreshold());
                     x.physObj->body()->setCcdSweptSphereRadius(old->body()->getCcdSweptSphereRadius());
-                    x.physObj->body()->setLinearVelocity(old->body()->getLinearVelocity());
-                    x.physObj->body()->setAngularVelocity(old->body()->getAngularVelocity());
+
+                    vec3 v(old->body()->getLinearVelocity().getX(), old->body()->getLinearVelocity().getY(), old->body()->getLinearVelocity().getZ());
+                    v = x.inv_offset.to<3>() * v;
+                    x.physObj->body()->setLinearVelocity(btVector3(v.x(), v.y(), v.z()));
+
+                    v = vec3(old->body()->getAngularVelocity().getX(), old->body()->getAngularVelocity().getY(), old->body()->getAngularVelocity().getZ());
+                    v = x.inv_offset.to<3>() * v;
+                    x.physObj->body()->setAngularVelocity(btVector3(v.x(), v.y(), v.z()));
+
                     x.physObj->body()->setUserIndex(old->body()->getUserIndex());
 
                     delete old;
 
-                    _physEngine.addObject(x.physObj, getLevel(_curLevel).indexScene);
+                    _physEngine.addObject(x.physObj, getLevel(_curLevel).indexScene, old->colMask(), old->colWithMask());
                     x.state = PortalTraversableObject::ENGAGED_IN;
                     x.lastPos = x.instIn->volume().center();
 
@@ -284,11 +317,13 @@ void LevelSystem::setEnablePortal(bool b, interface::MeshInstance* inst)
         _portalsHelper->setEnableEdge(b, *_levels[_curLevel].first.levelScene, inst);
 }
 
-void LevelSystem::registerPortalTraversableObject(int indexObject, interface::MeshInstance* inst, BulletObject* phys, int index)
+void LevelSystem::registerPortalTraversableObject(int indexObject, interface::MeshInstance* inst, BulletObject* phys, int index,
+                                                  const vector<interface::MeshInstance*>& forbiddenPortals)
 {
     if(index != _curLevel)
     {
         PortalTraversableObject obj;
+        obj.forbiddenPortals = forbiddenPortals;
         obj.indexObject = indexObject;
         obj.instOut = inst;
         obj.physObj = phys;
@@ -298,6 +333,7 @@ void LevelSystem::registerPortalTraversableObject(int indexObject, interface::Me
     else
     {
         PortalTraversableObject obj;
+        obj.forbiddenPortals = forbiddenPortals;
         obj.indexObject = indexObject;
         obj.instIn = inst;
         obj.physObj = phys;
@@ -331,6 +367,7 @@ void LevelSystem::manageTraversableObjOnSwitch(interface::Scene* sceneTo)
             {
                 mat4 offset;
                 auto scene_portal = _portalsHelper->closestPortal(Sphere(x.instIn->volume().center(), std::max(DIST_OUT, x.instIn->volume().radius())), offset);
+
                 if(scene_portal.first && x.sceneOut == sceneTo) // become out
                 {
                     auto sc_portal = _portalsHelper->communicatingPortal(getLevel(_curLevel).levelScene, scene_portal.second);
@@ -451,6 +488,11 @@ void LevelSystem::manageTraversableObjOnSwitch(interface::Scene* sceneTo)
     _inacessiblePortalTaversableObj.splice(_inacessiblePortalTaversableObj.end(), newInnacessible);
 }
 
+void LevelSystem::callDebug() {
+    if(_levelStrategy[_curLevel])
+        _levelStrategy[_curLevel]->callDebug();
+}
+
 
 /********************/
 /** Levelinterface **/
@@ -459,6 +501,17 @@ void LevelSystem::manageTraversableObjOnSwitch(interface::Scene* sceneTo)
 LevelSystem::Level& LevelInterface::level()
 {
     return _system->getLevel(_index);
+}
+
+void LevelInterface::bindSound(BulletObject* bo, int indexSound)
+{
+    if(bo)
+    {
+        bo->body()->setCollisionFlags(bo->body()->getCollisionFlags() |
+                                      btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
+
+        bo->body()->setUserIndex(indexSound + 100);
+    }
 }
 
 void LevelInterface::setEnablePortal(bool b, interface::MeshInstance* inst)
@@ -492,9 +545,16 @@ int LevelInterface::index() const
     return _index;
 }
 
-void LevelInterface::registerPortableTraversable(int indexObject, interface::MeshInstance* inst, BulletObject* o)
+void LevelInterface::registerPortableTraversable(int indexObj, interface::MeshInstance* inst, BulletObject* o, const vector<std::string>& forbiddenP)
 {
-    _system->registerPortalTraversableObject(indexObject, inst, o, _index);
+    vector<interface::MeshInstance*> fp;
+    for(auto str : forbiddenP)
+    {
+        int indexP = indexObject(str);
+        if(indexP >= 0)
+            fp.push_back(level().objects[indexP].meshInstance);
+    }
+    _system->registerPortalTraversableObject(indexObj, inst, o, _index, fp);
 }
 
 void LevelInterface::registerGameObject(int index, std::string name)
@@ -515,5 +575,14 @@ vector<LevelSystem::GameObject> LevelInterface::getGameObjects(std::string name)
 LevelSystem& LevelInterface::levelSystem()
 {
     return *_system;
+}
+
+bool LevelInterface::collidePaddles(BulletObject* obj)
+{
+    if(!obj)
+        return false;
+
+    return levelSystem().controller().controllerInfo().leftHandPhys->collideWith(obj->body()).size() > 0 ||
+           levelSystem().controller().controllerInfo().rightHandPhys->collideWith(obj->body()).size() > 0;
 }
 

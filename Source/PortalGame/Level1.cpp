@@ -16,7 +16,7 @@ void Level1::init()
     for(size_t i=0 ; i<l.objects.size() ; ++i)
     {
         if(l.physObjects[i])
-            registerPortableTraversable(-1, l.objects[i].meshInstance, l.physObjects[i]);
+            registerPortableTraversable(-1, l.objects[i].meshInstance, l.physObjects[i], {});
     }
 
     int index = indexObject("soundTest");

@@ -4,8 +4,11 @@
 #include "interface/XmlSceneLoader.h"
 #include "bullet/BulletEngine.h"
 #include "openAL/Listener.hpp"
+#include "openAL/Source.hpp"
 #include "Controller.h"
 #include <list>
+
+#define AUTO_SOLVE
 
 using namespace tim;      
 
@@ -48,7 +51,7 @@ public:
 
     void update(float);
 
-    void registerPortalTraversableObject(int, interface::MeshInstance*, BulletObject*, int);
+    void registerPortalTraversableObject(int, interface::MeshInstance*, BulletObject*, int, const vector<interface::MeshInstance*>&);
     void registerGameObject(int indexLevel, int indexObj, std::string name);
 
     struct GameObject
@@ -61,12 +64,17 @@ public:
     Option<GameObject> getGameObject(std::string name);
     vector<GameObject> getGameObjects(std::string name);
 
+    void callDebug();
+
 protected:
     BulletEngine& _physEngine;
     Listener& _listener;
     Controller& _controller;
     vector<std::pair<Level, bool>> _levels;
     vector<LevelInterface*> _levelStrategy;
+
+    std::string _curSoundName;
+    Source* _curAmbientSound = nullptr;
 
     int _curLevel = -1;
     MultipleSceneHelper* _portalsHelper = nullptr;
@@ -81,6 +89,8 @@ protected:
         interface::MeshInstance* portal = nullptr;
         mat4 offset, inv_offset;
         BulletObject* physObj = nullptr;
+
+        vector<interface::MeshInstance*> forbiddenPortals;
 
         enum { NEW, ENGAGED_IN, ENGAGED_OUT, OUT };
         int state = NEW;
@@ -110,6 +120,7 @@ public:
     virtual void init() {}
     virtual void prepareEnter() {}
     virtual void update(float) {}
+    virtual void beforeLeave() {}
 
     LevelSystem::Level& level();
     LevelSystem& levelSystem();
@@ -121,10 +132,16 @@ public:
 
     void setEnablePortal(bool b, interface::MeshInstance*);
     int index() const;
-    void registerPortableTraversable(int, interface::MeshInstance*, BulletObject*);
+    void registerPortableTraversable(int, interface::MeshInstance*, BulletObject*, const vector<std::string>&);
     void registerGameObject(int index, std::string name);
 
+    bool collidePaddles(BulletObject*);
+
     void setAmbientSound(Source* src, std::string name) { _ambientSound = src; _soundName = name; }
+
+    static void bindSound(BulletObject*, int);
+
+    virtual void callDebug(){}
 
 private:
     int _index;

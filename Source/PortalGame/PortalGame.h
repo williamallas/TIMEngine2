@@ -9,6 +9,7 @@
 #include "PortalGame/ForestLevel.h"
 #include "PortalGame/Level1.h"
 #include "PortalGame/SacredGroveLevel.h"
+#include "PortalGame/OceanLevel.h"
 
 #include <utility>
 
@@ -33,7 +34,9 @@ public:
     enum SoundEffects
     {
         WOOD1 = 0, WOOD2, WOOD3,
-        PLASTIC1, PLASTIC2, NB_EFFECTS
+        PLASTIC1, PLASTIC2,
+        METAL1, ARTIFACT1,
+        NB_EFFECTS
     };
 
 protected:

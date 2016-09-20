@@ -14,6 +14,9 @@ public:
 protected:
     BulletEngine& _physEngine;
     resource::SoundAsset _birds;
+    resource::SoundAsset _warp;
+
+    void emitSounddPortal(const vec3&);
 };
 
 class ForestLevel1 : public ForestLevelBase
@@ -27,6 +30,7 @@ public:
 
 private:
     int _indexPortal;
+    int _indexPortalOut;
     interface::MeshInstance* _instSunStone;
 
     bool _first = true;
@@ -68,7 +72,6 @@ private:
     int _updateRate = 0;
 
     int _indexArtifact, _indexSlot, _indexArtifactInPlace;
-    resource::SoundAsset _warp;
     interface::Mesh _nonActivatedArtifactMesh;
 
 };

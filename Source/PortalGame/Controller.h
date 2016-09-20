@@ -40,8 +40,8 @@ class Controller
 
         const InScene& controllerInfo() { return _curScene; }
 
-        float STRENGTH = 12000, DAMPING = 150;
-        float STRENGTH_R = 60, DAMPING_R = 1;
+        float STRENGTH = 10500, DAMPING = 120;
+        float STRENGTH_R = 30, DAMPING_R = 0.7;
 
     private:
         BulletEngine& _bullet;

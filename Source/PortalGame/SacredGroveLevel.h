@@ -11,6 +11,8 @@ public:
 
 protected:
     BulletEngine& _physEngine;
+
+    bool updateArtifact(const LevelSystem::GameObject&, int indexSlot, float height, float time);
 };
 
 class SacredGroveAux : public SacredGroveBase
@@ -23,7 +25,7 @@ public:
 protected:
     std::string _color;
     int _indexArtifact, _indexSlot;
-    bool _isArtifactBright = true;
+    bool _isArtifactBright = true;  
 };
 
 class SacredGroveMain : public SacredGroveBase
@@ -35,11 +37,17 @@ public:
 
 protected:
     int _indexButtons[3];
+    int _indexColumns[3];
     BulletObject* _buttonObj[3];
     interface::MeshInstance* _buttonInst[3];
     int _activeButton = -1;
 
     int _indexPortals[5]; // in,out,red,white,blue
+    bool _artifactOnSlot[3] = {false};
+    bool _allActive = false;
+
+    resource::SoundAsset _buttonSound;
+    resource::SoundAsset _warp;
 };
 
 

@@ -1,4 +1,5 @@
 #include "ForestLevel.h"
+#include "CollisionMask.h"
 #include "resource/AssetManager.h"
 #include "bullet/BulletObject.h"
 #include "openAL/Source.hpp"
@@ -11,11 +12,12 @@
 ForestLevelBase::ForestLevelBase(int index, LevelSystem* system, BulletEngine& phys) : LevelInterface(index, system), _physEngine(phys)
 {
     _birds = resource::AssetManager<resource::SoundAsset>::instance().load<false>("soundBank/birds1.wav", false, Sampler::NONE).value();
+    _warp = resource::AssetManager<resource::SoundAsset>::instance().load<false>("soundBank/warp.wav", false, Sampler::NONE).value();
 
     resource::SoundAsset ambientSound = resource::AssetManager<resource::SoundAsset>::instance().load<false>("soundBank/addressing_stars.ogg", true, Sampler::NONE).value();
     Source* src = system->listener().addSource(ambientSound);
     src->setLooping(true);
-    src->setGain(0.1);
+    src->setGain(0.12);
     setAmbientSound(src, "addressing_stars");
 }
 
@@ -25,20 +27,12 @@ void ForestLevelBase::init()
     {
         if(level().physObjects[i] && level().objects[i].model == "caisse")
         {
-            BulletObject* bo = level().physObjects[i];
-            bo->body()->setCollisionFlags(bo->body()->getCollisionFlags() |
-                                          btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
-
-            bo->body()->setUserIndex(PortalGame::SoundEffects::WOOD3 + 100);
+            bindSound(level().physObjects[i], PortalGame::SoundEffects::WOOD3);
         }
 
         else if(level().physObjects[i] && (level().objects[i].model == "kapla1" || level().objects[i].model == "kapla2"))
         {
-            BulletObject* bo = level().physObjects[i];
-            bo->body()->setCollisionFlags(bo->body()->getCollisionFlags() |
-                                          btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
-
-            bo->body()->setUserIndex(PortalGame::SoundEffects::WOOD1 + 100);
+            bindSound(level().physObjects[i], PortalGame::SoundEffects::WOOD1);
         }
     }
 }
@@ -65,6 +59,14 @@ void ForestLevelBase::update(float time)
             src->release();
         }
     }
+}
+
+void ForestLevelBase::emitSounddPortal(const vec3& p)
+{
+    Source* src = levelSystem().listener().addSource(_warp);
+    src->setPosition(p);
+    src->play();
+    src->release();
 }
 
 
@@ -116,11 +118,16 @@ void ForestLevel1::update(float time)
         }
 
         _first = false;
+        emitSounddPortal(stp - vec3(0,0,0.1));
     }
     else if(!_first)
     {
         setEnablePortal(true, level().objects[_indexPortal].meshInstance);
     }
+
+#ifdef AUTO_SOLVE
+    setEnablePortal(true, level().objects[_indexPortal].meshInstance);
+#endif
 }
 
 ForestLevel2::ForestLevel2(int index, LevelSystem* system, BulletEngine& phys) : ForestLevelBase(index, system, phys)
@@ -149,13 +156,15 @@ void ForestLevel2::init()
     for(size_t i=0 ; i<std::max(sts.size(), 2u) ; ++i)
         if(sts[i] >= 0)
             _sunStone[i+5] = level().objects[sts[i]].meshInstance;
+
+    _indexPortal = indexObject("portalForest2Out_Forest3In");
 }
 
 void ForestLevel2::update(float time)
 {
     ForestLevelBase::update(time);
 
-    if(_updateRate++ % 30 != 0)
+    if(_updateRate++ % 10 != 0)
         return;
 
     bool state[7] = {true};
@@ -166,9 +175,9 @@ void ForestLevel2::update(float time)
         BulletObject::CollisionPoint p_tmp;
         vec3 p;
         if(i == 0)
-            p = _sunStone[i]->matrix().translation() + vec3(-0.05,0,0);
+            p = _sunStone[i]->matrix().translation();// + vec3(-0.05,0,0);
         else
-            p = _sunStone[i]->matrix().translation() + vec3(0,0,0.95);
+            p = _sunStone[i]->matrix().translation() + vec3(0,0,0.85);
 
         state[i] = BulletObject::rayCastFirst(p, p - level().levelScene->globalLight.dirLights[0].direction * 30,
                                               p_tmp, *_physEngine.dynamicsWorld[index()]);
@@ -182,12 +191,24 @@ void ForestLevel2::update(float time)
     }
 
     if(state[0] && !state[1] && !state[2] && !state[3] && !state[4] && state[5] && state[6])
-        std::cout << "NICE\n";
+    {
+        if(_indexPortal >= 0)
+            setEnablePortal(true, level().objects[_indexPortal].meshInstance);
+    }
+    else
+    {
+        if(_indexPortal >= 0)
+            setEnablePortal(false, level().objects[_indexPortal].meshInstance);
+    }
+
+#ifdef AUTO_SOLVE
+    setEnablePortal(true, level().objects[_indexPortal].meshInstance);
+#endif
 }
 
 ForestLevel3::ForestLevel3(int index, LevelSystem* system, BulletEngine& phys) : ForestLevelBase(index, system, phys)
 {
-    _warp = resource::AssetManager<resource::SoundAsset>::instance().load<false>("soundBank/warp.wav", false, Sampler::NONE).value();
+
 }
 
 void ForestLevel3::init()
@@ -196,13 +217,16 @@ void ForestLevel3::init()
 
     _indexArtifact = indexObject("artifact");
     _indexSlot = indexObject("artifactSlot");
-    _indexPortal = indexObject("portalForest3Out");
+    _indexPortal = indexObject("portalForest3Out_GroveIn");
     _indexArtifactInPlace = indexObject("artifactInPlace");
 
     if(_indexArtifact >= 0)
     {
-        registerPortableTraversable(_indexArtifact, level().objects[_indexArtifact].meshInstance, level().physObjects[_indexArtifact]);
+        registerPortableTraversable(_indexArtifact, level().objects[_indexArtifact].meshInstance, level().physObjects[_indexArtifact], {});
+        //_physEngine.setCollisionMask(level().physObjects[_indexArtifact], CollisionTypes::COL_IOBJ, IOBJECT_COLLISION);
         _nonActivatedArtifactMesh = level().objects[_indexArtifact].meshInstance->mesh();
+
+        bindSound(level().physObjects[_indexArtifact], PortalGame::SoundEffects::METAL1);
     }
 }
 
@@ -235,16 +259,24 @@ void ForestLevel3::update(float time)
             if(!justInPlace)
             {
                 justInPlace = true;
-                Source* src = levelSystem().listener().addSource(_warp);
-                src->setPosition({14.069, 15.393, 1.5});
-                src->play();
-                src->release();
+                emitSounddPortal({14.069, 15.393, 1.5});
+
+                if(_indexPortal >= 0)
+                    setEnablePortal(true, level().objects[_indexPortal].meshInstance);
             }
         }
         else
         {
             justInPlace = false;
             level().objects[_indexArtifact].meshInstance->setMesh(_nonActivatedArtifactMesh);
+
+            if(_indexPortal >= 0)
+                setEnablePortal(false, level().objects[_indexPortal].meshInstance);
+
+        #ifdef AUTO_SOLVE
+            if(_indexPortal >= 0)
+                setEnablePortal(true, level().objects[_indexPortal].meshInstance);
+        #endif
         }
     }
 }
