@@ -33,7 +33,7 @@ namespace core
     class BadOptionAccess : public Exception
     {
     public:
-        BadOptionAccess() : Exception("Bad option access, option doesn't have a value."){}
+        BadOptionAccess(std::string optName) : Exception("Bad option access, option doesn't have a value (" + optName + "."){}
     };
 
     class BadRefCounter : public Exception
