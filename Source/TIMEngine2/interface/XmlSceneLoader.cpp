@@ -63,14 +63,6 @@ bool XmlSceneLoader::loadScene(std::string file, interface::Scene& scene, vector
     {
         if(elem->ValueStr() == std::string("Object"))
         {
-            bool isVisible = true;
-            elem->QueryBoolAttribute("isVisible", &isVisible);
-            if(!isVisible)
-            {
-                elem=elem->NextSiblingElement();
-                continue;
-            }
-
             std::string name;
             elem->QueryStringAttribute("name", &name);
 
@@ -83,9 +75,10 @@ bool XmlSceneLoader::loadScene(std::string file, interface::Scene& scene, vector
                 continue;
             }
 
-            bool isStatic = true, isPhysic = true;
+            bool isStatic = true, isPhysic = true, isVisible = true;
             elem->QueryBoolAttribute("isStatic", &isStatic);
             elem->QueryBoolAttribute("isPhysic", &isPhysic);
+            elem->QueryBoolAttribute("isVisible", &isVisible);
 
             vec3 tr, sc;
             mat3 rot;
@@ -103,8 +96,12 @@ bool XmlSceneLoader::loadScene(std::string file, interface::Scene& scene, vector
             obj.translation = tr;
             obj.rotation = rot;
 
-            obj.meshInstance = &scene.scene.add<MeshInstance>(XmlMeshAssetLoader::constructMesh(meshAssets[index], Texture::genParam(true,true,true, 0), false),
-                                                              mat4::constructTransformation(rot, tr, sc));
+            if(isVisible)
+                obj.meshInstance = &scene.scene.add<MeshInstance>(XmlMeshAssetLoader::constructMesh(meshAssets[index], Texture::genParam(true,true,true, 0), false),
+                                                                  mat4::constructTransformation(rot, tr, sc));
+            else
+                obj.meshInstance = nullptr;
+
             objects.push_back(obj);
         }
         else if(elem->ValueStr() == std::string("Skybox"))
