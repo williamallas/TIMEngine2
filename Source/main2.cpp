@@ -72,7 +72,7 @@ int main(int, char**)
             HmdSceneView hmdCamera(110, ratio, 100);
             pipeline.setStereoView(hmdCamera.cullingView(), hmdCamera.eyeView(0), hmdCamera.eyeView(1), 0);
 
-            VRDebugCamera debugCamera(&input, vec3(10,10,2));
+            VRDebugCamera debugCamera(&input, vec3(3,3,2));
 
             /* physic and setup */
             BulletEngine physEngine;
@@ -87,7 +87,7 @@ int main(int, char**)
 
             if (hmdDevice.isInit()) hmdDevice.sync();
 
-            float freqphys = 1000;
+            float freqphys = 500;
             btSphereShape ballShape(0.075);
 
             float timeElapsed = 0, totalTime = 0;
@@ -159,6 +159,10 @@ int main(int, char**)
                 {
                     portalGame.popBoxDebug();
                 }
+                if(input.keyState(SDLK_v).firstPress)
+                {
+                    portalGame.levelSystem().callDebug();
+                }
 
 
                 /*********************/
@@ -180,11 +184,12 @@ int main(int, char**)
                 portalGame.setDebugControllerPose(debugCamera.pos() + debugCamera.dir()*0.5);
 
                 int sceneIndex = portalGame.curSceneIndex();
-                threadPool.schedule([&physEngine, timeElapsed, sceneIndex, freqphys]()
+                int nbLevel = portalGame.levelSystem().nbLevels();
+                threadPool.schedule([&physEngine, timeElapsed, sceneIndex, freqphys, nbLevel]()
                 {
-                    for(int i=0 ; i<4 ; ++i)
+                    for(int i=0 ; i<nbLevel ; ++i)
                         if(physEngine.dynamicsWorld[i])
-                            physEngine.dynamicsWorld[i]->stepSimulation(std::min(timeElapsed, 1.f/60), 10, 1 / freqphys);
+                            physEngine.dynamicsWorld[i]->stepSimulation(std::min(timeElapsed, 1.f/60), 20, 1 / freqphys);
                });
 
                 /********************/

@@ -8,7 +8,7 @@
 #include "Controller.h"
 #include <list>
 
-#define AUTO_SOLVE
+//#define AUTO_SOLVE
 
 using namespace tim;      
 
