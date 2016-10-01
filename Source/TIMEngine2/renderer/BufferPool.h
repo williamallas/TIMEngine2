@@ -33,7 +33,7 @@ namespace renderer
 
             void flush(const InternBufferType* data, size_t begin, size_t size) const
             {
-                size = std::min(size, _size);
+                size = std::min(size, _capacity);
                 _pool._buffer.flush(data, begin+_begin, size);
             }
 
@@ -42,14 +42,18 @@ namespace renderer
                 _pool._bufferAllocator.dealloc(_begin);
             }
 
+            void setSize(size_t s) { _size = s; }
+
             size_t offset() const { return _begin; }
             size_t size() const { return _size; }
+            size_t capacity() const { return _capacity; }
             size_t elementSize() const { return _elementSize; }
 
         private:
-            Instance(size_t begin, size_t size, size_t elementSize, BufferPool& mbp) : _begin(begin), _size(size), _elementSize(elementSize), _pool(mbp) {}
+            Instance(size_t begin, size_t capacity, size_t elementSize, BufferPool& mbp)
+                : _begin(begin), _size(capacity), _capacity(capacity), _elementSize(elementSize), _pool(mbp) {}
 
-            size_t _begin, _size, _elementSize;
+            size_t _begin, _size, _capacity, _elementSize;
             BufferPool& _pool;
         };
 
