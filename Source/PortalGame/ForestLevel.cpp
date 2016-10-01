@@ -223,7 +223,7 @@ void ForestLevel3::init()
     if(_indexArtifact >= 0)
     {
         registerPortableTraversable(_indexArtifact, level().objects[_indexArtifact].meshInstance, level().physObjects[_indexArtifact], {});
-        //_physEngine.setCollisionMask(level().physObjects[_indexArtifact], CollisionTypes::COL_IOBJ, IOBJECT_COLLISION);
+        _physEngine.reinstance(level().physObjects[_indexArtifact], CollisionTypes::COL_IOBJ, IOBJECT_COLLISION);
         _nonActivatedArtifactMesh = level().objects[_indexArtifact].meshInstance->mesh();
 
         bindSound(level().physObjects[_indexArtifact], PortalGame::SoundEffects::METAL1);

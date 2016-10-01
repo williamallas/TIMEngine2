@@ -3,6 +3,7 @@
 #include "bullet/BulletObject.h"
 #include "openAL/Source.hpp"
 #include "PortalGame.h"
+#include "CollisionMask.h"
 #include "Rand.h"
 
 #include "MemoryLoggerOn.h"
@@ -49,7 +50,10 @@ SacredGroveAux::SacredGroveAux(int index, LevelSystem* system, BulletEngine& phy
     _indexArtifact = indexObject("sg_artifact_" + _color);
 
     if(_indexArtifact >= 0)
+    {
+        _physEngine.reinstance(level().physObjects[_indexArtifact], CollisionTypes::COL_IOBJ, IOBJECT_COLLISION);
         registerGameObject(_indexArtifact, std::string("sg_artifact_") + _color);
+    }
 }
 
 void SacredGroveAux::init()

@@ -248,7 +248,16 @@ bool MultipleSceneHelper::update(interface::Scene*& sceneCrossed, mat4* offset_i
         }
 
         if(!optimizeExtraSceneRendering(curEdges[i], i))
+        {
+            interface::Mesh m = curEdges[i].edge.portal->mesh();
+            if(m.nbElements() > 0)
+            {
+                m.element(0).setEnable(0);
+                curEdges[i].edge.portal->setMesh(m);
+            }
+
             continue;
+        }
 
         Plan transformedPlan = curEdges[i].portalPlan.transformed(curEdges[i].edge.portal->matrix());
         if(transformedPlan.distance(_curCamera->camera.pos) > 0)
@@ -445,7 +454,7 @@ void MultipleSceneHelper::constructEdge(const InternalEdge& edge)
     interface::Mesh m=edge.edge.portal->mesh();
     if(m.nbElements() > 0)
     {
-        m.element(0).setEnable(1);
+        m.element(0).setEnable(edge.enabled ? 1 : 0);
         m.element(0).setCastShadow(false);
     }
     edge.edge.portal->setMesh(m);
@@ -467,7 +476,8 @@ bool MultipleSceneHelper::optimizeExtraSceneRendering(InternalEdge& curEdge, int
 
     Sphere s(portalBox.toSphere());
     s.transform(portalMatrix);
-    if(!frust.collide(s))
+
+    if(!frust.collide(s) || (s.center() - cam.pos).length() > 5)
     {
         _pipeline.combineNode(0)->setEnableInput(i+2, false);
         if(_pipeline.isStereo())

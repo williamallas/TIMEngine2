@@ -1,5 +1,6 @@
 #include "MultiSceneManager.h"
 #include "resource/AssetManager.h"
+#include "PortalGame/CollisionMask.h"
 
 using namespace interface;
 
@@ -29,6 +30,8 @@ MultiSceneManager::MultiSceneManager(std::string file, MultipleSceneHelper& mult
 
     mapStringGeometry["meshBank/portal5Frame.obj"] = "meshBank/portal5Frame_Pass.obj";
     mapStringGeometry["meshBank/portal5FrameR.obj"] = "meshBank/portal5FrameR_Pass.obj";
+
+    interface::Geometry roomLimitGeom = resource::AssetManager<Geometry>::instance().load<false>("meshBank/roomPattern.obj", true).value();
 
     std::map<std::string, EdgeInfo> nameEdge;
     int index=0;
@@ -61,7 +64,7 @@ MultiSceneManager::MultiSceneManager(std::string file, MultipleSceneHelper& mult
 
             multipleScene.registerDirLightView(scene, _dirLightView.back());
 
-            vector<GeometryShape::MeshInstance> staticGeom;
+            vector<GeometryShape::MeshInstance> staticGeom, staticRoomGeom;
             for(XmlSceneLoader::ObjectLoaded& obj : objInScene)
             {
                 if(obj.type == XmlSceneLoader::ObjectLoaded::MESH_INSTANCE)
@@ -85,6 +88,10 @@ MultiSceneManager::MultiSceneManager(std::string file, MultipleSceneHelper& mult
                         }
                     }
 
+                    else if(obj.collider.type == XmlSceneLoader::Collider::NONE && obj.name == "roomPattern")
+                    {
+                        staticRoomGeom.push_back({roomLimitGeom, mat4::constructTransformation(obj.rotation, obj.translation, vec3(1,1,1))});
+                    }
                     else if(obj.isPhysic && obj.isStatic && obj.collider.type == XmlSceneLoader::Collider::NONE)
                     {
                         for(XmlMeshAssetLoader::MeshElementModel part : obj.asset)
@@ -98,6 +105,15 @@ MultiSceneManager::MultiSceneManager(std::string file, MultipleSceneHelper& mult
 
              btBvhTriangleMeshShape* shape = GeometryShape::genStaticGeometryShape(staticGeom);
              _staticGeom.push_back(shape);
+
+             if(staticRoomGeom.empty())
+                 _staticRoomGeom.push_back(nullptr);
+             else
+             {
+                 btBvhTriangleMeshShape* roomShape = GeometryShape::genStaticGeometryShape(staticRoomGeom);
+                 _staticRoomGeom.push_back(roomShape);
+                 std::cout << "constructRoomShape: " << staticRoomGeom.size() << std::endl;
+             }
 
             ++index;
         }
@@ -133,7 +149,13 @@ MultiSceneManager::~MultiSceneManager()
     for(auto ptr : _staticGeom)
         delete ptr;
 
+    for(auto ptr : _staticRoomGeom)
+        delete ptr;
+
     for(auto ptr : _staticGeomObj)
+        delete ptr;
+
+    for(auto ptr : _staticRoomGeomObj)
         delete ptr;
 
     for(auto ptr : _sphereShapes)
@@ -153,11 +175,23 @@ void MultiSceneManager::instancePhysic(BulletEngine& bulletEngine)
             bulletEngine.createWorld(i);
 
         BulletObject* obj = new BulletObject(mat4::IDENTITY(), _staticGeom[i]);
-        bulletEngine.addObject(obj, i);
+        bulletEngine.addObject(obj, i, CollisionTypes::COL_STATIC, STATIC_COLLISION);
         obj->body()->setRestitution(0.8);
         obj->body()->setFriction(0.75);
 
         _staticGeomObj.push_back(obj);
+
+        if(_staticRoomGeom[i])
+        {
+            BulletObject* obj = new BulletObject(mat4::IDENTITY(), _staticRoomGeom[i]);
+            bulletEngine.addObject(obj, i, CollisionTypes::COL_ROOM, ROOMPATTERN_COLLISION);
+            obj->body()->setRestitution(0);
+            obj->body()->setFriction(0);
+
+            _staticRoomGeomObj.push_back(obj);
+        }
+        else
+            _staticRoomGeomObj.push_back(nullptr);
 
         for(size_t j=0 ; j<_objects[i].size() ; ++j)
         {
@@ -237,7 +271,7 @@ void MultiSceneManager::instancePhysic(BulletEngine& bulletEngine)
 
                 if(pObj)
                 {
-                    bulletEngine.addObject(pObj, i);
+                    bulletEngine.addObject(pObj, i, CollisionTypes::COL_PHYS, PHYS_COLLISION);
                     pObj->body()->setRestitution(obj.collider.restitution);
                     pObj->body()->setFriction(obj.collider.friction);
                     pObj->body()->setRollingFriction(obj.collider.rollingFriction);

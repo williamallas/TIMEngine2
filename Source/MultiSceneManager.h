@@ -26,7 +26,9 @@
         vector<vector<BulletObject*>> _physObjects;
 
         vector<btBvhTriangleMeshShape*> _staticGeom;
+        vector<btBvhTriangleMeshShape*> _staticRoomGeom;
         vector<BulletObject*> _staticGeomObj;
+        vector<BulletObject*> _staticRoomGeomObj;
 
         std::map<vec3, btBoxShape*> _boxShapes;
         std::map<float, btSphereShape*> _sphereShapes;
