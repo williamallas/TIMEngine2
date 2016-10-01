@@ -23,6 +23,8 @@ using namespace core;
         const btRigidBody* body() const { return _body; }
 
         int indexWorld() const { return _indexWorld; }
+        int colMask() const { return _collisionMask; }
+        int colWithMask() const { return _collisionWithMask; }
 
        struct CollisionPoint
        {
@@ -68,6 +70,10 @@ using namespace core;
         btRigidBody* _body = nullptr;
         btDiscreteDynamicsWorld* _world = nullptr;
         int _indexWorld = -1;
+
+        int _collisionMask = 0, _collisionWithMask = 0;
+
+        void swap(BulletObject&);
     };
 }
 

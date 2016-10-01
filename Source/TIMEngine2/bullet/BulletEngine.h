@@ -62,6 +62,39 @@ namespace tim
             o->_indexWorld = worldId;
         }
 
+        void addObject(BulletObject* o, int worldId, int colMask, int colWithMask)
+        {
+            dynamicsWorld[worldId]->addRigidBody(o->body(), colMask, colWithMask);
+            o->body()->setDamping(0.3, 0.5);
+            o->_world = dynamicsWorld[worldId];
+            o->_indexWorld = worldId;
+            o->_collisionMask = colMask;
+            o->_collisionWithMask = colWithMask;
+        }
+
+        void reinstance(BulletObject* o, int colMask, int colWithMask)
+        {
+            auto* mt = o->body()->getMotionState();
+            o->setMotionState(nullptr);
+
+            BulletObject* b = new BulletObject(mt, o->body()->getCollisionShape(), 1.f / o->body()->getInvMass());
+            b->body()->setFriction(o->body()->getFriction());
+            b->body()->setRestitution(o->body()->getRestitution());
+            b->body()->setRollingFriction(o->body()->getRollingFriction());
+            b->body()->setCcdMotionThreshold(o->body()->getCcdMotionThreshold());
+            b->body()->setCcdSweptSphereRadius(o->body()->getCcdSweptSphereRadius());
+
+            b->body()->setLinearVelocity(o->body()->getLinearFactor());
+            b->body()->setAngularVelocity(o->body()->getAngularVelocity());
+            b->body()->setUserIndex(o->body()->getUserIndex());
+
+
+            addObject(b, o->_indexWorld, colMask, colWithMask);
+
+            o->swap(*b);
+            delete b;
+        }
+
         void createWorld(int index)
         {
             if(dynamicsWorld[index] == nullptr)

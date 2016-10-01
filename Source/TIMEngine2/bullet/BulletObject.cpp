@@ -45,6 +45,11 @@ BulletObject::~BulletObject()
     delete _body;
 }
 
+void BulletObject::swap(BulletObject& o)
+{
+    std::swap(*this, o);
+}
+
 void BulletObject::setMotionState(btMotionState* mt)
 {
     _motionState = mt;
