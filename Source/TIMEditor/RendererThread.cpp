@@ -38,7 +38,7 @@ bool RendererThread::isInitialized() const {
 void RendererThread::run()
 {
     initContext();
-
+    SDL_Delay(100);
     _main->main();
 
     delete _main;
