@@ -42,12 +42,16 @@ public:
     void setMainRenderer(tim::MainRenderer* mr) { _renderer = mr; }
     void setEditMode(int mode) { _editMode = mode; }
 
+    void setMouseSensitivity(float s) { _mouseSensivity = s; }
+
 protected:
     tim::MainRenderer* _renderer = nullptr;
 
     vec2 _inMeshEditorCameraAngle = {-90,0};
 
     vec2 _inSceneEditorCameraAngle = {-90, 0};
+
+    float _mouseSensivity = 1;
 
     virtual void glInit() override {}
     virtual void glDraw() override {}

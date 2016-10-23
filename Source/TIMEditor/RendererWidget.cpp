@@ -66,13 +66,13 @@ void RendererWidget::mouseMoveEvent(QMouseEvent *event)
 
         if(_editMode == MESH_EDITOR && _leftMouse)
         {
-            emit pressedMouseMoved(p.x(), p.y());
+            emit pressedMouseMoved(p.x() * _mouseSensivity, p.y() * _mouseSensivity);
         }
         else if(_editMode == MESH_EDITOR && _rightMouse)
         {
             float time = _renderer->elapsedTime();
-            _inMeshEditorCameraAngle.x() -= p.x() * time * 20;
-            _inMeshEditorCameraAngle.y() += p.y() * time * 20;
+            _inMeshEditorCameraAngle.x() -= p.x() * time * 20 * _mouseSensivity;
+            _inMeshEditorCameraAngle.y() += p.y() * time * 20 * _mouseSensivity;
 
             vec3 dir = {cosf(_inMeshEditorCameraAngle[1]*PI/180)*cosf(_inMeshEditorCameraAngle[0]*PI/180),
                         cosf(_inMeshEditorCameraAngle[1]*PI/180)*sinf(_inMeshEditorCameraAngle[0]*PI/180),
@@ -85,8 +85,8 @@ void RendererWidget::mouseMoveEvent(QMouseEvent *event)
         else if(_editMode == SCENE_EDITOR && _rightMouse && _stateReady == NO_INTERACTION)
         {
             float time = _renderer->elapsedTime();
-            _inSceneEditorCameraAngle.x() -= p.x() * time * 30;
-            _inSceneEditorCameraAngle.y() -= p.y() * time * 30;
+            _inSceneEditorCameraAngle.x() -= p.x() * time * 30 * _mouseSensivity;
+            _inSceneEditorCameraAngle.y() -= p.y() * time * 30 * _mouseSensivity;
             _inSceneEditorCameraAngle.y() = std::max(-89.9f, std::min(89.9f, _inSceneEditorCameraAngle.y()));
 
             vec3 dir = {cosf(_inSceneEditorCameraAngle[1]*PI/180)*cosf(_inSceneEditorCameraAngle[0]*PI/180),
