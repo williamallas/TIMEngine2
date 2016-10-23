@@ -44,7 +44,7 @@ namespace core
         const T& value() const
         {
             if(!_hasValue)
-                throw BadOptionAccess();
+                throw BadOptionAccess(typeid(T).name());
 
              return _val;
         }
