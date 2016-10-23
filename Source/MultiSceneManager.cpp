@@ -1,6 +1,7 @@
 #include "MultiSceneManager.h"
 #include "resource/AssetManager.h"
 #include "PortalGame/CollisionMask.h"
+#include <boost/timer/timer.hpp>
 
 using namespace interface;
 
@@ -42,7 +43,10 @@ MultiSceneManager::MultiSceneManager(std::string file, MultipleSceneHelper& mult
 
         interface::Scene* scene = new interface::Scene;
         vector<XmlSceneLoader::ObjectLoaded> objInScene;
-        bool b = XmlSceneLoader::loadScene(sceneFile, *scene, objInScene);
+
+        bool b;
+        {boost::timer::auto_cpu_timer t;std::cout << "loadscene:";
+        b = XmlSceneLoader::loadScene(sceneFile, *scene, objInScene);}
 
         if(b)
         {
@@ -96,15 +100,17 @@ MultiSceneManager::MultiSceneManager(std::string file, MultipleSceneHelper& mult
                     {
                         for(XmlMeshAssetLoader::MeshElementModel part : obj.asset)
                         {
-                            staticGeom.push_back({resource::AssetManager<Geometry>::instance().load<false>(mapGeometry(part.geometry), true).value(),
-                                                  obj.meshInstance->matrix()});
+                            if(obj.meshInstance)
+                                staticGeom.push_back({resource::AssetManager<Geometry>::instance().load<false>(mapGeometry(part.geometry), true).value(),
+                                                      obj.meshInstance->matrix()});
                         }
                     }
                 }
             }
 
+            {boost::timer::auto_cpu_timer t;std::cout << "buildstatic:";
              btBvhTriangleMeshShape* shape = GeometryShape::genStaticGeometryShape(staticGeom);
-             _staticGeom.push_back(shape);
+             _staticGeom.push_back(shape);}
 
              if(staticRoomGeom.empty())
                  _staticRoomGeom.push_back(nullptr);
