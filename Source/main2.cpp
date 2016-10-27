@@ -54,10 +54,11 @@ int main(int, char**)
 			FullPipeline pipeline;
 			FullPipeline::Parameter pipelineParam;
             pipelineParam.useShadow = true;
-            pipelineParam.usePointLight = false;
+            pipelineParam.usePointLight = true;
             pipelineParam.shadowCascad = vector<float>({5, 25});
             pipelineParam.shadowResolution = 1024;
             pipelineParam.useSSReflexion = false;
+            pipelineParam.usePostSSReflexion = false;
             pipelineParam.useFxaa = true;
 
             OnHmdRenderer* hmdNode = new OnHmdRenderer;

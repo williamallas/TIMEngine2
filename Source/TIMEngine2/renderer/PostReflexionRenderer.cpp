@@ -46,50 +46,13 @@ PostReflexionRenderer::~PostReflexionRenderer()
 
 void PostReflexionRenderer::draw()
 {
-//    if(!input.empty() && input[0])
-//    {
-//        if(input[0]->resolution() != _resolution)
-//        {
-//            _resolution = input[0]->resolution();
-
-//            delete _output;
-//            Texture::GenTexParam param;
-//            param.nbLevels = 1;
-//            param.size = uivec3(_resolution,0);
-//            param.format = input[0]->format();
-
-//            _output = Texture::genTexture2D(param);
-//            _fbo.attachTexture(0, _output);
-//            _fbo.setResolution(input[0]->resolution());
-//            _fbo.unbind();
-//        }
-//    }
-//    else return;
-
-//    _fbo.bind();
-//    _states.bind();
-
-//    for(uint i=0 ; i<input.size() ; ++i)
-//    {
-//        if(input[i])
-//        {
-//            openGL.bindTexture(input[i]->id(), Texture::toGLType(input[i]->type()), i);
-//            openGL.bindTextureSampler(textureSampler[TextureMode::NoFilter], i);
-//        }
-//    }
-
-//    _frameState.bind(0);
-
-//    quadMeshBuffers->draw(6, VertexMode::TRIANGLES, 1);
-
-
-//    _context.frameBuffer().bind();
+//    _context.frameBuffer()->bind();
 //    _state.bind();
 
 //    for(int i=0 ; i<4 ; ++i)
 //    {
-//        openGL.bindTextureSampler(textureSampler[TextureMode::NoFilter], i);
 //        _context.deferred().buffer(i)->bind(i);
+//        openGL.bindTextureSampler(textureSampler[TextureMode::NoFilter], i);
 //    }
 
 //    _context.frameState().bind(0);

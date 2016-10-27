@@ -3,6 +3,7 @@
 
 #include "DeferredRenderer.h"
 #include "FrameParameter.h"
+#include "Texture.h"
 
 #include "MemoryLoggerOn.h"
 namespace tim
@@ -16,13 +17,14 @@ namespace renderer
     public:
         struct Light
         {
-            enum { POINT, SPOT };
+            enum { POINT=0, SPOT, SPECULAR_PROB };
             int type;
             float radius, power;
             vec3 position;
             vec4 color;
             vec3 direction;
             float cutoff;
+            renderer::Texture* tex = nullptr;
         };
 
         LightContextRenderer(const DeferredRenderer& gbuffers, bool hdr=false);

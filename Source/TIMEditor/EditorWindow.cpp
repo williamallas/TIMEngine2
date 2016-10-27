@@ -2,6 +2,8 @@
 #include "ui_EditorWindow.h"
 #include "QGLWidget"
 #include <QDateTime>
+#include <QFile>
+#include <QTextStream>
 
 #include <QMessageBox>
 #include <QFileDialog>
@@ -67,12 +69,40 @@ EditorWindow::EditorWindow(QWidget *parent) :
     connect(_copySC, SIGNAL(activated()), ui->sceneEditorWidget, SLOT(copyObject()));
 
     connect(ui->sceneEditorWidget, SIGNAL(editTransformation(int)), ui->glWidget, SLOT(enableTransformationMode(int)));
+
+    loadParameter("editorParameter.txt");
 }
 
 EditorWindow::~EditorWindow()
 {
     delete ui;
     delete _copySC;
+}
+
+void EditorWindow::loadParameter(QString filename)
+{
+    QFile file(filename);
+    if(!file.open(QIODevice::ReadOnly))
+        return;
+
+    QTextStream in(&file);
+    QString line;
+
+    while(in.readLineInto(&line))
+    {
+        auto vec = StringUtils(line.toStdString()).splitWord('=');
+        if(vec.size() == 2)
+        {
+            if(vec[0] == "mouseSensitivity")
+            {
+                float sens = StringUtils(vec[1]).toFloat();
+                if(sens <= 0)
+                    sens = 1;
+
+                ui->glWidget->setMouseSensitivity(sens);
+            }
+        }
+    }
 }
 
 QString EditorWindow::genTitle() const
@@ -427,5 +457,17 @@ void EditorWindow::addGeometryToScene(QString geomPath, QString name)
     ui->sceneEditorWidget->addSceneObject("", name, asset.materials, mat3::IDENTITY(), camPos + (camDir-camPos).resize(2), vec3(1,1,1));
 
     ui->sceneEditorWidget->activateLastAdded();
+}
 
+void EditorWindow::on_actionSkybox_triggered()
+{
+    QString dir = QFileDialog::getExistingDirectory(this, "Save scene", ".");
+    if(dir.isEmpty())
+        return;
+
+    vec3 camPos = _rendererThread->mainRenderer()->getSceneView(_rendererThread->mainRenderer()->getCurSceneIndex()).camera.pos;
+    MainRenderer* mr = _rendererThread->mainRenderer();
+    mr->addEvent( [=](){
+        mr->renderCubemapAndExportFaces(camPos, 1024, _rendererThread->mainRenderer()->getCurSceneIndex(), dir.toStdString() + "/");
+    });
 }

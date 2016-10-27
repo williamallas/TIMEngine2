@@ -32,10 +32,21 @@ TiledLightRenderer::TiledLightRenderer(DeferredRenderer& deferred, bool hdr) : L
 
     _computeShader->bind();
     _nbLightUniformId = _computeShader->uniformLocation("nbLight");
+
+    Texture::GenTexParam param;
+    param.format = Texture::RGB16;
+    param.nbLevels = 1;
+    param.size = uivec3(256,256,1);
+    float* dat = new float[256*256*3];
+    std::ifstream inDat("shader/brdf_256.dat", std::ios_base::binary);
+    inDat.read((char*)dat, sizeof(float)*256*256*3);
+    _processedBrdf = Texture::genTexture2D(param, dat, 3);
+    delete[] dat;
 }
 
 TiledLightRenderer::~TiledLightRenderer()
 {
+    delete _processedBrdf;
     delete _computeShader;
 }
 
@@ -53,6 +64,22 @@ void TiledLightRenderer::draw(const vector<Light>& lights)
     {
         openGL.bindTextureSampler(textureSampler[TextureMode::NoFilter], i);
         _deferred.buffer(i)->bind(i);
+    }
+
+    if(_processedBrdf)
+    {
+        _processedBrdf->bind(4);
+        openGL.bindTextureSampler(textureSampler[TextureMode::FilteredNoRepeat], 4);
+    } else openGL.bindTexture(0, GL_TEXTURE_2D, 4);
+
+    uint texIndex=5;
+    for(const Light& l : lights)
+    {
+        if(l.type == Light::SPECULAR_PROB && l.tex != nullptr)
+        {
+            openGL.bindTextureSampler(textureSampler[TextureMode::FilteredNoRepeat], texIndex);
+            l.tex->bind(texIndex++);
+        }
     }
 
     _frameState.bind(0);

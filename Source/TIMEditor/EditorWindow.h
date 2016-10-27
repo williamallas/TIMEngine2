@@ -32,6 +32,8 @@ private:
 
     QString genTitle() const;
 
+    void loadParameter(QString);
+
 public slots:
     void addResourceFolder();
     void addResourceFolderRec();
@@ -56,6 +58,7 @@ private slots:
     void on_actionSave_As_triggered();
     void on_actionNew_triggered();
     void on_actionSunDirection_triggered();
+    void on_actionSkybox_triggered();
 
     void addAssetToScene(QString);
     void addGeometryToScene(QString, QString);

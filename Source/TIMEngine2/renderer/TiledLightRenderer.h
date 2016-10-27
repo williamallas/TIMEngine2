@@ -36,6 +36,8 @@ namespace renderer
         renderer::ShaderStorageBuffer<Std140LightData> _lightBuffer;
         int _nbLightUniformId = -1;
 
+        Texture* _processedBrdf = nullptr;
+
         void createLigthBuffer(const vector<Light>&);
     };
 

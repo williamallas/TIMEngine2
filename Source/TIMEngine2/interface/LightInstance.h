@@ -4,6 +4,7 @@
 #include "Matrix.h"
 #include "renderer/LightContextRenderer.h"
 #include "SimpleScene.h"
+#include "Texture.h"
 
 #include "MemoryLoggerOn.h"
 namespace tim
@@ -24,8 +25,12 @@ namespace interface
 
         const renderer::LightContextRenderer::Light& get() const { return _light; }
 
+        void setTexture(const interface::Texture& tex) { _lightTex = tex; _light.tex = tex.texture(); }
+        const interface::Texture& texture() const { return _lightTex; }
+
     protected:
         renderer::LightContextRenderer::Light _light;
+        interface::Texture _lightTex;
 
         LightInstance() = default;
         ~LightInstance() = default;

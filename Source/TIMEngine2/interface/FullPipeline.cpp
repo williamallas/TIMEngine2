@@ -120,31 +120,6 @@ void FullPipeline::setDirLightView(interface::View& dirLightView, int sceneId)
     }
 }
 
-void FullPipeline::create(uivec2 res, const Parameter& param)
-{
-    delete _pipeline;
-    setNull();
-
-    _pipeline = new interface::Pipeline;
-    _stereoscopy = false;
-
-    pipeline::OnScreenRenderer& onScreen = _pipeline->createNode<pipeline::OnScreenRenderer>();
-
-    if(param.useFxaa)
-    {
-        pipeline::SimpleFilter& antialiasNode = _pipeline->createNode<pipeline::SimpleFilter>();
-        antialiasNode.setShader(ShaderPool::instance().get("fxaa"));
-        antialiasNode.setBufferOutputNode(createSubDeferredPipeline(res, param, 0)->outputNode(0),0);
-        onScreen.setBufferOutputNode(&antialiasNode,0);
-    }
-    else
-    {
-        onScreen.setBufferOutputNode(createSubDeferredPipeline(res, param, 0)->outputNode(0),0);
-    }
-
-    _pipeline->setOutputNode(onScreen);
-}
-
 void FullPipeline::createTwoScene(uivec2 res, const Parameter& param1, const Parameter& param2)
 {
     createExtensible(res, param1);

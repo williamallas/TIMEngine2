@@ -41,6 +41,8 @@ public:
 
     //MultipleSceneHelper* portalsManager() const { return _scenePortalsManager; }
 
+    void setupScene(int, tim::interface::View&);
+
     int getCurSceneIndex() const { return _curScene; }
     void setCurSceneIndex(int index) { _curScene = index; }
     void setMoveDirection(int dir, bool v) { _moveDirection[dir] = v; }
@@ -53,6 +55,9 @@ public:
     void setDirectionalLight(uint sceneIndex, const tim::interface::Pipeline::DirectionalLight&);
 
     const tim::interface::Mesh& lineMesh(uint index) const { return _lineMesh[index]; }
+
+    renderer::Texture* renderCubemap(vec3 pos, uint resolution, uint sceneId);
+    void renderCubemapAndExportFaces(vec3 pos, uint resolution, uint sceneId, std::string filepath);
 
 private:
     RendererWidget* _parent;

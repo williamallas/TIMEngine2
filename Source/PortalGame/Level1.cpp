@@ -1,4 +1,5 @@
 #include "Level1.h"
+#include "interface/ShaderPool.h"
 
 Level1::Level1(int index, LevelSystem* system) : LevelInterface(index, system)
 {
@@ -48,8 +49,20 @@ void Level1::init()
         bo->body()->setUserIndex(104);
     }
 
+    renderer::LightContextRenderer::Light liparam;
+    vector<std::string> cubeMap(6);
+    cubeMap[0] = "skybox/test/red.png";
+    cubeMap[1] = "skybox/test/blue.png";
+    cubeMap[2] = "skybox/test/yellow.png";
+    cubeMap[3] = "skybox/test/purple.png";
+    cubeMap[4] = "skybox/test/cyan.png";
+    cubeMap[5] = "skybox/test/green.png";
+    liparam.tex = renderer::IndirectLightRenderer::loadAndProcessSkybox(cubeMap, interface::ShaderPool::instance().get("processSpecularCubeMap")).second;
+    liparam.position = {0,0,1};
+    liparam.radius = 1.5;
+    liparam.type = renderer::LightContextRenderer::Light::SPECULAR_PROB;
 
-    std::cout << "INIT\n";
+    auto& li = level().levelScene->scene.add<interface::LightInstance>(liparam);
 
 }
 

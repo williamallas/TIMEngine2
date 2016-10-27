@@ -1,4 +1,5 @@
 #version 430
+#define NB_MIPMAP 7
 
 #define PI 3.14159265359
 
@@ -31,6 +32,9 @@ uniform sampler2D texture0; // color
 uniform sampler2D texture1; // normal
 uniform sampler2D texture2; // material
 uniform sampler2D texture3; // depth
+uniform sampler2D texture4; // brdf
+
+uniform samplerCube textures[24];
 
 uniform int nbLight;
 
@@ -96,6 +100,8 @@ float F_shlick(float F0, float dotVH)
 {
 	return F0+(1.f-F0)*pow((1.f-dotVH),5);
 }
+
+vec3 approximateSpecular(vec3 specColor, float roughness, vec3 r, float dotNV, int indexCubeMap);
 
 #define LIGHT_THRESHOLD 0.02f
 
@@ -192,44 +198,83 @@ void main()
 	float roughness = clamp(material.x,0,1);
 	
 	vec3 finalColor = vec3(0);
-
+	
+	int indexLightTexture = 0;
 	for(int i=0 ; i<lightsTileSize ; ++i)
 	{
 		vec3 L =(lights[lightsTile[i]].position.xyz - worldOrigin.xyz - frag_pos);
+		float dist = length(L);
+			
+		if(lights[lightsTile[i]].head.x > 0)
+		{
+			float radiusLight = lights[lightsTile[i]].head.y * 0.8;
+			float distAtt = lights[lightsTile[i]].head.y * 0.2;
 		
-		float dist = length(L); dist *= dist;
-		float radiusLight = lights[lightsTile[i]].head.y;
-		float invPower = 1.f / lights[lightsTile[i]].head.z;
+			vec3 diffuseTerm = color * (1-material.y) * textureLod(textures[indexLightTexture], normal, NB_MIPMAP-1).xyz;
 		
-		float coef = (1.f/LIGHT_THRESHOLD - invPower) / (radiusLight*radiusLight);
-		float att = 1.f/(invPower + coef*dist) - LIGHT_THRESHOLD;
+			vec3 specularColor = mix(vec3(material.z), vec3(color), metalic);
+			vec3 specTerm = approximateSpecular(specularColor, roughness, reflect(-V, normal), dotNV, indexLightTexture);
+			
+			float att = dist < radiusLight ? 1 : 1 - (min(dist - radiusLight, distAtt) / distAtt);
 		
-		L = normalize(L);
+			finalColor += att * (specTerm + diffuseTerm);
+			indexLightTexture++;
+		}
+		else
+		{
+			float radiusLight = lights[lightsTile[i]].head.y;
+			float invPower = 1.f / lights[lightsTile[i]].head.z;
+			
+			float coef = (1.f/LIGHT_THRESHOLD - invPower) / (radiusLight*radiusLight);
+			float att = 1.f/(invPower + coef*dist) - LIGHT_THRESHOLD;
+			
+			L = normalize(L);
 
-		vec3 H = normalize(L + V);
-		
-		float dotNL = dot(normal, L);
-		float dotNH = dot(normal, H);
-		float dotVH = dot(V,H);
-		
-		if(dotNL <= 0 || dotNV <= 0) continue;
-		
-		dotNL = clamp(dotNL, 0.001,0.999);
-		dotNH = clamp(dotNH, 0.001,0.999);
-		dotVH = clamp(dotVH, 0.001,0.999);
-		
-		float G_CT = G_smith(dotNV, dotNL, roughness);
-		float F_CT = F_shlick(mix(0.04, 0.9, metalic), dotVH);
-		float D_CT = D_GGX(roughness, dotNH);
-		
-		float specular = D_CT*G_CT*F_CT / (4*dotNV*dotNL);
-		
-		vec3 diffuseColor = color - color * metalic;
-		vec3 specularColor = mix(vec3(material.z), color, metalic);
-		
-		finalColor += att * dotNL * lights[lightsTile[i]].color.xyz * (diffuseColor + specularColor*specular);
+			vec3 H = normalize(L + V);
+			
+			float dotNL = dot(normal, L);
+			float dotNH = dot(normal, H);
+			float dotVH = dot(V,H);
+			
+			if(dotNL <= 0 || dotNV <= 0) continue;
+			
+			dotNL = clamp(dotNL, 0.001,0.999);
+			dotNH = clamp(dotNH, 0.001,0.999);
+			dotVH = clamp(dotVH, 0.001,0.999);
+			
+			float G_CT = G_smith(dotNV, dotNL, roughness);
+			float F_CT = F_shlick(mix(0.04, 0.9, metalic), dotVH);
+			float D_CT = D_GGX(roughness, dotNH);
+			
+			float specular = D_CT*G_CT*F_CT / (4*dotNV*dotNL);
+			
+			vec3 diffuseColor = color - color * metalic;
+			vec3 specularColor = mix(vec3(material.z), color, metalic);
+			
+			finalColor += att * dotNL * lights[lightsTile[i]].color.xyz * (diffuseColor + specularColor*specular);
+		}
 	}
 
 	imageStore(image0, ivec2(gl_GlobalInvocationID.xy), vec4(finalColor,1));
 	
+}
+
+vec3 approximateSpecular(vec3 specColor, float roughness, vec3 r, float dotNV, int indexCubeMap)
+{
+	const float rough[NB_MIPMAP] = {0, 0.05, 0.13, 0.25, 0.45, 0.66, 1};
+	int index=NB_MIPMAP-2;
+	for(int i=0 ; i<NB_MIPMAP-1 ; ++i)
+	{
+		if(rough[i] >= roughness)
+		{
+			index=i;
+			break;
+		}
+	}
+	
+	float coef = (roughness - rough[index]) / (rough[index+1] - rough[index]);
+	
+	vec2 a_b = texture(texture4, vec2(dotNV, roughness)).xy;
+	
+	return textureLod(textures[indexCubeMap], r, float(index)+coef).rgb * (specColor*a_b.x+vec3(a_b.y));
 }

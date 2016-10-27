@@ -4,6 +4,7 @@
 #include <QModelIndex>
 #include <QElapsedTimer>
 #include <QWaitCondition>
+#include <QImage>
 
 #include "MemoryLoggerOn.h"
 namespace tim{
@@ -21,7 +22,7 @@ MainRenderer::MainRenderer(RendererWidget* parent) : _parent(parent)
     _renderingParameter.shadowCascad = {4,15,50};
     _renderingParameter.shadowResolution = 2048;
     _renderingParameter.usePointLight = true;
-    _renderingParameter.useSSReflexion = false;
+    _renderingParameter.useSSReflexion = true;
     _currentSize = {200,200};
     _newSize = true;
 
@@ -160,19 +161,7 @@ void MainRenderer::main()
 //                }
 //            }
 
-            _pipeline.setScene(_scene[_curScene], _view[_curScene], 0);
-
-            for(int i=0 ; i<NB_SCENE ; ++i)
-            {
-                if(_scene[i].globalLight.dirLights.size() > 0 && _scene[i].globalLight.dirLights[0].projectShadow)
-                {
-                    _dirLightView[i].dirLightView.camPos = _view[_curScene].camera.pos;
-                    _dirLightView[i].dirLightView.lightDir = _scene[_curScene].globalLight.dirLights[0].direction;
-
-                    if(i == _curScene)
-                        _pipeline.setDirLightView(_dirLightView[_curScene], 0);
-                }
-            }
+            setupScene(_curScene, _view[_curScene]);
 
             _pipeline.pipeline()->prepare();
             _pipeline.pipeline()->render();
@@ -187,6 +176,23 @@ void MainRenderer::main()
         totalTime += _time;
         _pipeline.pipeline()->meshRenderer().frameState().setTime(totalTime, _time);
         unlock();
+    }
+}
+
+void MainRenderer::setupScene(int index, tim::interface::View& v)
+{
+    _pipeline.setScene(_scene[index], v, 0);
+
+    for(int i=0 ; i<NB_SCENE ; ++i)
+    {
+        if(_scene[i].globalLight.dirLights.size() > 0 && _scene[i].globalLight.dirLights[0].projectShadow)
+        {
+            _dirLightView[i].dirLightView.camPos = v.camera.pos;
+            _dirLightView[i].dirLightView.lightDir = _scene[index].globalLight.dirLights[0].direction;
+
+            if(i == index)
+                _pipeline.setDirLightView(_dirLightView[index], 0);
+        }
     }
 }
 
@@ -314,6 +320,108 @@ void MainRenderer::setDirectionalLight(uint sceneIndex, const tim::interface::Pi
     }
     if(l.projectShadow)
         _dirLightView[sceneIndex].dirLightView.lightDir = l.direction;
+}
+
+renderer::Texture* MainRenderer::renderCubemap(vec3 pos, uint resolution, uint sceneId)
+{
+    openGL.resetStates();
+    openGL.applyAll();
+    auto& node = _pipeline.create<interface::pipeline::InBufferRenderer>({resolution,resolution}, _renderingParameter);
+
+    tim::interface::View v;
+    v.camera.pos = pos;
+    v.camera.clipDist = {0.1, 1000};
+    v.camera.fov = 90;
+    v.camera.ratio = 1;
+    v.camera.useRawMat = false;
+
+    setupScene(sceneId, v);
+
+    renderer::Texture::GenTexParam param;
+    param.nbLevels = 1;
+    param.size = uivec3(resolution, resolution, 1);
+    renderer::Texture* tex = renderer::Texture::genTextureCube(param);
+
+    v.camera.dir = v.camera.pos + vec3(1,0,0);
+    v.camera.up = vec3(0,0,-1);
+    node.fbo().attachTexture(0, tex, 0, 0);
+    _pipeline.pipeline()->prepare();
+    _pipeline.pipeline()->render();
+
+    v.camera.dir = v.camera.pos + vec3(-1,0,0);
+    v.camera.up = vec3(0,0,-1);
+    node.fbo().attachTexture(0, tex, 0, 1);
+    _pipeline.pipeline()->prepare();
+    _pipeline.pipeline()->render();
+
+    v.camera.dir = v.camera.pos + vec3(0,-1,0);
+    v.camera.up = vec3(0,0,-1);
+    node.fbo().attachTexture(0, tex, 0, 2);
+    _pipeline.pipeline()->prepare();
+    _pipeline.pipeline()->render();
+
+    v.camera.dir = v.camera.pos + vec3(0,1,0);
+    v.camera.up = vec3(0,0,-1);
+    node.fbo().attachTexture(0, tex, 0, 3);
+    _pipeline.pipeline()->prepare();
+    _pipeline.pipeline()->render();
+
+    v.camera.dir = v.camera.pos + vec3(0,0,1);
+    v.camera.up = vec3(0,-1,0);
+    node.fbo().attachTexture(0, tex, 0, 4);
+    _pipeline.pipeline()->prepare();
+    _pipeline.pipeline()->render();
+
+    v.camera.dir = v.camera.pos + vec3(0,0,-1);
+    v.camera.up = vec3(0,-1,0);
+    node.fbo().attachTexture(0, tex, 0, 5);
+    _pipeline.pipeline()->prepare();
+    _pipeline.pipeline()->render();
+
+    _newSize = true;
+    resize();
+
+    return tex;
+}
+
+void MainRenderer::renderCubemapAndExportFaces(vec3 pos, uint resolution, uint sceneId, std::string filepath)
+{
+    renderer::Texture* tex = renderCubemap(pos, resolution, sceneId);
+
+    ubyte* dat = new ubyte[4 * tex->resolution().x() * tex->resolution().y()];
+    tex->bind(0);
+    {
+        glGetTexImage(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA, GL_UNSIGNED_BYTE, dat);
+        QImage img(dat, tex->resolution().x(), tex->resolution().y(), QImage::Format_RGBA8888);
+        img.save(QString::fromStdString(filepath) + "x.png");
+    }
+    {
+        glGetTexImage(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGBA, GL_UNSIGNED_BYTE, dat);
+        QImage img(dat, tex->resolution().x(), tex->resolution().y(), QImage::Format_RGBA8888);
+        img.save(QString::fromStdString(filepath) + "nx.png");
+    }
+    {
+        glGetTexImage(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGBA, GL_UNSIGNED_BYTE, dat);
+        QImage img(dat, tex->resolution().x(), tex->resolution().y(), QImage::Format_RGBA8888);
+        img.save(QString::fromStdString(filepath) + "y.png");
+    }
+    {
+        glGetTexImage(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGBA, GL_UNSIGNED_BYTE, dat);
+        QImage img(dat, tex->resolution().x(), tex->resolution().y(), QImage::Format_RGBA8888);
+        img.save(QString::fromStdString(filepath) + "ny.png");
+    }
+    {
+        glGetTexImage(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGBA, GL_UNSIGNED_BYTE, dat);
+        QImage img(dat, tex->resolution().x(), tex->resolution().y(), QImage::Format_RGBA8888);
+        img.save(QString::fromStdString(filepath) + "z.png");
+    }
+    {
+        glGetTexImage(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGBA, GL_UNSIGNED_BYTE, dat);
+        QImage img(dat, tex->resolution().x(), tex->resolution().y(), QImage::Format_RGBA8888);
+        img.save(QString::fromStdString(filepath) + "nz.png");
+    }
+
+    delete[] dat;
 }
 
 }

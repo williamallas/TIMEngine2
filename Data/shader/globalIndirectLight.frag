@@ -131,7 +131,7 @@ void main()
 		outColor = specColor*raytraceCamSpace(world, reflected, texture3, n, texture(texture4, reflect(viewDir, normal)));
 	}
 	else if(enableGI == 1)
-	{	
+	{
 		vec4 diffuseTerm = color * (1-material.y) * textureLod(texture5, normal,NB_MIPMAP-1);
 		
 		vec3 specularColor = mix(vec3(material.z), vec3(color), metallic);
@@ -139,7 +139,7 @@ void main()
 		
 		outColor.rgb = specTerm + vec3(diffuseTerm);
 	}
-	else
+/* 	else
 	{
 		vec4 diffuseTerm = color * (1-material.y) * globalAmbient;
 		vec2 a_b = texture(texture6, vec2(max(dot(normal, -viewDir), 0.01), roughness)).xy;
@@ -148,7 +148,7 @@ void main()
 		vec3 specTerm = globalAmbient.rgb * (specularColor*a_b.x + vec3(a_b.y));
 		
 		outColor.rgb = specTerm + vec3(diffuseTerm);
-	}
+	} */
 	
 	outColor += vec4(color * material.w * 5);
 	float dotNV = clamp(dot(normal, -viewDir), 0.0001, 0.9999);
@@ -221,150 +221,6 @@ vec3 approximateSpecular(vec3 specColor, float roughness, vec3 r, float dotNV)
 	vec2 a_b = texture(texture6, vec2(dotNV, roughness)).xy;
 	
 	return textureLod(texture5, r, float(index)+coef).rgb * (specColor*a_b.x+vec3(a_b.y));
-}
-
-bool traceScreenSpaceRay(vec3 csOrig, vec3 csDir, sampler2D csZBuffer, vec2 csZBufferSize, 
-						 float zThickness, const bool csZBufferIsHyperbolic, vec3 clipInfo, float nearPlaneZ,
-				         float stride, float jitter, const float maxSteps, float maxDistance,
-						 out vec2 hitPixel, out vec3 csHitPoint) 
-{
-
-	 // Clip to the near plane
-	 float rayLength = ((csOrig.z + csDir.z * maxDistance) > nearPlaneZ) ? (nearPlaneZ - csOrig.z) / csDir.z : maxDistance;
-	 vec3 csEndPoint = csOrig + csDir * rayLength;
-	 hitPixel = vec2(-1, -1);
-
-	 // Project into screen space
-	 vec4 H0 = proj * vec4(csOrig, 1.0), H1 = proj * vec4(csEndPoint, 1.0);
-	 float k0 = 1.0 / H0.w, k1 = 1.0 / H1.w;
-	 vec3 Q0 = csOrig * k0, Q1 = csEndPoint * k1;
-
-	 // Screen-space endpoints
-	 vec2 P0 = csZBufferSize.x*(H0.xy*0.5+0.5) * k0, P1 = csZBufferSize.y*(H1.xy*0.5+0.5) * k1;
-
-	 // [ Optionally clip here using listing 4 ]
-
-	 P1 += vec2((dot(P0-P1, P0-P1) < 0.0001) ? 0.01 : 0.0);
-	 vec2 delta = P1 - P0;
-
-	 bool permute = false;
-	 if (abs(delta.x) < abs(delta.y)) {
-		permute = true;
-		delta = delta.yx; P0 = P0.yx; P1 = P1.yx;
-	 }
-
-	 float stepDir = sign(delta.x), invdx = stepDir / delta.x;
-
-	 // Track the derivatives of Q and k.
-	 vec3 dQ = (Q1 - Q0) * invdx;
-	 float dk = (k1 - k0) * invdx;
-	 vec2 dP = vec2(stepDir, delta.y * invdx);
-
-	dP *= stride; dQ *= stride; dk *= stride;
-	P0 += dP * jitter; Q0 += dQ * jitter; k0 += dk * jitter;
-	float prevZMaxEstimate = csOrig.z;
- 
-	 // Slide P from P0 to P1, (now-homogeneous) Q from Q0 to Q1, k from k0 to k1
-	 vec3 Q = Q0; float k = k0, stepCount = 0.0, end = P1.x * stepDir;
-	for (vec2 P = P0; ((P.x * stepDir) <= end) && (stepCount < maxSteps); P += dP, Q.z += dQ.z, k += dk, stepCount += 1.0) 
-	{
-		// Project back from homogeneous to camera space
-		hitPixel = permute ? P.yx : P;
-
-		// The depth range that the ray covers within this loop iteration.
-		// Assume that the ray is moving in increasing z and swap if backwards.
-		float rayZMin = prevZMaxEstimate;
-		// Compute the value at 1/2 pixel into the future
-		float rayZMax = (dQ.z * 0.5 + Q.z) / (dk * 0.5 + k);
-		prevZMaxEstimate = rayZMax;
-		if (rayZMin > rayZMax) 
-		{ 
-			float tmp = rayZMin;
-			rayZMin = rayZMax;
-			rayZMax=tmp;
-			//swap(rayZMin, rayZMax);
-		}
-
-		// Camera-space z of the background
-		float sceneZMax = texelFetch(csZBuffer, ivec2(hitPixel.x, hitPixel.y), 0).r;
-
-		/*if (csZBufferIsHyperbolic)
-			sceneZMax = reconstructCSZ(sceneZMax, clipInfo);*/
-
-		float sceneZMin = sceneZMax - zThickness;
-
-		if (((rayZMax >= sceneZMin) && (rayZMin <= sceneZMax)) || (sceneZMax == 0))
-		{
-			break;
-		}
-
-	} // for each pixel on ray
-
-	 // Advance Q based on the number of steps
-	 Q.xy += dQ.xy * stepCount; csHitPoint = Q * (1.0 / k);
-	 return all(lessThanEqual(abs(hitPixel - (csZBufferSize * 0.5)), csZBufferSize * 0.5));
-}
-
-bool raytraceDepth(vec3 rayPos, vec3 rayDir, sampler2D ZBuffer, out vec2 intersectCoord)
-{
-	const float maxDist = 2.0;
-	const float maxStep = 30.0;
-	ivec2 ibufferSize = textureSize(ZBuffer,0);
-	vec2 bufSize = vec2(ibufferSize.x, ibufferSize.y);
-	
-	vec3 P0 = rayPos, P1 = rayPos + rayDir * maxDist;
-	
-	vec4 hoP0 = proj * vec4(P0,1), hoP1 = proj * vec4(P1,1);
-
-	float z0 = 1.f / hoP0.w, z1 = 1.f / hoP0.w;
-	float dz = z1-z0;
-	
-	vec3 Q0 = P0 * z0, Q1 = P1 * z1;
-	vec3 dQ = Q1-Q0;
-	
-	vec4 dHoP = hoP1 - hoP0;
-	bool swapXY=false;
-	if(abs(dHoP.x) < abs(dHoP.y))
-	{
-		swapXY=true;
-		dHoP.yx = dHoP.xy; hoP0.xy = hoP0.yx; hoP1.xy = hoP1.yx;
-	}
-	
-	vec2 sP0 = hoP0.xy * z0, sP1 = hoP1.xy * z1;
-	vec2 dsP = sP1-sP0;
-	//float sign_dsP = sign(dsP.x);
-	float invx = 3.0 / (dsP.x*bufSize.x*0.5);
-	//invx = 1.f/maxStep;
-	
-	dsP *= invx;
-	dQ *= invx; 
-	dz *= invx;
-	dHoP *= invx;
-	
-	vec2 sP=sP0; vec4 hoP=hoP0;
-	vec3 Q = Q0;
-	float prevDepth = 1;
-	
-	for(float nbStep=0, curZ = z0; nbStep < maxStep ; nbStep+=1.0, curZ += dz, sP+=dsP, Q+=dQ, hoP+=dHoP)
-	{
-		float curRayDepthCS = hoP.z / hoP.w;
-		curRayDepthCS = curRayDepthCS*0.5+0.5;
-		vec2 coord = (swapXY ? sP.yx : sP.xy)*0.5+0.5;
-		float curBackDepth = texture(ZBuffer, coord).r;
-		//curBackDepth = unproj(coord, curBackDepth).z;
-		
-		if(curRayDepthCS >= curBackDepth && prevDepth <= curBackDepth)
-		{
-			intersectCoord = coord;
-			return true;
-			//break;
-		}
-		
-		prevDepth = curRayDepthCS;
-	}
-
-	
-	return false;
 }
 
 vec4 binarySearch(vec3 noP, vec3 yesP, sampler2D ZBuffer, out vec3 hitP)

@@ -24,6 +24,7 @@ namespace interface
     class Texture : public resource::Asset<renderer::Texture>
     {
         friend class Mesh;
+        friend class LightInstance;
 
     public:
         using resource::Asset<renderer::Texture>::Asset;

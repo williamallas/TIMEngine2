@@ -119,8 +119,15 @@
     <property name="title">
      <string>Lighting</string>
     </property>
+    <widget class="QMenu" name="menuGenerate_Specular_Probe_As">
+     <property name="title">
+      <string>Generate Specular Probe As</string>
+     </property>
+     <addaction name="actionSkybox"/>
+    </widget>
     <addaction name="actionSet_skybox"/>
     <addaction name="actionSunDirection"/>
+    <addaction name="menuGenerate_Specular_Probe_As"/>
    </widget>
    <addaction name="menuContext"/>
    <addaction name="menuResource"/>
@@ -654,6 +661,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+L</string>
+   </property>
+  </action>
+  <action name="actionSkybox">
+   <property name="text">
+    <string>Skybox</string>
    </property>
   </action>
   <zorder>resourceDockWidget</zorder>

@@ -145,6 +145,7 @@ Option<Shader*> Shader::linkComputeShader(const Option<uint>& cs)
 
     Shader* prog = new Shader;
     prog->_id = id;
+    prog->bind();
     prog->loadEngineUniform();
     prog->setUniform(vec4(0,0,0,0), prog->_engineUniform[EngineUniform::CLIP_PLAN_0]);
     prog->setUniform(vec4(0,0,0,0), prog->_engineUniform[EngineUniform::CLIP_PLAN_1]);
@@ -199,7 +200,9 @@ void Shader::loadEngineUniform()
     {
         _uniformTextureId[nbSimple+i] = glGetUniformLocation(_id, (std::string("textures[")+StringUtils(i).str()+"]").c_str());
         if(_uniformTextureId[nbSimple+i] >= 0)
+        {
             glUniform1i(_uniformTextureId[nbSimple+i], (int)(nbSimple+i));
+        }
     }
 
 

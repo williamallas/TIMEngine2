@@ -113,6 +113,7 @@ SOURCES += mainEditor.cpp \
     TIMEngine2/interface/Pipeline.cpp \
     TIMEngine2/interface/pipeline/DeferredRendererNode.cpp \
     TIMEngine2/interface/pipeline/OnScreenRenderer.cpp \
+    TIMEngine2/interface/pipeline/InBufferRenderer.cpp \
     TIMEngine2/interface/pipeline/BloomNode.cpp \
     TIMEngine2/interface/pipeline/DirLightShadowNode.cpp \
     TIMEngine2/interface/pipeline/SimpleFilter.cpp \

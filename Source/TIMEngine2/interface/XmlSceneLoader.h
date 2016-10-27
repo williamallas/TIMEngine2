@@ -4,6 +4,7 @@
 #include "XmlMeshAssetLoader.h"
 #include "pipeline/pipeline.h"
 #include "MeshInstance.h"
+#include "LightInstance.h"
 
 #undef tim
 #include "MemoryLoggerOn.h"

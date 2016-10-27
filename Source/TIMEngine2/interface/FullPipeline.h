@@ -37,7 +37,8 @@ namespace interface
 
         const std::set<Pipeline::DeferredRendererEntity*>& rendererEntities() const { return _deferredEntities; }
 
-        void create(uivec2, const Parameter&);
+        template <class OutNodeType = pipeline::OnScreenRenderer> OutNodeType& create(uivec2, const Parameter&);
+
         void createTwoScene(uivec2, const Parameter&, const Parameter&);
         void createExtensible(uivec2, const Parameter&);
 
@@ -72,6 +73,32 @@ namespace interface
 
         Pipeline::InOutBufferNode* _combineMultipleScene[2] = {nullptr, nullptr};
     };
+
+    template <class OutNodeType> OutNodeType& FullPipeline::create(uivec2 res, const Parameter& param)
+    {
+        delete _pipeline;
+        setNull();
+
+        _pipeline = new interface::Pipeline;
+        _stereoscopy = false;
+
+        OutNodeType& finalNode = _pipeline->createNode<OutNodeType>();
+
+        if(param.useFxaa)
+        {
+            pipeline::SimpleFilter& antialiasNode = _pipeline->createNode<pipeline::SimpleFilter>();
+            antialiasNode.setShader(ShaderPool::instance().get("fxaa"));
+            antialiasNode.setBufferOutputNode(createSubDeferredPipeline(res, param, 0)->outputNode(0),0);
+            finalNode.setBufferOutputNode(&antialiasNode,0);
+        }
+        else
+        {
+            finalNode.setBufferOutputNode(createSubDeferredPipeline(res, param, 0)->outputNode(0),0);
+        }
+
+        _pipeline->setOutputNode(finalNode);
+        return finalNode;
+    }
 }
 }
 #include "MemoryLoggerOff.h"
