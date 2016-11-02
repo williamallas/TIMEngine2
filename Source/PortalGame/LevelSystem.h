@@ -6,6 +6,7 @@
 #include "openAL/Listener.hpp"
 #include "openAL/Source.hpp"
 #include "Controller.h"
+#include "OpenVR/HmdSceneView.h"
 #include <list>
 
 //#define AUTO_SOLVE
@@ -31,11 +32,13 @@ public:
 
     static renderer::Texture::GenTexParam defaultTexParam;
 
-    LevelSystem(BulletEngine&, Listener&, Controller&);
+    LevelSystem(BulletEngine&, Listener&, Controller&, HmdSceneView&);
     ~LevelSystem();
 
     Listener& listener() { return _listener; }
     Controller& controller() { return _controller; }
+    vec3 headPosition() const;
+    HmdSceneView& hmdView() { return _hmdView; }
 
     void addLevel(const Level&);
     void setStrategy(LevelInterface* strat, int index);
@@ -70,6 +73,7 @@ protected:
     BulletEngine& _physEngine;
     Listener& _listener;
     Controller& _controller;
+    HmdSceneView& _hmdView;
     vector<std::pair<Level, bool>> _levels;
     vector<LevelInterface*> _levelStrategy;
 

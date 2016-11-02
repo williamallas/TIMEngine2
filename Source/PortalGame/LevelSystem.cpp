@@ -8,7 +8,8 @@ using namespace resource;
 
 renderer::Texture::GenTexParam LevelSystem::defaultTexParam;
 
-LevelSystem::LevelSystem(BulletEngine& ph, Listener& listener, Controller& controller) : _physEngine(ph), _listener(listener), _controller(controller)
+LevelSystem::LevelSystem(BulletEngine& ph, Listener& listener, Controller& controller, HmdSceneView& hmdView)
+    : _physEngine(ph), _listener(listener), _controller(controller), _hmdView(hmdView)
 {
     defaultTexParam = interface::Texture::genParam(true,true,true, 4);
 }
@@ -491,6 +492,11 @@ void LevelSystem::manageTraversableObjOnSwitch(interface::Scene* sceneTo)
 void LevelSystem::callDebug() {
     if(_levelStrategy[_curLevel])
         _levelStrategy[_curLevel]->callDebug();
+}
+
+vec3 LevelSystem::headPosition() const
+{
+    return _hmdView.cullingView().camera.pos;
 }
 
 
