@@ -50,7 +50,7 @@ TiledLightRenderer::~TiledLightRenderer()
     delete _computeShader;
 }
 
-void TiledLightRenderer::draw(const vector<Light>& lights)
+void TiledLightRenderer::draw(const vector<Light>& lights, Texture* processedSkybox)
 {
     createLigthBuffer(lights);
     _lightBuffer.bind(0);
@@ -72,7 +72,13 @@ void TiledLightRenderer::draw(const vector<Light>& lights)
         openGL.bindTextureSampler(textureSampler[TextureMode::FilteredNoRepeat], 4);
     } else openGL.bindTexture(0, GL_TEXTURE_2D, 4);
 
-    uint texIndex=5;
+    if(processedSkybox)
+    {
+        processedSkybox->bind(5);
+        openGL.bindTextureSampler(textureSampler[TextureMode::FilteredNoRepeat], 5);
+    } else openGL.bindTexture(0, GL_TEXTURE_CUBE_MAP, 5);
+
+    uint texIndex=6;
     for(const Light& l : lights)
     {
         if(l.type == Light::SPECULAR_PROB && l.tex != nullptr)
@@ -96,13 +102,16 @@ void TiledLightRenderer::createLigthBuffer(const vector<Light>& lights)
     if(lights.size() > _lightBuffer.size())
         _lightBuffer.create(lights.size(), nullptr, DYNAMIC);
 
-
+    int indexTexture = 0;
     vector<Std140LightData> data(lights.size());
     for(uint i=0 ; i<lights.size() ; ++i)
     {
-        data[i].head = vec4(static_cast<float>(lights[i].type), lights[i].radius, lights[i].power, 0);
+        data[i].head = vec4(static_cast<float>(lights[i].type), lights[i].radius, lights[i].power, static_cast<float>(indexTexture));
         data[i].position = vec4(lights[i].position);
         data[i].color = lights[i].color;
+
+        if(lights[i].type == Light::SPECULAR_PROB && lights[i].tex != nullptr)
+            indexTexture ++;
     }
 
      _lightBuffer.flush(&data[0], 0, lights.size());

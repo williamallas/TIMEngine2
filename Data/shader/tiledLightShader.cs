@@ -34,7 +34,7 @@ uniform sampler2D texture2; // material
 uniform sampler2D texture3; // depth
 uniform sampler2D texture4; // brdf
 
-uniform samplerCube textures[24];
+uniform samplerCube textures[24]; // the first is the global cubemap
 
 uniform int nbLight;
 
@@ -102,6 +102,7 @@ float F_shlick(float F0, float dotVH)
 }
 
 vec3 approximateSpecular(vec3 specColor, float roughness, vec3 r, float dotNV, int indexCubeMap);
+vec3 parallaxCorrection(vec3 position, vec3 dir, vec3 center, float radius);
 
 #define LIGHT_THRESHOLD 0.02f
 
@@ -197,9 +198,10 @@ void main()
 	float metalic = clamp(material.y,0,1);
 	float roughness = clamp(material.x,0,1);
 	
-	vec3 finalColor = vec3(0);
+	float accAmbient = 0;
+	vec3 accAmbientColor = vec3(0);
+	vec3 accLight = vec3(0);
 	
-	int indexLightTexture = 0;
 	for(int i=0 ; i<lightsTileSize ; ++i)
 	{
 		vec3 L =(lights[lightsTile[i]].position.xyz - worldOrigin.xyz - frag_pos);
@@ -209,16 +211,18 @@ void main()
 		{
 			float radiusLight = lights[lightsTile[i]].head.y * 0.8;
 			float distAtt = lights[lightsTile[i]].head.y * 0.2;
-		
-			vec3 diffuseTerm = color * (1-material.y) * textureLod(textures[indexLightTexture], normal, NB_MIPMAP-1).xyz;
+			int indexCubemap = int(lights[lightsTile[i]].head.w)+1;
+			
+			
+			vec3 diffuseTerm = color * (1-material.y) * textureLod(textures[indexCubemap], parallaxCorrection(vec3(0,0,0), normal, L, lights[lightsTile[i]].head.y), NB_MIPMAP-1).xyz;
 		
 			vec3 specularColor = mix(vec3(material.z), vec3(color), metalic);
-			vec3 specTerm = approximateSpecular(specularColor, roughness, reflect(-V, normal), dotNV, indexLightTexture);
+			vec3 specTerm = approximateSpecular(specularColor, roughness, parallaxCorrection(vec3(0,0,0), reflect(-V, normal), L, lights[lightsTile[i]].head.y), dotNV, indexCubemap);
 			
 			float att = dist < radiusLight ? 1 : 1 - (min(dist - radiusLight, distAtt) / distAtt);
 		
-			finalColor += att * (specTerm + diffuseTerm);
-			indexLightTexture++;
+			accAmbient += att;
+			accAmbientColor += (specTerm + diffuseTerm) * att;
 		}
 		else
 		{
@@ -251,11 +255,22 @@ void main()
 			vec3 diffuseColor = color - color * metalic;
 			vec3 specularColor = mix(vec3(material.z), color, metalic);
 			
-			finalColor += att * dotNL * lights[lightsTile[i]].color.xyz * (diffuseColor + specularColor*specular);
+			accLight += att * dotNL * lights[lightsTile[i]].color.xyz * (diffuseColor + specularColor*specular);
 		}
 	}
-
-	imageStore(image0, ivec2(gl_GlobalInvocationID.xy), vec4(finalColor,1));
+	
+	if(accAmbient > 1)
+		accAmbientColor /= accAmbient;
+	else
+	{
+		vec3 diffuseTerm = color * (1-material.y) * textureLod(textures[0], normal, NB_MIPMAP-1).xyz;
+		
+		vec3 specularColor = mix(vec3(material.z), vec3(color), metalic);
+		vec3 specTerm = approximateSpecular(specularColor, roughness, reflect(-V, normal), dotNV, 0);
+		accAmbientColor += (specTerm + diffuseTerm) * (1-accAmbient);
+	}
+	
+	imageStore(image0, ivec2(gl_GlobalInvocationID.xy), vec4(accLight+accAmbientColor,1));
 	
 }
 
@@ -277,4 +292,26 @@ vec3 approximateSpecular(vec3 specColor, float roughness, vec3 r, float dotNV, i
 	vec2 a_b = texture(texture4, vec2(dotNV, roughness)).xy;
 	
 	return textureLod(textures[indexCubeMap], r, float(index)+coef).rgb * (specColor*a_b.x+vec3(a_b.y));
+}
+
+vec3 parallaxCorrection(vec3 position, vec3 dir, vec3 center, float radius)
+{
+	vec3 boxMax = vec3(center - vec3(radius));
+	vec3 boxMin = vec3(center + vec3(radius));
+	
+	// Following is the parallax-correction code
+	// Find the ray intersection with box plane
+	vec3 FirstPlaneIntersect =  (boxMax - position) / dir;
+	vec3 SecondPlaneIntersect = (boxMin - position) / dir;
+	
+	// Get the furthest of these intersections along the ray
+	// (Ok because x/0 give +inf and -x/0 give –inf )
+	vec3 FurthestPlane = max(FirstPlaneIntersect, SecondPlaneIntersect);
+	// Find the closest far intersection
+	float dist = min(min(FurthestPlane.x, FurthestPlane.y), FurthestPlane.z);
+
+	// Get the intersection position
+	vec3 interectPosition = position + dir * dist;
+
+	return interectPosition - center;
 }

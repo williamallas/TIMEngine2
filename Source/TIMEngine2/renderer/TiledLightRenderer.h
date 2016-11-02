@@ -18,7 +18,7 @@ namespace renderer
         TiledLightRenderer(DeferredRenderer&, bool hdr=false);
         ~TiledLightRenderer();
 
-        void draw(const vector<Light>&);
+        void draw(const vector<Light>&, Texture*);
 
     private:
         const uivec2 TILE_SIZE = {32,30};

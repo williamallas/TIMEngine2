@@ -187,8 +187,12 @@ void DeferredRendererNode::render()
 
     _rendererEntity->lightContext()->acquire();
 
+    renderer::Texture* globalPSkybox = nullptr;
+    if(_globalLightInfo)
+        globalPSkybox = _globalLightInfo->skybox.second;
+
     if (_rendererEntity->lightRenderer())
-        _rendererEntity->lightRenderer()->draw(lights);
+        _rendererEntity->lightRenderer()->draw(lights, globalPSkybox);
     else
         _rendererEntity->lightContext()->clear();
 
