@@ -8,7 +8,7 @@ using namespace resource;
 
 PortalGame::PortalGame(BulletEngine& phys, MultipleSceneHelper& multiscene, HmdSceneView& hmdCam, VR_Device& vrdevice)
     : _physEngine(phys), _multiSceneHelper(multiscene), _hmdCamera(hmdCam), _vrDevice(vrdevice),
-      _multiScene("configScene.txt", _multiSceneHelper), _vrControllers(phys), _levels(phys, _listener, _vrControllers)
+      _multiScene("configScene.txt", _multiSceneHelper), _vrControllers(phys), _levels(phys, _listener, _vrControllers, _hmdCamera)
 {
     _multiScene.instancePhysic(_physEngine);
 
