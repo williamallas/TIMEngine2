@@ -56,11 +56,11 @@ public:
 
     const tim::interface::Mesh& lineMesh(uint index) const { return _lineMesh[index]; }
 
-    renderer::Texture* renderCubemap(vec3 pos, uint resolution, uint sceneId);
-    void renderCubemapAndExportFaces(vec3 pos, uint resolution, uint sceneId, std::string filepath);
+    renderer::Texture* renderCubemap(vec3 pos, uint resolution, uint sceneId, int mode=0, float farDist = 1000);
+    void exportSkybox(renderer::Texture*, std::string filepath);
 
 private:
-    RendererWidget* _parent;
+    RendererWidget* _parent;far
     bool _running;
     float _time = 0;
 
@@ -70,7 +70,6 @@ private:
     interface::FullPipeline::Parameter _renderingParameter;
     interface::FullPipeline _pipeline;
     mutable QMutex _mutex;
-
 
     /* Shared state */
     static const int NB_SCENE=5;

@@ -22,7 +22,7 @@ MainRenderer::MainRenderer(RendererWidget* parent) : _parent(parent)
     _renderingParameter.shadowCascad = {4,15,50};
     _renderingParameter.shadowResolution = 2048;
     _renderingParameter.usePointLight = true;
-    _renderingParameter.useSSReflexion = true;
+    _renderingParameter.useSSReflexion = false;
     _currentSize = {200,200};
     _newSize = true;
 
@@ -322,7 +322,7 @@ void MainRenderer::setDirectionalLight(uint sceneIndex, const tim::interface::Pi
         _dirLightView[sceneIndex].dirLightView.lightDir = l.direction;
 }
 
-renderer::Texture* MainRenderer::renderCubemap(vec3 pos, uint resolution, uint sceneId)
+renderer::Texture* MainRenderer::renderCubemap(vec3 pos, uint resolution, uint sceneId, int mode, float farDist)
 {
     openGL.resetStates();
     openGL.applyAll();
@@ -330,7 +330,7 @@ renderer::Texture* MainRenderer::renderCubemap(vec3 pos, uint resolution, uint s
 
     tim::interface::View v;
     v.camera.pos = pos;
-    v.camera.clipDist = {0.1, 1000};
+    v.camera.clipDist = {0.1, farDist};
     v.camera.fov = 90;
     v.camera.ratio = 1;
     v.camera.useRawMat = false;
@@ -343,40 +343,46 @@ renderer::Texture* MainRenderer::renderCubemap(vec3 pos, uint resolution, uint s
     renderer::Texture* tex = renderer::Texture::genTextureCube(param);
 
     v.camera.dir = v.camera.pos + vec3(1,0,0);
-    v.camera.up = vec3(0,0,-1);
+    v.camera.up = mode==0 ? vec3(0,0,-1) : vec3(0,-1,0);
     node.fbo().attachTexture(0, tex, 0, 0);
     _pipeline.pipeline()->prepare();
     _pipeline.pipeline()->render();
+    openGL.resetStates();
 
     v.camera.dir = v.camera.pos + vec3(-1,0,0);
-    v.camera.up = vec3(0,0,-1);
+    v.camera.up = mode==0 ? vec3(0,0,-1) : vec3(0,-1,0);
     node.fbo().attachTexture(0, tex, 0, 1);
     _pipeline.pipeline()->prepare();
     _pipeline.pipeline()->render();
+    openGL.resetStates();
 
-    v.camera.dir = v.camera.pos + vec3(0,-1,0);
-    v.camera.up = vec3(0,0,-1);
+    v.camera.dir = v.camera.pos + vec3(0,1,0);
+    v.camera.up = mode==0 ? vec3(0,0,-1) : vec3(0,0,1);
     node.fbo().attachTexture(0, tex, 0, 2);
     _pipeline.pipeline()->prepare();
     _pipeline.pipeline()->render();
+    openGL.resetStates();
 
-    v.camera.dir = v.camera.pos + vec3(0,1,0);
-    v.camera.up = vec3(0,0,-1);
+    v.camera.dir = v.camera.pos + vec3(0,-1,0);
+    v.camera.up = mode==0 ? vec3(0,0,-1) : vec3(0,0,-1);
     node.fbo().attachTexture(0, tex, 0, 3);
     _pipeline.pipeline()->prepare();
     _pipeline.pipeline()->render();
+    openGL.resetStates();
 
     v.camera.dir = v.camera.pos + vec3(0,0,1);
     v.camera.up = vec3(0,-1,0);
     node.fbo().attachTexture(0, tex, 0, 4);
     _pipeline.pipeline()->prepare();
     _pipeline.pipeline()->render();
+    openGL.resetStates();
 
     v.camera.dir = v.camera.pos + vec3(0,0,-1);
     v.camera.up = vec3(0,-1,0);
     node.fbo().attachTexture(0, tex, 0, 5);
     _pipeline.pipeline()->prepare();
     _pipeline.pipeline()->render();
+    openGL.resetStates();
 
     _newSize = true;
     resize();
@@ -384,10 +390,8 @@ renderer::Texture* MainRenderer::renderCubemap(vec3 pos, uint resolution, uint s
     return tex;
 }
 
-void MainRenderer::renderCubemapAndExportFaces(vec3 pos, uint resolution, uint sceneId, std::string filepath)
+void MainRenderer::exportSkybox(renderer::Texture* tex, std::string filepath)
 {
-    renderer::Texture* tex = renderCubemap(pos, resolution, sceneId);
-
     ubyte* dat = new ubyte[4 * tex->resolution().x() * tex->resolution().y()];
     tex->bind(0);
     {
