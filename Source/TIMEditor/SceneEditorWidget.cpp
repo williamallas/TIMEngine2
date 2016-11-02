@@ -2,6 +2,7 @@
 #include "ui_SceneEditor.h"
 #include "AssetViewWidget.h"
 #include "EditorWindow.h"
+#include "ConfigSpecProbe.h"
 
 #include "MeshEditorWidget.h"
 #include "RendererWidget.h"
@@ -1294,4 +1295,89 @@ void SceneEditorWidget::switchScene(int index)
     {
         ui->listSceneObject->addItem(_objects[_curSceneIndex][i].listItem);
     }
+}
+
+void SceneEditorWidget::renderSpecularProbe()
+{
+    ConfigSpecProbe paramRendering(this);
+    paramRendering.exec();
+
+    if(!paramRendering.isRenderClicked())
+        return;
+
+    vec3 pos;
+    if(paramRendering.centerOnSlection() && _selections.size() > 0)
+        pos = _objects[_curSceneIndex][_selections[0].index].translate;
+    else
+        pos = _renderer->getSceneView(_curSceneIndex+1).camera.pos;
+
+    float radius = paramRendering.radius();
+    float farDist = paramRendering.farDist();
+    int iterations = paramRendering.nbIterations();
+    int res = paramRendering.resolution();
+    std::string pathRD = paramRendering.pathRawData().toStdString();
+    std::string pathSkybox = paramRendering.pathSkybox().toStdString();
+    bool addToScene = paramRendering.addToScene();
+    bool exportAsRawData = paramRendering.exportAsRawData();
+    bool exportAsSkybox = paramRendering.exportAsSkybox();
+
+    cancelSelection();
+
+    _renderer->addEvent( [=](){
+        renderer::LightContextRenderer::Light liparam;
+        liparam.position = pos;
+        liparam.radius = radius;
+        liparam.type = renderer::LightContextRenderer::Light::SPECULAR_PROB;
+        liparam.tex = nullptr;
+
+        interface::LightInstance& light = _renderer->getScene(_curSceneIndex+1).scene.add<interface::LightInstance>(liparam);
+        renderer::Texture* texTmp = nullptr;
+        vector<renderer::Texture*> toDel;
+        for(int i=0 ; i<iterations ; ++i)
+        {
+            delete texTmp;
+            toDel.push_back( liparam.tex );
+
+            texTmp = _renderer->renderCubemap(pos, res, _curSceneIndex+1, 1, farDist);
+            liparam.tex = renderer::IndirectLightRenderer::processSkybox(texTmp, interface::ShaderPool::instance().get("processSpecularCubeMap"));
+
+            if(i == iterations-1 && exportAsSkybox && !pathSkybox.empty())
+            {
+                auto sky = _renderer->renderCubemap(pos, res, _curSceneIndex+1, 0, farDist);
+                _renderer->exportSkybox(sky, pathSkybox + "/");
+                delete sky;
+            }
+
+            light.set(liparam);
+        }
+
+        if(exportAsRawData && !pathRD.empty())
+            renderer::Texture::exportTexture(liparam.tex, pathRD, 7);
+
+        if(!addToScene)
+        {
+            _renderer->getScene(_curSceneIndex+1).scene.remove(light);
+            delete liparam.tex;
+        }
+        else
+        {
+            _allSpecProbe[_curSceneIndex].push_back(&light);
+        }
+
+        toDel.pop_back();
+        for(auto t : toDel) delete t;
+
+    });
+}
+
+void SceneEditorWidget::removeAllLightProbe()
+{
+    _renderer->addEvent( [=](){
+        for(auto ptr : _allSpecProbe[_curSceneIndex])
+        {
+            delete ptr->get().tex;
+            _renderer->getScene(_curSceneIndex+1).scene.remove(*ptr);
+        }
+        _allSpecProbe[_curSceneIndex].clear();
+    });
 }

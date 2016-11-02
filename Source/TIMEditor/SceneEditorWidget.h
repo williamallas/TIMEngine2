@@ -100,8 +100,10 @@ protected:
 
     tim::interface::MeshInstance* _translateLine[3] = {nullptr};
 
+    vector<interface::LightInstance*> _allSpecProbe[NB_SCENE];
+
     /* copy past trans */
-    vec3 copy_scale     = {1,1,1};
+    vec3 copy_scale     = {1,1,1};far
     mat3 copy_rotate    = mat3::IDENTITY();
     vec3 copy_translate = {0,0,0};
     bool somethingCopied = false;
@@ -166,6 +168,9 @@ public slots:
     void exportScene(QString, int);
     void importScene(QString, int);
     void clearScene(int);
+
+    void renderSpecularProbe();
+    void removeAllLightProbe();
 
 signals:
     void editTransformation(int);
