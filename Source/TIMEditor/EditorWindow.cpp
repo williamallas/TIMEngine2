@@ -65,6 +65,8 @@ EditorWindow::EditorWindow(QWidget *parent) :
     connect(ui->glWidget, SIGNAL(stateChanged(int)), ui->sceneEditorWidget, SLOT(flushUiAccordingState(int)));
     connect(ui->sceneEditorWidget, SIGNAL(feedbackTransformation(QString)), this, SLOT(flushFeedbackTrans(QString)));
 
+    connect(ui->actionGenerate_Specular_Probe, SIGNAL(triggered()), ui->sceneEditorWidget, SLOT(renderSpecularProbe()));
+
     _copySC = new QShortcut(QKeySequence("Ctrl+C"), ui->glWidget);
     connect(_copySC, SIGNAL(activated()), ui->sceneEditorWidget, SLOT(copyObject()));
 
@@ -459,15 +461,24 @@ void EditorWindow::addGeometryToScene(QString geomPath, QString name)
     ui->sceneEditorWidget->activateLastAdded();
 }
 
-void EditorWindow::on_actionSkybox_triggered()
+void EditorWindow::on_actionRaw_Data_triggered()
 {
-    QString dir = QFileDialog::getExistingDirectory(this, "Save scene", ".");
-    if(dir.isEmpty())
+    QString file = QFileDialog::getSaveFileName(this, "Save cubemap", ".", "RawImage Files (*.itim)");
+    if(file.isEmpty())
         return;
 
     vec3 camPos = _rendererThread->mainRenderer()->getSceneView(_rendererThread->mainRenderer()->getCurSceneIndex()).camera.pos;
     MainRenderer* mr = _rendererThread->mainRenderer();
     mr->addEvent( [=](){
-        mr->renderCubemapAndExportFaces(camPos, 1024, _rendererThread->mainRenderer()->getCurSceneIndex(), dir.toStdString() + "/");
+        auto tex = mr->renderCubemap(camPos, 1024, _rendererThread->mainRenderer()->getCurSceneIndex(), 1);
+        auto ptex = renderer::IndirectLightRenderer::processSkybox(tex, interface::ShaderPool::instance().get("processSpecularCubeMap"));
+        renderer::Texture::exportTexture(ptex, file.toStdString(), 7);
+        delete tex; delete ptex;
+
     });
+}
+
+void EditorWindow::on_actionRemove_Spec_Probe_triggered()
+{
+    ui->sceneEditorWidget->removeAllLightProbe();
 }
