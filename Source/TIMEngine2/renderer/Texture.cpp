@@ -1,4 +1,5 @@
 #include "Texture.h"
+#include <fstream>
 
 #include "MemoryLoggerOn.h"
 namespace tim
@@ -237,6 +238,164 @@ void Texture::setupParameter(GLenum type, bool repeat, bool linear, bool mipmapL
 void Texture::removeTextureSampler(uint sampler)
 {
     glDeleteSamplers(1, &sampler);
+}
+
+template<class T>
+void __write(std::ostream& stream, const T& data)
+{
+    stream.write(reinterpret_cast<const char*>(&data), sizeof(data));
+}
+
+void Texture::exportTexture(Texture* tex, std::string filename, int nbMipmap)
+{
+    std::ofstream fs(filename, std::ios_base::binary);
+    if(!fs || !tex || tex->size() == uivec3(0,0,0) || tex->format()==GL_RGB10_A2 || tex->format()==GL_R3_G3_B2 || tex->format()==GL_R11F_G11F_B10F)
+    {
+        LOG("Unuable to export ", filename);
+        return;
+    }
+
+    int effectiveMipMap = nbMipmap;
+    if(nbMipmap <= 0)
+        effectiveMipMap = 1;
+
+    char header[4] = {93,67,34,12};
+    fs.write(header,4);
+
+    __write(fs, tex->_size);
+    __write(fs, tex->_format);
+    __write(fs, tex->_type);
+    __write(fs, nbMipmap);
+
+    ubyte* dat;
+
+    tex->bind(0);
+    switch(tex->type())
+    {
+    case TEXTURE_2D:
+        dat = new ubyte[tex->_size.x() * tex->_size.y() * bytePerPixel(tex->_format)];
+        for(int i=0 ; i<nbMipmap ; ++i)
+        {
+            glGetTexImage(GL_TEXTURE_2D, i, toExternalFormat(tex->_format), isFloatFormat(tex->_format) ? GL_FLOAT : GL_UNSIGNED_BYTE, dat);
+            fs.write(reinterpret_cast<char*>(dat), (tex->_size.x() >> i) * (tex->_size.y() >> i) * bytePerPixel(tex->_format));
+        }
+        delete[] dat;
+        break;
+
+    case CUBE_MAP:
+        dat = new ubyte[tex->_size.x() * tex->_size.y() * bytePerPixel(tex->_format)];
+        for(int i=0 ; i<effectiveMipMap ; ++i)
+        {
+            glGetTexImage(GL_TEXTURE_CUBE_MAP_POSITIVE_X, i, toExternalFormat(tex->_format), isFloatFormat(tex->_format) ? GL_FLOAT : GL_UNSIGNED_BYTE, dat);
+            fs.write(reinterpret_cast<char*>(dat), (tex->_size.x() >> i) * (tex->_size.y() >> i) * bytePerPixel(tex->_format));
+
+            glGetTexImage(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, i, toExternalFormat(tex->_format), isFloatFormat(tex->_format) ? GL_FLOAT : GL_UNSIGNED_BYTE, dat);
+            fs.write(reinterpret_cast<char*>(dat), (tex->_size.x() >> i) * (tex->_size.y() >> i) * bytePerPixel(tex->_format));
+
+            glGetTexImage(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, i, toExternalFormat(tex->_format), isFloatFormat(tex->_format) ? GL_FLOAT : GL_UNSIGNED_BYTE, dat);
+            fs.write(reinterpret_cast<char*>(dat), (tex->_size.x() >> i) * (tex->_size.y() >> i) * bytePerPixel(tex->_format));
+
+            glGetTexImage(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, i, toExternalFormat(tex->_format), isFloatFormat(tex->_format) ? GL_FLOAT : GL_UNSIGNED_BYTE, dat);
+            fs.write(reinterpret_cast<char*>(dat), (tex->_size.x() >> i) * (tex->_size.y() >> i) * bytePerPixel(tex->_format));
+
+            glGetTexImage(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, i, toExternalFormat(tex->_format), isFloatFormat(tex->_format) ? GL_FLOAT : GL_UNSIGNED_BYTE, dat);
+            fs.write(reinterpret_cast<char*>(dat), (tex->_size.x() >> i) * (tex->_size.y() >> i) * bytePerPixel(tex->_format));
+
+            glGetTexImage(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, i, toExternalFormat(tex->_format), isFloatFormat(tex->_format) ? GL_FLOAT : GL_UNSIGNED_BYTE, dat);
+            fs.write(reinterpret_cast<char*>(dat), (tex->_size.x() >> i) * (tex->_size.y() >> i) * bytePerPixel(tex->_format));
+        }
+        delete[] dat;
+        break;
+
+    default:
+        LOG("Unsuported texture type for export (", filename, ")");
+        return;
+    }
+}
+
+Texture* Texture::genTextureFromRawData(ubyte* rawData, GenTexParam param)
+{
+    if(rawData == nullptr)
+        return nullptr;
+
+    char header[4] = {93,67,34,12};
+    if(rawData[0] != header[0] || rawData[1] != header[1] || rawData[2] != header[2] || rawData[3] != header[3])
+        return nullptr;
+
+    rawData += 4;
+    uivec3 size = *reinterpret_cast<uivec3*>(rawData); rawData += sizeof(uivec3);
+    Format format = *reinterpret_cast<Format*>(rawData); rawData += sizeof(Format);
+    Type type = *reinterpret_cast<Type*>(rawData); rawData += sizeof(Type);
+    int mipMap = *reinterpret_cast<int*>(rawData); rawData += sizeof(int);
+    std::cout << size << " " << format << " " << type<< " " << mipMap << std::endl;
+
+    int effectiveMipmap = mipMap;
+    if(mipMap <= 0)
+        effectiveMipmap = 1;
+
+    Texture* tex = nullptr;
+    param.size = size;
+    param.nbLevels = mipMap;
+    param.format = format;
+
+    switch(type)
+    {
+    case TEXTURE_2D:
+        tex = genTexture2D(param);
+        break;
+    case CUBE_MAP:
+        tex = genTextureCube(param);
+        break;
+    default: break;
+    }
+
+    if(tex == nullptr)
+        return nullptr;
+
+    tex->bind(0);
+    for(int i=0 ; i<effectiveMipmap ; ++i)
+    {
+        switch(type)
+        {
+        case TEXTURE_2D:
+            glTexSubImage2D(GL_TEXTURE_2D, i, 0, 0, size.x() >> i, size.y() >> i,
+                            toExternalFormat(format), isFloatFormat(format) ? GL_FLOAT : GL_UNSIGNED_BYTE, rawData);
+            rawData += (size.x() >> i) * (size.y() >> i) * bytePerPixel(format);
+            break;
+        case CUBE_MAP:
+            glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, i, 0, 0,  size.x() >> i, size.y() >> i,
+                            toExternalFormat(format), isFloatFormat(format) ? GL_FLOAT : GL_UNSIGNED_BYTE, rawData);
+            rawData += (size.x() >> i) * (size.y() >> i) * bytePerPixel(format);
+
+            glTexSubImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, i, 0, 0,  size.x() >> i, size.y() >> i,
+                            toExternalFormat(format), isFloatFormat(format) ? GL_FLOAT : GL_UNSIGNED_BYTE, rawData);
+            rawData += (size.x() >> i) * (size.y() >> i) * bytePerPixel(format);
+
+            glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, i, 0, 0,  size.x() >> i, size.y() >> i,
+                            toExternalFormat(format), isFloatFormat(format) ? GL_FLOAT : GL_UNSIGNED_BYTE, rawData);
+            rawData += (size.x() >> i) * (size.y() >> i) * bytePerPixel(format);
+
+            glTexSubImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, i, 0, 0,  size.x() >> i, size.y() >> i,
+                            toExternalFormat(format), isFloatFormat(format) ? GL_FLOAT : GL_UNSIGNED_BYTE, rawData);
+            rawData += (size.x() >> i) * (size.y() >> i) * bytePerPixel(format);
+
+            glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, i, 0, 0,  size.x() >> i, size.y() >> i,
+                            toExternalFormat(format), isFloatFormat(format) ? GL_FLOAT : GL_UNSIGNED_BYTE, rawData);
+            rawData += (size.x() >> i) * (size.y() >> i) * bytePerPixel(format);
+
+            glTexSubImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, i, 0, 0,  size.x() >> i, size.y() >> i,
+                            toExternalFormat(format), isFloatFormat(format) ? GL_FLOAT : GL_UNSIGNED_BYTE, rawData);
+            rawData += (size.x() >> i) * (size.y() >> i) * bytePerPixel(format);
+            break;
+
+        default: break;
+        }
+    }
+
+    if(mipMap <= 0)
+        glGenerateMipmap(toGLType(type));
+
+    return tex;
 }
 
 }

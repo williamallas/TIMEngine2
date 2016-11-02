@@ -61,6 +61,9 @@ namespace renderer
         static Texture* genTextureArray2D(const GenTexParam&, const ubyte* data=nullptr, uint nbC=0);
         static Texture* genTextureArray2D(const GenTexParam&, const float* data, uint nbC);
 
+        static void exportTexture(Texture*, std::string, int nbMipmap = 1);
+        static Texture* genTextureFromRawData(ubyte*, GenTexParam);
+
         static uint genTextureSampler(bool repeat, bool linear, bool mipmapLinear,bool depthTest, int anisotropy=0);
         static void removeTextureSampler(uint sampler);
 
@@ -91,6 +94,10 @@ namespace renderer
         static Texture* genTextureArray2D(uint, const GenTexParam&, const void*, uint);
         static void setupParameter(GLenum type, bool repeat, bool linear, bool mipmapLinear,bool depthTest, int anisotropy=0);
 
+        static uint bytePerPixel(Format);
+        static bool isFloatFormat(Format);
+        static GLenum toExternalFormat(Format);
+
     };
 
     inline uint Texture::id() const { return _id; }
@@ -118,6 +125,36 @@ namespace renderer
                                            GL_RGB10_A2, GL_R3_G3_B2, GL_R11F_G11F_B10F,
                                            GL_DEPTH_COMPONENT32 };
         return glFormat[f];
+    }
+
+    inline GLenum Texture::toExternalFormat(Format f)
+    {
+        static const GLenum exFormat[] = { GL_R, GL_R, GL_R, GL_R, GL_R,
+                                           GL_RGB, GL_RGB, GL_RGB, GL_RGB, GL_RGB,
+                                           GL_RGBA, GL_RGBA, GL_RGBA, GL_RGBA, GL_RGBA,
+                                           GL_RGB, GL_RGB, GL_RGB,
+                                           GL_DEPTH_COMPONENT };
+        return exFormat[f];
+    }
+
+    inline bool Texture::isFloatFormat(Format f)
+    {
+        static const bool t[] = { false, false, false, true, true,
+                                  false, false, false, true, true,
+                                  false, false, false, true, true,
+                                  false, false, true,
+                                  false };
+        return t[f];
+    }
+
+    inline uint Texture::bytePerPixel(Format f)
+    {
+        static const GLenum bps[] = { 1, 1, 2, 4, 4,
+                                      3, 3, 6, 12, 12,
+                                      4, 4, 8, 16, 16,
+                                      4, 1, 12,
+                                      4 };
+        return bps[f];
     }
 
 }
