@@ -2,7 +2,6 @@
 #define MESHLOADER_H
 
 #include "Vector.h"
-#include <fstream>
 #include "renderer/VertexFormat.h"
 #include "renderer/MeshBuffers.h"
 #include "renderer/renderer.h"

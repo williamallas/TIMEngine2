@@ -1,6 +1,7 @@
 #include "MeshLoader.h"
 #include "core/core.h"
 #include "Sphere.h"
+#include <fstream>
 
 #include "MemoryLoggerOn.h"
 namespace tim
