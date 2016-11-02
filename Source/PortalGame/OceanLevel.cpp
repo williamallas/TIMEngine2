@@ -68,6 +68,10 @@ void OceanLevel::init()
     if(slot5.inst)
         _slots.push_back(slot5);
 
+    SlotArtifact slot6 = createSlotArtifact("slotArtifact6", "", "");
+    if(slot6.inst)
+        _slots.push_back(slot6);
+
     for(size_t i=0 ; i<level().objects.size() ; ++i)
     {
         if(level().physObjects[i] && level().objects[i].model == "caisse")
@@ -157,7 +161,23 @@ void OceanLevel::update(float time)
             }
             else slot.onReset = false;
         }
+
+        if(slot.name == "slotArtifact6" && slot.timeOn > TIME_ON_SLOT && _levelState == 0)
+        {
+            int indexBoat = indexObject("boat");
+            if((level().objects[indexBoat].meshInstance->matrix().translation() - levelSystem().headPosition()).length() < 1)
+            {
+                _timeOnBoat += time;
+                if(_timeOnBoat > 2)
+                {
+                    _levelState = 1;
+                    _distanceBoat = 0;
+                }
+            }
+        }
     }
+
+    manageBoat(time);
 
     _timerButtonSound += time;
 
@@ -174,6 +194,45 @@ void OceanLevel::update(float time)
     level().objects[_artifactIndex].meshInstance->setMesh(m);
 }
 
+void OceanLevel::manageBoat(float time)
+{
+    if(_levelState < 1)
+        return;
+
+    if(_levelState == 1)
+    {
+        int indexB = indexObject("boat");
+        int indexB2 = indexObject("boatArrival");
+
+        if(indexB >= 0 && indexB2 >= 0)
+        {
+            vec3 from = level().objects[indexB].translation;
+            vec3 to = level().objects[indexB2].translation;
+            float l_path = (from-to).length();
+            vec3 dir = (to-from) / l_path;
+
+            float step = time;
+            if(_distanceBoat + time >= l_path)
+            {
+                step = l_path - _distanceBoat;
+                _levelState = 2;
+            }
+            else
+               _distanceBoat += time;
+
+            levelSystem().hmdView().addOffset(mat4::Translation(dir * step));
+
+            mat4 m = level().objects[indexB].meshInstance->matrix();
+            m.translate(dir * step);
+            level().objects[indexB].meshInstance->setMatrix(m);
+        }
+    }
+    else if(_levelState == 2)
+    {
+
+    }
+}
+
 OceanLevel::SlotArtifact OceanLevel::createSlotArtifact(std::string nameSlot, std::string resetButton, std::string portal, bool alreadyActive)
 {
     SlotArtifact slot;
@@ -185,6 +244,7 @@ OceanLevel::SlotArtifact OceanLevel::createSlotArtifact(std::string nameSlot, st
 
     slot.resetButtonIndex = indexObject(resetButton);
     slot.resetActive = alreadyActive;
+    slot.name = nameSlot;
 
     if(!portal.empty())
     {

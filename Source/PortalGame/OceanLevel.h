@@ -43,6 +43,11 @@ protected:
     float _timerButtonSound = 0;
 
     SlotArtifact createSlotArtifact(std::string nameSlot, std::string resetButton, std::string portal, bool alreadyActive = false);
+
+    int _levelState = 0;
+    float _timeOnBoat = 0;
+    float _distanceBoat = 0;
+    void manageBoat(float time);
 };
 
 
