@@ -332,14 +332,14 @@ namespace renderer
 
     inline bool GLState::bindTexture(uint id, GLenum type, uint unit)
     {
-        if(_textureUnit != unit)
-        {
-            _textureUnit=unit;
-            glActiveTexture(GL_TEXTURE0+_textureUnit);
-        }
-
         if(_enabledTexture[unit] != id)
         {
+            if(_textureUnit != unit)
+            {
+                _textureUnit=unit;
+                glActiveTexture(GL_TEXTURE0+_textureUnit);
+            }
+
             _enabledTexture[unit] = id;
             _typeEnabledTexture[unit] = type;
             glBindTexture(type, id);
