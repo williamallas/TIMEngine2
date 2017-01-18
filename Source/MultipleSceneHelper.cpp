@@ -477,7 +477,7 @@ bool MultipleSceneHelper::optimizeExtraSceneRendering(InternalEdge& curEdge, int
     Sphere s(portalBox.toSphere());
     s.transform(portalMatrix);
 
-    if(!frust.collide(s) || (s.center() - cam.pos).length() > 5)
+    if(!frust.collide(s) || (s.center() - cam.pos).length() > 50)
     {
         _pipeline.combineNode(0)->setEnableInput(i+2, false);
         if(_pipeline.isStereo())

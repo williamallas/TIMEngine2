@@ -6,10 +6,12 @@
 #include "OpenVR/HmdSceneView.h"
 #include "OpenVR/VR_Device.h"
 
+#include "PortalGame/BetweenSceneStruct.h"
 #include "PortalGame/ForestLevel.h"
 #include "PortalGame/Level1.h"
 #include "PortalGame/SacredGroveLevel.h"
 #include "PortalGame/OceanLevel.h"
+#include "PortalGame/FlyingIslandLevel.h"
 
 #include <utility>
 
@@ -35,7 +37,7 @@ public:
     {
         WOOD1 = 0, WOOD2, WOOD3,
         PLASTIC1, PLASTIC2,
-        METAL1, ARTIFACT1,
+        METAL1, METAL2, ARTIFACT1,
         NB_EFFECTS
     };
 

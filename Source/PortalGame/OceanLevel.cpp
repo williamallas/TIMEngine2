@@ -4,10 +4,11 @@
 #include "openAL/Source.hpp"
 #include "PortalGame.h"
 #include "Rand.h"
+#include "SimpleSpecProbeImportExport.h"
 
 #include "MemoryLoggerOn.h"
 
-OceanLevel::OceanLevel(int index, LevelSystem* system, BulletEngine& phys) : LevelInterface(index, system), _physEngine(phys)
+OceanLevel::OceanLevel(int index, LevelSystem* system, BulletEngine& phys, Sync_Ocean_FlyingIsland_PTR syncObj) : LevelInterface(index, system), _physEngine(phys), _syncBoat(syncObj)
 {
     _buttonSound = resource::AssetManager<resource::SoundAsset>::instance().load<false>("soundBank/pheub.wav", false, Sampler::NONE).value();
     _warpSound = resource::AssetManager<resource::SoundAsset>::instance().load<false>("soundBank/warp.wav", false, Sampler::NONE).value();
@@ -31,6 +32,12 @@ OceanLevel::~OceanLevel()
 
 void OceanLevel::init()
 {
+    {
+        int indexBoat2 = indexObject("boat2");
+        if(indexBoat2 >= 0)
+            _syncBoat->boatOcean = level().objects[indexBoat2].meshInstance;
+    }
+
     _artifactIndex = indexObject("oceanArtifact");
     if(_artifactIndex >= 0)
     {
@@ -86,6 +93,30 @@ void OceanLevel::init()
         {
             bindSound(level().physObjects[i], PortalGame::SoundEffects::WOOD1);
         }
+        else if(level().physObjects[i] && level().objects[i].name == "physToy1")
+        {
+            bindSound(level().physObjects[i], PortalGame::SoundEffects::METAL2);
+        }
+    }
+#include "MemoryLoggerOff.h"
+    vector<int> physToy = indexObjects("physToy1");
+    for(int i : physToy)
+    {
+        if(level().physObjects[i])
+        {
+            vec3 pos = vec3(0,0,0.343);
+            btPoint2PointConstraint * c = new btPoint2PointConstraint(*(level().physObjects[i]->body()),
+                                                                      btVector3(pos.x(), pos.y(), pos.z()));
+
+            level().physObjects[i]->addConstraintToWorld(c);
+        }
+    }
+#include "MemoryLoggerOn.h"
+
+    auto lpVec = LightProbeUtils::importProbe("ocean_specprobe.xml");
+    for(auto lp : lpVec)
+    {
+        level().levelScene->scene.add<interface::LightInstance>(LightProbeUtils::genLightProbe(lp));
     }
 }
 
@@ -199,37 +230,66 @@ void OceanLevel::manageBoat(float time)
     if(_levelState < 1)
         return;
 
-    if(_levelState == 1)
+    if(_levelState == 1) // move the first boat
     {
-        int indexB = indexObject("boat");
-        int indexB2 = indexObject("boatArrival");
-
-        if(indexB >= 0 && indexB2 >= 0)
+        moveBoat(time, indexObject("boat"), indexObject("boatArrival"), nullptr);
+    }
+    else if(_levelState == 2) // reset some variables
+    {
+        _timeOnBoat = 0;
+        _levelState = 3;
+    }
+    else if(_levelState == 3) // wait until the player seats in the boat2
+    {
+        if((_syncBoat->boatOcean->matrix().translation() - levelSystem().headPosition()).length() < 1)
         {
-            vec3 from = level().objects[indexB].translation;
-            vec3 to = level().objects[indexB2].translation;
-            float l_path = (from-to).length();
-            vec3 dir = (to-from) / l_path;
-
-            float step = time;
-            if(_distanceBoat + time >= l_path)
+            _timeOnBoat += time;
+            if(_timeOnBoat > 2)
             {
-                step = l_path - _distanceBoat;
-                _levelState = 2;
+                _levelState = 4;
+                _distanceBoat = 0;
             }
-            else
-               _distanceBoat += time;
-
-            levelSystem().hmdView().addOffset(mat4::Translation(dir * step));
-
-            mat4 m = level().objects[indexB].meshInstance->matrix();
-            m.translate(dir * step);
-            level().objects[indexB].meshInstance->setMatrix(m);
         }
     }
-    else if(_levelState == 2)
+    else if(_levelState == 4) // move the boat2
     {
+        moveBoat(time, indexObject("boat2"), indexObject("boatArrival2"), _syncBoat->boatOcean);
+    }
+}
 
+void OceanLevel::moveBoat(float time, int startBoatId, int arrivalBoatId, bool secondBoat)
+{
+    if(startBoatId >= 0 && arrivalBoatId >= 0)
+    {
+        vec3 from = level().objects[startBoatId].translation;
+        vec3 to = level().objects[arrivalBoatId].translation;
+        float l_path = (from-to).length();
+        vec3 dir = (to-from) / l_path;
+
+        auto boat = level().objects[startBoatId].meshInstance;
+
+        float step = time;
+        if(_distanceBoat + time >= l_path)
+        {
+            step = l_path - _distanceBoat;
+            _levelState++;
+        }
+        else
+           _distanceBoat += time;
+
+        levelSystem().hmdView().addOffset(mat4::Translation(dir * step));
+
+        mat4 m = boat->matrix();
+        m.translate(dir * step);
+        boat->setMatrix(m);
+
+        if(secondBoat)
+        {
+            _syncBoat->dir = dir;
+            _syncBoat->arrival = to;
+            _syncBoat->boatFI->setMatrix(m);
+            _syncBoat->remainingDist = l_path - _distanceBoat;
+        }
     }
 }
 

@@ -20,15 +20,19 @@ PortalGame::PortalGame(BulletEngine& phys, MultipleSceneHelper& multiscene, HmdS
     _soundEffects[SoundEffects::PLASTIC1] = AssetManager<SoundAsset>::instance().load<false>("soundBank/plastic1.wav", false, Sampler::NONE).value();
     _soundEffects[SoundEffects::PLASTIC2] = AssetManager<SoundAsset>::instance().load<false>("soundBank/plastic2.wav", false, Sampler::NONE).value();
     _soundEffects[SoundEffects::METAL1] = AssetManager<SoundAsset>::instance().load<false>("soundBank/metal1.wav", false, Sampler::NONE).value();
+    _soundEffects[SoundEffects::METAL2] = AssetManager<SoundAsset>::instance().load<false>("soundBank/metal2.wav", false, Sampler::NONE).value();
     _soundEffects[SoundEffects::ARTIFACT1] = AssetManager<SoundAsset>::instance().load<false>("soundBank/artifact.wav", false, Sampler::NONE).value();
 
+    const auto TEXTURE_CONFIG = interface::Texture::genParam(true,true,true, 4);
     _gameAssets.load("gameAssets.xml");
-    _vrControllers.setControllerMesh(_gameAssets.getMesh("controller", interface::Texture::genParam(true,true,true, 4)));
+    _vrControllers.setControllerMesh(_gameAssets.getMesh("controller", TEXTURE_CONFIG));
     _vrControllers.setControllerOffset(mat4::RotationX(toRad(-86.1672))*mat4::Translation({0, 0.121448f*0.6f, -0.020856f*0.6f}));
     _vrControllers.buildForScene(*_multiSceneHelper.curScene(), _multiScene.getSceneIndex(_multiSceneHelper.curScene()));
 
     _levels.setPortalHelper(&_multiSceneHelper);
     _multiScene.buildLevels(_levels);
+
+    Sync_Ocean_FlyingIsland_PTR syncOceanFI = std::make_shared<Sync_Ocean_FlyingIsland>();
 
     for(int i=0 ; i<_levels.nbLevels() ; ++i)
     {
@@ -47,10 +51,13 @@ PortalGame::PortalGame(BulletEngine& phys, MultipleSceneHelper& multiscene, HmdS
         else if(_levels.getLevel(i).name == "sacredGrove" || _levels.getLevel(i).name == "sacredGrove_final")
             _levels.setStrategy(new SacredGroveMain(i, &_levels, _physEngine), i);
         else if(_levels.getLevel(i).name == "ocean")
-            _levels.setStrategy(new OceanLevel(i, &_levels, _physEngine), i);
+            _levels.setStrategy(new OceanLevel(i, &_levels, _physEngine, syncOceanFI), i);
+        else if(_levels.getLevel(i).name == "flyingIsland")
+            _levels.setStrategy(new FlyingIslandLevel(i, &_levels, _physEngine, syncOceanFI), i);
         else
             _levels.setStrategy(new Level1(i, &_levels), i);
     }
+    _levels.initAll();
     _levels.changeLevel(0);
 
     registerSoundCallBack();

@@ -70,10 +70,10 @@ int main(int, char**)
             pipeline.createStereoExtensible(*hmdNode, {RES_X,RES_Y}, pipelineParam);
             hmdNode->setVRDevice(&hmdDevice);
 
-            HmdSceneView hmdCamera(110, ratio, 100);
+            HmdSceneView hmdCamera(110, ratio, 500);
             pipeline.setStereoView(hmdCamera.cullingView(), hmdCamera.eyeView(0), hmdCamera.eyeView(1), 0);
 
-            VRDebugCamera debugCamera(&input, vec3(3,3,2));
+            VRDebugCamera debugCamera(&input, vec3(300,300,2));
 
             /* physic and setup */
             BulletEngine physEngine;
@@ -163,6 +163,15 @@ int main(int, char**)
                 if(input.keyState(SDLK_v).firstPress)
                 {
                     portalGame.levelSystem().callDebug();
+                }
+
+                if(input.keyState(SDLK_y).firstPress)
+                {
+                    hmdNode->setInvertEyes(false);
+                }
+                else if(input.keyState(SDLK_x).firstPress)
+                {
+                    hmdNode->setInvertEyes(true);
                 }
 
 

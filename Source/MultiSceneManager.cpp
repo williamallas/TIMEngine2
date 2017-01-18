@@ -45,8 +45,10 @@ MultiSceneManager::MultiSceneManager(std::string file, MultipleSceneHelper& mult
         vector<XmlSceneLoader::ObjectLoaded> objInScene;
 
         bool b;
-        {boost::timer::auto_cpu_timer t;std::cout << "loadscene:";
-        b = XmlSceneLoader::loadScene(sceneFile, *scene, objInScene);}
+        {
+            boost::timer::auto_cpu_timer t;std::cout << "Loading " << sceneFile << ":";
+            b = XmlSceneLoader::loadScene(sceneFile, *scene, objInScene);
+        }
 
         if(b)
         {
@@ -108,18 +110,16 @@ MultiSceneManager::MultiSceneManager(std::string file, MultipleSceneHelper& mult
                 }
             }
 
-            {boost::timer::auto_cpu_timer t;std::cout << "buildstatic:";
-             btBvhTriangleMeshShape* shape = GeometryShape::genStaticGeometryShape(staticGeom);
-             _staticGeom.push_back(shape);}
+            btBvhTriangleMeshShape* shape = GeometryShape::genStaticGeometryShape(staticGeom);
+            _staticGeom.push_back(shape);
 
-             if(staticRoomGeom.empty())
-                 _staticRoomGeom.push_back(nullptr);
-             else
-             {
-                 btBvhTriangleMeshShape* roomShape = GeometryShape::genStaticGeometryShape(staticRoomGeom);
-                 _staticRoomGeom.push_back(roomShape);
-                 std::cout << "constructRoomShape: " << staticRoomGeom.size() << std::endl;
-             }
+            if(staticRoomGeom.empty())
+                _staticRoomGeom.push_back(nullptr);
+            else
+            {
+                btBvhTriangleMeshShape* roomShape = GeometryShape::genStaticGeometryShape(staticRoomGeom);
+                _staticRoomGeom.push_back(roomShape);
+            }
 
             ++index;
         }

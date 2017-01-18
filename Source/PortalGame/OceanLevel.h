@@ -3,11 +3,12 @@
 
 #include "PortalGame/LevelSystem.h"
 #include "bullet/BulletEngine.h"
+#include "PortalGame/BetweenSceneStruct.h"
 
 class OceanLevel : public LevelInterface
 {
 public:
-    OceanLevel(int index, LevelSystem* system, BulletEngine&);
+    OceanLevel(int index, LevelSystem* system, BulletEngine&, Sync_Ocean_FlyingIsland_PTR);
     virtual ~OceanLevel();
     void init() override;
     void update(float) override;
@@ -47,7 +48,11 @@ protected:
     int _levelState = 0;
     float _timeOnBoat = 0;
     float _distanceBoat = 0;
+
+    Sync_Ocean_FlyingIsland_PTR _syncBoat;
+
     void manageBoat(float time);
+    void moveBoat(float time, int startBoatId, int arrivalBoatId, bool);
 };
 
 
