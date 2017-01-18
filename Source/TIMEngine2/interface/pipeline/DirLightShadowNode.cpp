@@ -120,9 +120,14 @@ void DirLightShadowNode::render()
     if(!_sceneView)
         return;
 
+    _counter++;
     for(size_t i=0 ; i<_resolution.z() ; ++i)
     {
-#warning OPTIMIZE SHADOW FOR LAST LEVEL
+//        if(i == 1 && _counter % 2 == 0)
+//            continue;
+//        else if(_counter % 2 != 0 && _counter % 3 > 0)
+//            continue;
+
         _buffer.fbo()->attachDepthTexture(_buffer.buffer(0), i);
         _buffer.fbo()->bind();
         renderer::openGL.clearDepth();

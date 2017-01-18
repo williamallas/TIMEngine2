@@ -20,6 +20,7 @@ void main()
 	else outColor0 = vec4(1,0,0,1);
 	
 	//outColor0 = vec4(texc,0,1);
+	//outColor0 = texture(textures[0], vec2(texc.x,texc.y));
 #else
 	vec4 mat = texture(textures[0], texc); 
 	outColor0 = texture(textures[1], texc);

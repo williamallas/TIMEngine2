@@ -390,30 +390,6 @@ namespace core
 			return ((q1*sinf(angle*(1-t)) + q3*sinf(angle*t))/sinf(angle)).normalized();
 		} else // if the angle is small, use linear interpolation
 			return interpolate(q1,q3,t).normalized();
-
-
-//        float dotproduct = q1.dot(q2);
-//        float theta, st, sut, sout, coeff1, coeff2;
-//         // https://www.sonycsl.co.jp/person/nielsen/visualcomputing/programs/slerp.cpp
-//        // algorithm adapted from Shoemake's paper
-//        lambda=lambda/2.0;
-//
-//        theta = acosf(dotproduct);
-//        if (theta<0.0) theta=-theta;
-//
-//        st = sinf(theta);
-//        sut = sinf(lambda*theta);
-//        sout = sinf((1-lambda)*theta);
-//        coeff1 = sout/st;
-//        coeff2 = sut/st;
-//
-//        vec4 qr;
-//        qr.x() = coeff1*q1.x() + coeff2*q2.x();
-//        qr.y() = coeff1*q1.y() + coeff2*q2.y();
-//        qr.z() = coeff1*q1.z() + coeff2*q2.z();
-//        qr.w() = coeff1*q1.w() + coeff2*q2.w();
-//
-//        return qr.normalized();
     }
 
 }

@@ -67,8 +67,14 @@ renderer::MeshBuffers* MeshLoader::createMeshBuffers(renderer::MeshData& data, r
 
 bool MeshLoader::loadObjData(const std::string& file, ObjBuffer& buffer)
 {
+    std::string content;
     {
-        std::ifstream readNbV(file);
+        std::ifstream f_tmp(file);
+        std::stringstream readNbV;
+
+        readNbV << f_tmp.rdbuf();
+        content = readNbV.str();
+
         buffer.nbVertex=0;
         buffer.nbNormal=0;
         buffer.nbTexCoord=0;
@@ -108,14 +114,14 @@ bool MeshLoader::loadObjData(const std::string& file, ObjBuffer& buffer)
     if(buffer.nbTexCoord)
         buffer.tbuffer = new vec2[buffer.nbTexCoord];
 
-    std::ifstream sfile(file);
+    std::stringstream str_stream(content);
     std::string str;
 
     size_t vindex=0, nindex=0, tindex=0, iindex=0;
 
-    while(sfile.good())
+    while(str_stream.good())
     {
-        sfile >> str;
+        str_stream >> str;
 
         if(str=="v" || str=="vn")
         {
@@ -123,7 +129,7 @@ bool MeshLoader::loadObjData(const std::string& file, ObjBuffer& buffer)
             vec3 v;
             for(size_t i=0 ; i<3 ; ++i)
             {
-                sfile >> xyz[i];
+                str_stream >> xyz[i];
                 if(!StringUtils(xyz[i]).isNumber())
                 {
 
@@ -149,7 +155,7 @@ bool MeshLoader::loadObjData(const std::string& file, ObjBuffer& buffer)
             std::string str;
             for(size_t i=0 ; i<2 ; ++i)
             {
-                sfile >> str;
+                str_stream >> str;
                 if(!StringUtils(str).isNumber())
                 {
                     buffer.free();
@@ -164,7 +170,7 @@ bool MeshLoader::loadObjData(const std::string& file, ObjBuffer& buffer)
         {
             for(size_t i=0 ; i<3 ; ++i)
             {
-                sfile >> str;
+                str_stream >> str;
                 bool b=true;
                 buffer.ibuffer[iindex] = parseObjIndex(str, b, nbSlash);
                 if(!b || buffer.ibuffer[iindex].x()>buffer.nbVertex || (buffer.ibuffer[iindex].x()==0 && buffer.nbVertex)
@@ -181,7 +187,7 @@ bool MeshLoader::loadObjData(const std::string& file, ObjBuffer& buffer)
         {
             for(size_t i=0 ; i<2 ; ++i)
             {
-                sfile >> str;
+                str_stream >> str;
                 bool b=true;
                 buffer.ibuffer[iindex] = parseObjIndex(str, b, nbSlash);
                 if(!b || buffer.ibuffer[iindex].x()>buffer.nbVertex || (buffer.ibuffer[iindex].x()==0 && buffer.nbVertex)

@@ -38,6 +38,7 @@ namespace pipeline
         vector<ElementInstance> _toDraw[renderer::MAX_SHADOW_MAP_LVL];
 
         bool _needUpdate = true;
+        int _counter = 0;
         uivec3 _resolution = {1024,1024,3};
         renderer::DrawState _defaultDrawState;
 

@@ -2,4 +2,8 @@
 /Lib/
 *.pro.user*
 /build-Editor-Desktop_Qt_5_5_1_MinGW_32bit-Debug/
+/build-Editor-Desktop_Qt_5_5_1_MinGW_32bit-Release/
 /Source/VSProject/*
+/Data_other/
+/Data.zip
+/Screenshots/

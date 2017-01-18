@@ -17,6 +17,8 @@ using namespace core;
         BulletObject(mat4, btCollisionShape*, float mass = 0);
         virtual ~BulletObject();
 
+        void addConstraintToWorld(btTypedConstraint*);
+
         void setMotionState(btMotionState* mt);
 
         btRigidBody* body() { return _body; }

@@ -14,3 +14,8 @@
 *.jpg
 *.blend
 *.mtl
+/configScene.txt
+/editorParameter.txt
+/flower.pdn
+/perfdump.json
+/phsicPreset.txt

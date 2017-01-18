@@ -50,6 +50,11 @@ void BulletObject::swap(BulletObject& o)
     std::swap(*this, o);
 }
 
+void BulletObject::addConstraintToWorld(btTypedConstraint* c)
+{
+    _world->addConstraint(c);
+}
+
 void BulletObject::setMotionState(btMotionState* mt)
 {
     _motionState = mt;

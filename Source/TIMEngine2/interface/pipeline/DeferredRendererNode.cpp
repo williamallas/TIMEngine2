@@ -191,7 +191,11 @@ void DeferredRendererNode::render()
     if(_globalLightInfo)
         globalPSkybox = _globalLightInfo->skybox.second;
 
-    if (_rendererEntity->lightRenderer())
+    bool needCompute = true;//!_isAux;
+    if(lights.empty())
+        needCompute = false;
+
+    if (_rendererEntity->lightRenderer() && needCompute)
         _rendererEntity->lightRenderer()->draw(lights, globalPSkybox);
     else
         _rendererEntity->lightContext()->clear();
@@ -244,6 +248,7 @@ void DeferredRendererNode::render()
 //            _rendererEntity->envLightRenderer().setReflexionBuffer(_copyBuffer);
 //        }
 
+        _rendererEntity->envLightRenderer().setEnableGI(!needCompute);
         _rendererEntity->envLightRenderer().setSkybox(_globalLightInfo->skybox.first, _globalLightInfo->skybox.second);
         _rendererEntity->envLightRenderer().draw(lights);
 
