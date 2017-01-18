@@ -121,13 +121,23 @@
     </property>
     <widget class="QMenu" name="menuGenerate_Specular_Probe_As">
      <property name="title">
-      <string>Generate Specular Probe As</string>
+      <string>(old)Generate Specular Probe As</string>
      </property>
-     <addaction name="actionSkybox"/>
+     <addaction name="actionRaw_Data"/>
+    </widget>
+    <widget class="QMenu" name="menuSpecularProbe">
+     <property name="title">
+      <string>SpecularProbe</string>
+     </property>
+     <addaction name="actionGenerate_Specular_Probe"/>
+     <addaction name="actionRemove_Spec_Probe"/>
+     <addaction name="actionRemove_last_Spec_Probe"/>
+     <addaction name="actionRegenerate_Spec_Probe"/>
     </widget>
     <addaction name="actionSet_skybox"/>
     <addaction name="actionSunDirection"/>
     <addaction name="menuGenerate_Specular_Probe_As"/>
+    <addaction name="menuSpecularProbe"/>
    </widget>
    <addaction name="menuContext"/>
    <addaction name="menuResource"/>
@@ -666,6 +676,31 @@
   <action name="actionSkybox">
    <property name="text">
     <string>Skybox</string>
+   </property>
+  </action>
+  <action name="actionRaw_Data">
+   <property name="text">
+    <string>Raw Data</string>
+   </property>
+  </action>
+  <action name="actionGenerate_Specular_Probe">
+   <property name="text">
+    <string>Generate Specular Probe</string>
+   </property>
+  </action>
+  <action name="actionRemove_Spec_Probe">
+   <property name="text">
+    <string>Remove all Spec Probe</string>
+   </property>
+  </action>
+  <action name="actionRemove_last_Spec_Probe">
+   <property name="text">
+    <string>Remove last Spec Probe</string>
+   </property>
+  </action>
+  <action name="actionRegenerate_Spec_Probe">
+   <property name="text">
+    <string>Regenerate Spec Probe</string>
    </property>
   </action>
   <zorder>resourceDockWidget</zorder>

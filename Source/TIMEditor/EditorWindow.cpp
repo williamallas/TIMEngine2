@@ -482,3 +482,13 @@ void EditorWindow::on_actionRemove_Spec_Probe_triggered()
 {
     ui->sceneEditorWidget->removeAllLightProbe();
 }
+
+void EditorWindow::on_actionRemove_last_Spec_Probe_triggered()
+{
+    ui->sceneEditorWidget->removeLastLightProbe();
+}
+
+void EditorWindow::on_actionRegenerate_Spec_Probe_triggered()
+{
+    ui->sceneEditorWidget->regenAllLightProb();
+}

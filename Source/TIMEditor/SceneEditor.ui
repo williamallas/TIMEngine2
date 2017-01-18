@@ -231,6 +231,13 @@
           </property>
          </widget>
         </item>
+        <item>
+         <widget class="QPushButton" name="instancing">
+          <property name="text">
+           <string>Instancing</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </item>
       <item>

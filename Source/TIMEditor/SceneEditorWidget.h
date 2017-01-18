@@ -9,6 +9,9 @@
 #include "MeshEditorWidget.h"
 #include "interface/XmlMeshAssetLoader.h"
 
+#include "ObjectInstancingDialog.h"
+#include "SimpleSpecProbeImportExport.h"
+
 class ResourceViewWidget;
 
 using namespace tim;
@@ -61,8 +64,10 @@ protected:
         // todo add list of user defined shape (multishape component)
     };
 
+    int sceneObject_id_generator = 0;
     struct SceneObject
     {
+        int unique_id = 0;
         QString name;
         QString baseModel;
         QListWidgetItem* listItem;
@@ -100,7 +105,11 @@ protected:
 
     tim::interface::MeshInstance* _translateLine[3] = {nullptr};
 
-    vector<interface::LightInstance*> _allSpecProbe[NB_SCENE];
+    vector<LightProbeUtils> _allSpecProbe[NB_SCENE];
+
+    ObjectInstancingDialog _instancingDialog;
+    QList<int> _lastAddedInstancing;
+    int _indexSceneLastInstancing = 0;
 
     /* copy past trans */
     vec3 copy_scale     = {1,1,1};far
@@ -123,6 +132,9 @@ protected:
 
     QTimer _flushState;
 
+    void remove_n_first_lightProb(size_t n);
+    void removeSceneObject(const SceneObject&, int);
+
 public slots:
     void sceneItemActivated(QListWidgetItem*);
 
@@ -136,6 +148,7 @@ public slots:
 
     void on_copyTransButton_clicked();
     void on_pastTransButton_clicked();
+    void on_instancing_clicked();
 
     void on_meshc_isStatic_clicked(bool);
     void on_meshc_isPhysic_clicked(bool);
@@ -171,10 +184,15 @@ public slots:
 
     void renderSpecularProbe();
     void removeAllLightProbe();
+    void removeLastLightProbe();
+    void regenAllLightProb();
 
 signals:
     void editTransformation(int);
     void feedbackTransformation(QString);
+
+private:
+    void internalRenderLightProb(vec3 pos, float radius, float farDist, int iterations, int res, std::string pathRD, std::string pathSkybox, bool addToScene, bool exportAsRawData, bool exportAsSkybox);
 };
 
 inline bool SceneEditorWidget::hasCurrentSelection() const

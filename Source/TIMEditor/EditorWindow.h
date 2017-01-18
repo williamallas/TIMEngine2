@@ -58,8 +58,11 @@ private slots:
     void on_actionSave_As_triggered();
     void on_actionNew_triggered();
     void on_actionSunDirection_triggered();
+
     void on_actionRaw_Data_triggered();
     void on_actionRemove_Spec_Probe_triggered();
+    void on_actionRemove_last_Spec_Probe_triggered();
+    void on_actionRegenerate_Spec_Probe_triggered();
 
     void addAssetToScene(QString);
     void addGeometryToScene(QString, QString);

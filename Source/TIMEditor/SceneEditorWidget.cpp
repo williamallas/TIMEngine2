@@ -7,6 +7,8 @@
 #include "MeshEditorWidget.h"
 #include "RendererWidget.h"
 #include "core/Matrix.h"
+#include "core/Rand.h"
+#include <iterator>
 
 #include <QQuaternion>
 #include <QMatrix3x3>
@@ -21,7 +23,7 @@ using namespace tim;
 using namespace tim::core;
 using namespace tim::interface;
 
-SceneEditorWidget::SceneEditorWidget(QWidget* parent) : QWidget(parent), ui(new Ui::SceneEditor), _flushState{}
+SceneEditorWidget::SceneEditorWidget(QWidget* parent) : QWidget(parent), ui(new Ui::SceneEditor), _flushState{}, _instancingDialog(parent)
 {
     ui->setupUi(this);
     setMinimumWidth(320);
@@ -94,6 +96,7 @@ void SceneEditorWidget::addSceneObject(int sceneIndex, bool lock, QString name, 
 
 void SceneEditorWidget::addSceneObject(int sceneIndex, bool lock, SceneObject obj)
 {
+    obj.unique_id = sceneObject_id_generator++;
     mat4 trans = mat4::constructTransformation(obj.rotate, obj.translate, obj.scale);
 
     if(lock) _renderer->lock();
@@ -440,6 +443,78 @@ void SceneEditorWidget::on_pastTransButton_clicked()
         _objects[_curSceneIndex][_selections[0].index].scale = copy_scale;
         _objects[_curSceneIndex][_selections[0].index].translate = copy_translate;
         updateSelectedMeshMatrix();
+    }
+}
+
+float changeInterval(float f, vec2 interval)
+{
+    return interval.x() + f * (interval.y()-interval.x());
+}
+
+void SceneEditorWidget::on_instancing_clicked()
+{
+    if(hasCurrentSelection())
+    {
+        _instancingDialog.exec();
+
+        if(_instancingDialog.state() == 0)
+            return;
+        else if(_instancingDialog.state() == 1) // generate
+        {
+            ObjectInstancingDialog::ObjectInstancingConfig config = _instancingDialog.getConfig();
+
+            Rand rand(config.seed);
+            vec3 center = _renderer->getSceneView(_renderer->getCurSceneIndex()).camera.pos;
+            _renderer->lock();
+            _lastAddedInstancing.clear();
+            _indexSceneLastInstancing = _renderer->getCurSceneIndex();
+            for(int i=0 ; i<config.number ; ++i)
+            {
+                vec3 v = vec3(rand.next_f(), rand.next_f(), rand.next_f()) * config.size - config.size*0.5;
+                v += center;
+
+                mat3 m = mat3::IDENTITY();
+                if(config.randRot.x())
+                    m *= mat3::RotationX(toRad(rand.next_f()*360));
+                if(config.randRot.y())
+                    m *= mat3::RotationY(toRad(rand.next_f()*360));
+                if(config.randRot.z())
+                    m *= mat3::RotationZ(toRad(rand.next_f()*360));
+
+                SceneObject obj = _objects[_curSceneIndex][_selections[0].index];
+                obj.rotate = m;
+                obj.translate = v;
+                obj.scale = vec3::construct(changeInterval(rand.next_f(), config.randScale));
+                obj.name = config.name;
+                if(config.prefix)
+                    obj.name += "_" + QString::number(i);
+
+                _lastAddedInstancing.append(sceneObject_id_generator);
+                addSceneObject(_curSceneIndex, false, obj);
+            }
+            _renderer->unlock();
+
+        }
+        else if(_instancingDialog.state() == 2) // remove last
+        {
+            cancelSelection();
+            _renderer->waitNoEvent();
+
+            QList<SceneObject> tmp;
+            _renderer->lock();
+            for(int i=0 ; i<_objects[_curSceneIndex].size() ; ++i)
+            {
+                if(std::find_if(std::begin(_lastAddedInstancing), std::end(_lastAddedInstancing), [&](int id){ return id == _objects[_curSceneIndex][i].unique_id; }) == std::end(_lastAddedInstancing))
+                    tmp += _objects[_curSceneIndex][i];
+                else
+                {
+                    removeSceneObject(_objects[_curSceneIndex][i], _indexSceneLastInstancing);
+                }
+            }
+            _renderer->unlock();
+            _objects[_curSceneIndex] = tmp;
+            _lastAddedInstancing.clear();
+        }
     }
 }
 
@@ -917,10 +992,7 @@ void SceneEditorWidget::deleteCurrentObjects()
     _renderer->lock();
     for(int i=0 ; i<_selections.size() ; ++i)
     {
-        if(_objects[_curSceneIndex][_selections[i].index].node)
-            _renderer->getScene(_renderer->getCurSceneIndex()).scene.remove(*_objects[_curSceneIndex][_selections[i].index].node);
-
-        delete _objects[_curSceneIndex][_selections[i].index].listItem;
+        removeSceneObject(_objects[_curSceneIndex][_selections[i].index], _renderer->getCurSceneIndex());
     }
     _renderer->unlock();
 
@@ -1069,6 +1141,13 @@ void SceneEditorWidget::exportScene(QString filePath, int sceneIndex)
         }
 
     }
+
+    if(!_allSpecProbe[sceneIndex].empty() && filePath.size() > 4)
+    {
+        filePath.resize(filePath.size()-4);
+        filePath += "_specprobe.xml";
+        LightProbeUtils::exportProbe(filePath.toStdString(), _allSpecProbe[sceneIndex]);
+    }
 }
 
 void SceneEditorWidget::parseTransformation(TiXmlElement* elem, vec3& tr, vec3& sc, mat3& rot, Collider* collider)
@@ -1141,6 +1220,9 @@ QList<QString> SceneEditorWidget::parseSkyboxXmlElement(TiXmlElement* elem)
 
 void SceneEditorWidget::importScene(QString file, int sceneIndex)
 {
+    if(_curSceneIndex == sceneIndex)
+        removeAllLightProbe();
+
     clearScene(sceneIndex);
 
     TiXmlDocument doc(file.toStdString());
@@ -1249,6 +1331,13 @@ void SceneEditorWidget::importScene(QString file, int sceneIndex)
         });
     }
 
+    if(file.size() > 4)
+    {
+        file.resize(file.size()-4);
+        file += "_specprobe.xml";
+        _allSpecProbe[sceneIndex] = LightProbeUtils::importProbe(file.toStdString());
+    }
+
     _renderer->unlock();
     _renderer->waitNoEvent();
 }
@@ -1324,60 +1413,146 @@ void SceneEditorWidget::renderSpecularProbe()
     cancelSelection();
 
     _renderer->addEvent( [=](){
-        renderer::LightContextRenderer::Light liparam;
-        liparam.position = pos;
-        liparam.radius = radius;
-        liparam.type = renderer::LightContextRenderer::Light::SPECULAR_PROB;
-        liparam.tex = nullptr;
-
-        interface::LightInstance& light = _renderer->getScene(_curSceneIndex+1).scene.add<interface::LightInstance>(liparam);
-        renderer::Texture* texTmp = nullptr;
-        vector<renderer::Texture*> toDel;
-        for(int i=0 ; i<iterations ; ++i)
-        {
-            delete texTmp;
-            toDel.push_back( liparam.tex );
-
-            texTmp = _renderer->renderCubemap(pos, res, _curSceneIndex+1, 1, farDist);
-            liparam.tex = renderer::IndirectLightRenderer::processSkybox(texTmp, interface::ShaderPool::instance().get("processSpecularCubeMap"));
-
-            if(i == iterations-1 && exportAsSkybox && !pathSkybox.empty())
-            {
-                auto sky = _renderer->renderCubemap(pos, res, _curSceneIndex+1, 0, farDist);
-                _renderer->exportSkybox(sky, pathSkybox + "/");
-                delete sky;
-            }
-
-            light.set(liparam);
-        }
-
-        if(exportAsRawData && !pathRD.empty())
-            renderer::Texture::exportTexture(liparam.tex, pathRD, 7);
-
-        if(!addToScene)
-        {
-            _renderer->getScene(_curSceneIndex+1).scene.remove(light);
-            delete liparam.tex;
-        }
-        else
-        {
-            _allSpecProbe[_curSceneIndex].push_back(&light);
-        }
-
-        toDel.pop_back();
-        for(auto t : toDel) delete t;
-
+        internalRenderLightProb(pos, radius, farDist, iterations, res, pathRD, pathSkybox, addToScene, exportAsRawData, exportAsSkybox);
     });
+}
+
+void SceneEditorWidget::regenAllLightProb()
+{
+    cancelSelection();
+
+    vector<LightProbeUtils> tmpVec = _allSpecProbe[_curSceneIndex];
+
+    removeAllLightProbe();
+    _renderer->waitNoEvent();
+
+    _renderer->addEvent( [=](){
+        auto renderFun = [&](){
+            for(const LightProbeUtils& elem : tmpVec)
+            {
+                internalRenderLightProb(elem.pos, elem.radius, elem.farDist, elem.nbIterations, 512, "", "", true, false, false);
+            }
+        };
+
+        renderFun();
+
+        const int NB_ITER = 3;
+        for(int i=0 ; i<NB_ITER ; ++i)
+        {
+            renderFun();
+            remove_n_first_lightProb(tmpVec.size());
+        }
+
+        for(const LightProbeUtils& elem : tmpVec)
+        {
+            std::cout << elem.pos<< " "<<elem.radius<< " "<< elem.farDist<< " "<< elem.nbIterations<< " "<< 512<< " "<< elem.filename<< " " << std::endl;
+            internalRenderLightProb(elem.pos, elem.radius, elem.farDist, elem.nbIterations, 512, elem.filename, "", true, true, false);
+        }
+        remove_n_first_lightProb(tmpVec.size());
+    });
+
+    _renderer->waitNoEvent();
+}
+
+void SceneEditorWidget::internalRenderLightProb(vec3 pos, float radius, float farDist, int iterations, int res,
+                                                std::string pathRD, std::string pathSkybox, bool addToScene, bool exportAsRawData, bool exportAsSkybox)
+{
+    renderer::LightContextRenderer::Light liparam;
+    liparam.position = pos;
+    liparam.radius = radius;
+    liparam.type = renderer::LightContextRenderer::Light::SPECULAR_PROB;
+    liparam.tex = nullptr;
+
+    interface::LightInstance& light = _renderer->getScene(_curSceneIndex+1).scene.add<interface::LightInstance>(liparam);
+    renderer::Texture* texTmp = nullptr;
+    vector<renderer::Texture*> toDel;
+    for(int i=0 ; i<iterations ; ++i)
+    {
+        delete texTmp;
+        toDel.push_back( liparam.tex );
+
+        texTmp = _renderer->renderCubemap(pos, res, _curSceneIndex+1, 1, farDist);
+        liparam.tex = renderer::IndirectLightRenderer::processSkybox(texTmp, interface::ShaderPool::instance().get("processSpecularCubeMap"));
+
+        if(i == iterations-1 && exportAsSkybox && !pathSkybox.empty())
+        {
+            auto sky = _renderer->renderCubemap(pos, res, _curSceneIndex+1, 0, farDist);
+            _renderer->exportSkybox(sky, pathSkybox + "/");
+            delete sky;
+        }
+
+        light.set(liparam);
+    }
+
+    if(exportAsRawData && !pathRD.empty())
+        renderer::Texture::exportTexture(liparam.tex, pathRD, 7);
+
+    if(!addToScene)
+    {
+        _renderer->getScene(_curSceneIndex+1).scene.remove(light);
+        delete liparam.tex;
+    }
+    else
+    {
+        LightProbeUtils lprobe;
+        lprobe.light = &light;
+        lprobe.filename = pathRD;
+        lprobe.pos = liparam.position;
+        lprobe.radius = liparam.radius;
+        lprobe.farDist = farDist;
+        lprobe.nbIterations = iterations;
+        _allSpecProbe[_curSceneIndex].push_back(lprobe);
+    }
+
+    toDel.pop_back();
+    for(auto t : toDel) delete t;
 }
 
 void SceneEditorWidget::removeAllLightProbe()
 {
     _renderer->addEvent( [=](){
-        for(auto ptr : _allSpecProbe[_curSceneIndex])
+        for(auto lprobe : _allSpecProbe[_curSceneIndex])
         {
-            delete ptr->get().tex;
-            _renderer->getScene(_curSceneIndex+1).scene.remove(*ptr);
+            if(lprobe.light)
+            {
+                delete lprobe.light->get().tex;
+                _renderer->getScene(_curSceneIndex+1).scene.remove(*(lprobe.light));
+            }
         }
         _allSpecProbe[_curSceneIndex].clear();
     });
+}
+
+void SceneEditorWidget::removeLastLightProbe()
+{
+    if(!_allSpecProbe[_curSceneIndex].empty())
+    {
+        auto lprobe = _allSpecProbe[_curSceneIndex].back();
+        _renderer->addEvent( [=](){
+            delete lprobe.light->get().tex;
+            _renderer->getScene(_curSceneIndex+1).scene.remove(*(lprobe.light));
+
+        });
+        _allSpecProbe[_curSceneIndex].pop_back();
+    }
+}
+
+void SceneEditorWidget::remove_n_first_lightProb(size_t n)
+{
+    for(size_t i=0 ; i < std::min(n, _allSpecProbe[_curSceneIndex].size()) ; ++i)
+    {
+        auto lprobe = _allSpecProbe[_curSceneIndex][i];
+        delete lprobe.light->get().tex;
+        _renderer->getScene(_curSceneIndex+1).scene.remove(*(lprobe.light));
+    }
+
+   _allSpecProbe[_curSceneIndex].erase(_allSpecProbe[_curSceneIndex].begin(), _allSpecProbe[_curSceneIndex].begin() + std::min(n, _allSpecProbe[_curSceneIndex].size()));
+}
+
+void SceneEditorWidget::removeSceneObject(const SceneObject& obj, int sceneIndex)
+{
+    if(obj.node)
+        _renderer->getScene(sceneIndex).scene.remove(*obj.node);
+
+    delete obj.listItem;
 }

@@ -76,6 +76,19 @@ vector<LevelSystem::GameObject> LevelSystem::getGameObjects(std::string name)
     return objs;
 }
 
+void LevelSystem::initAll()
+{
+    for(uint i=0 ; i < _levels.size() ; ++i)
+    {
+        if(_levels[i].second)
+        {
+            _levels[i].second = false;
+            if(_levelStrategy[i])
+                _levelStrategy[i]->init();
+        }
+    }
+}
+
 void LevelSystem::changeLevel(int index)
 {
     if(_curLevel == index)
@@ -88,7 +101,7 @@ void LevelSystem::changeLevel(int index)
             _levelStrategy[_curLevel]->beforeLeave();
     }
 
-    if(_curLevel == -1 || _levels[index].second)
+    if(_levels[index].second)
     {
         _levels[index].second = false;
         _curLevel = index;

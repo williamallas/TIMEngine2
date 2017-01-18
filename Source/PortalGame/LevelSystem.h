@@ -48,6 +48,7 @@ public:
     int getCurLevelIndex() const { return _curLevel; }
     int getLevelIndex(interface::Scene*) const;
 
+    void initAll();
     void changeLevel(int);
     Level& getLevel(int);
     void setEnablePortal(bool, interface::MeshInstance*);

@@ -69,7 +69,10 @@ HEADERS += TIM_SDL/*.h TIMEngine2/core/*.h TIMEngine2/renderer/*.h TIMEngine2/re
     TIMEditor/SelectResourcesDialog.h \
     TIMEditor/SelectSkyboxDialog.h \
     MultipleSceneHelper.h \
-    TIMEditor/LightComponent.h
+    TIMEditor/LightComponent.h \
+    TIMEditor/ConfigSpecProbe.h \
+    SimpleSpecProbeImportExport.h \
+    TIMEditor/ObjectInstancingDialog.h
     TIMEditor/MeshElement.h
 
 SOURCES += mainEditor.cpp \
@@ -135,7 +138,9 @@ SOURCES += mainEditor.cpp \
     TIMEngine2/renderer/PooledBuffer.cpp \
     TIMEngine2/renderer/TextureBufferPool.cpp \
     MultipleSceneHelper.cpp \
-    TIMEditor/LightComponent.cpp
+    TIMEditor/LightComponent.cpp \
+    TIMEditor/ConfigSpecProbe.cpp \
+    TIMEditor/ObjectInstancingDialog.cpp
 
 FORMS += \
     TIMEditor/EditorWindow.ui \
@@ -143,7 +148,9 @@ FORMS += \
     TIMEditor/SceneEditor.ui \
     TIMEditor/SelectResourcesDialog.ui \
     TIMEditor/SelectSkyboxDialog.ui \
-    TIMEditor/lightcomponent.ui
+    TIMEditor/lightcomponent.ui \
+    TIMEditor/ConfigSpecProbe.ui \
+    TIMEditor/ObjectInstancingDialog.ui
 
 RESOURCES += \
     ../EditorResources.qrc

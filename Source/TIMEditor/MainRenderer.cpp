@@ -172,10 +172,16 @@ void MainRenderer::main()
         GL_ASSERT();
         _parent->swapBuffers();
 
-        _time = float(std::max(timer.elapsed(), qint64(1))) / 1000;
+        float idealFPS = 1.f / 90.f;
+        float realTime = float(std::max(timer.elapsed(), qint64(1))) / 1000;
+        _time = std::max(realTime, idealFPS);
         totalTime += _time;
+
         _pipeline.pipeline()->meshRenderer().frameState().setTime(totalTime, _time);
         unlock();
+
+        if(realTime < idealFPS)
+            QThread::msleep(static_cast<unsigned long>((idealFPS - realTime) * 1000));
     }
 }
 

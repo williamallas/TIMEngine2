@@ -21,6 +21,10 @@ namespace tim
             _dir.normalize();
 
             float boostv = 1;
+            if(_input->keyState(SDLK_SPACE).pressed)
+            {
+                boostv = 10;
+            }
             if(_input->keyState(SDLK_w).pressed)
             {
                 _pos += _dir*time*boostv;
