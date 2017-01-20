@@ -23,7 +23,7 @@ renderer::MeshData MeshLoader::importObj(const std::string& file, bool tangent)
     if(!loadObjData(file, buf))
         return meshData;
 
-    boost::container::map<renderer::VNC_Vertex, size_t> mapIndex;
+    VNC_Map mapIndex;
 
     size_t nbVertex = computeObjVertexMap(buf, meshData, mapIndex);
 
@@ -38,13 +38,18 @@ renderer::MeshData MeshLoader::importObj(const std::string& file, bool tangent)
 
     meshData.nbVertex = nbVertex;
     meshData.vData = new renderer::MeshData::DataType[nbVertex];
+
 	for (auto it : mapIndex)
 	{
-		meshData.vData[it.second] = { it.first.v, it.first.n, it.first.c, vec3() };
+        meshData.vData[it.second] = { it.first[0]==0 ? vec3(0,0,0) : buf.vbuffer[it.first[0]-1],
+                                      it.first[2]==0 ? vec3(0,0,0) : buf.nbuffer[it.first[2]-1],
+                                      it.first[1]==0 ? vec2(0,0)   : buf.tbuffer[it.first[1]-1], vec3() };
 	}
 
     if(meshData.format == renderer::VertexFormat::VNCT)
+    {
         computeTangent(meshData);
+    }
 
     buf.free();
     return meshData;
@@ -65,45 +70,96 @@ renderer::MeshBuffers* MeshLoader::createMeshBuffers(renderer::MeshData& data, r
 
 }
 
-bool MeshLoader::loadObjData(const std::string& file, ObjBuffer& buffer)
+#include "MemoryLoggerOff.h"
+class IterateLine
 {
-    std::string content;
+public:
+    IterateLine() = delete;
+    IterateLine(const IterateLine&) = delete;
+
+    IterateLine(std::unique_ptr<char[]>&& buf, size_t size) : buffer(std::move(buf)), sizeBuf(size) {}
+
+    bool nextLine(std::string& str)
     {
-        std::ifstream f_tmp(file);
-        std::stringstream readNbV;
-
-        readNbV << f_tmp.rdbuf();
-        content = readNbV.str();
-
-        buffer.nbVertex=0;
-        buffer.nbNormal=0;
-        buffer.nbTexCoord=0;
-        buffer.nbIndex=0;
-        std::string s;
-        while(readNbV.good())
+        str.clear();
+        while(index < sizeBuf)
         {
-            readNbV >> s;
-            if(s=="v")
-                ++buffer.nbVertex;
-            else if(s=="vn")
-                ++buffer.nbNormal;
-            else if(s=="vt")
-                ++buffer.nbTexCoord;
-            else if(s=="f")
-                buffer.nbIndex+=3;
-            else if(s=="l")
-                buffer.nbIndex+=2;
+            if(finish)
+                return false;
+
+            if(buffer[index] == '\n')
+            {
+                ++index; return true;
+            }
+            else if(buffer[index] == '\0')
+            {
+                finish = true;
+                return str.size() > 0;
+            }
+
+            str += buffer[index++];
         }
 
-        if(!buffer.nbVertex || !buffer.nbIndex)
-            return false;
+        finish = true;
+        return str.size() > 0;
     }
 
-    int nbSlash=2;
-    if(buffer.nbNormal == 0 && buffer.nbTexCoord == 0)
-        nbSlash=0;
-    else if(buffer.nbNormal == 0)
-        nbSlash=1;
+    void reset()
+    {
+        index = 0;
+        finish = false;
+    }
+
+    static bool startWith(const std::string& str, const std::string& prefix)
+    {
+        if(str.size() < prefix.size())
+            return false;
+        else return std::equal(prefix.begin(), prefix.end(), str.begin());
+    }
+
+    std::unique_ptr<char[]> buffer;
+    size_t sizeBuf;
+    size_t index=0;
+    bool finish = false;
+};
+#include "MemoryLoggerOn.h"
+
+bool MeshLoader::loadObjData(const std::string& file, ObjBuffer& buffer)
+{
+    std::ifstream f_tmp(file, std::ios_base::binary);
+    f_tmp.seekg (0, f_tmp.end);
+    size_t sizeFile = f_tmp.tellg();
+    f_tmp.seekg (0, f_tmp.beg);
+
+    auto buf = std::unique_ptr<char[]>(new char[sizeFile]);
+    f_tmp.read(&buf[0], sizeFile);
+    f_tmp.close();
+
+    IterateLine iterline(std::move(buf), sizeFile);
+
+    buffer.nbVertex=0;
+    buffer.nbNormal=0;
+    buffer.nbTexCoord=0;
+    buffer.nbIndex=0;
+
+    {
+        std::string s;
+
+        while(iterline.nextLine(s))
+        {
+            if(IterateLine::startWith(s,"v "))
+                ++buffer.nbVertex;
+            else if(IterateLine::startWith(s,"vn "))
+                ++buffer.nbNormal;
+            else if(IterateLine::startWith(s,"vt "))
+                ++buffer.nbTexCoord;
+            else if(IterateLine::startWith(s,"f "))
+                buffer.nbIndex+=3;
+        }
+    }
+
+    if(!buffer.nbVertex || !buffer.nbIndex)
+        return false;
 
     buffer.vbuffer = new vec3[buffer.nbVertex];
     buffer.ibuffer = new uivec3[buffer.nbIndex];
@@ -114,126 +170,128 @@ bool MeshLoader::loadObjData(const std::string& file, ObjBuffer& buffer)
     if(buffer.nbTexCoord)
         buffer.tbuffer = new vec2[buffer.nbTexCoord];
 
-    std::stringstream str_stream(content);
-    std::string str;
 
     size_t vindex=0, nindex=0, tindex=0, iindex=0;
+    iterline.reset();
+    std::string s;
 
-    while(str_stream.good())
+    while(iterline.nextLine(s))
     {
-        str_stream >> str;
-
-        if(str=="v" || str=="vn")
+        if(IterateLine::startWith(s, "v "))
         {
-            std::string xyz[3];
-            vec3 v;
-            for(size_t i=0 ; i<3 ; ++i)
-            {
-                str_stream >> xyz[i];
-                if(!StringUtils(xyz[i]).isNumber())
-                {
-
-                    buffer.free();
-                    return false;
-                }
-                else v[i] = StringUtils(xyz[i]).toFloat();
-            }
-
-            if(str=="v")
-            {
-                buffer.vbuffer[vindex] = v;
+            if(sscanf(s.c_str()+2, "%f %f %f", &(buffer.vbuffer[vindex][0]), &(buffer.vbuffer[vindex][1]), &(buffer.vbuffer[vindex][2])) == 3)
                 ++vindex;
-            }
             else
             {
-                buffer.nbuffer[nindex] = v;
+                buffer.free();
+                return false;
+            }
+        }
+
+        else if(IterateLine::startWith(s, "vn "))
+        {
+            if(sscanf(s.c_str()+3, "%f %f %f", &(buffer.nbuffer[nindex][0]), &(buffer.nbuffer[nindex][1]), &(buffer.nbuffer[nindex][2])) == 3)
                 ++nindex;
-            }
-        }
-        else if(str=="vt")
-        {
-            std::string str;
-            for(size_t i=0 ; i<2 ; ++i)
+            else
             {
-                str_stream >> str;
-                if(!StringUtils(str).isNumber())
-                {
-                    buffer.free();
-                    return false;
-                }
-                else
-                    buffer.tbuffer[tindex][i] = StringUtils(str).toFloat();
+                buffer.free();
+                return false;
             }
-            ++tindex;
         }
-        else if(str=="f")
+
+        else if(IterateLine::startWith(s, "vt "))
         {
+            if(sscanf(s.c_str()+3, "%f %f", &(buffer.tbuffer[tindex][0]), &(buffer.tbuffer[tindex][1])) == 2)
+                ++tindex;
+            else
+            {
+                buffer.free();
+                return false;
+            }
+        }
+        else if(IterateLine::startWith(s, "f "))
+        {
+            char v[3][64];
+            if(sscanf(s.c_str()+2, "%s %s %s", v[0],v[1],v[2]) != 3)
+            {
+                buffer.free();
+                return false;
+            }
+
             for(size_t i=0 ; i<3 ; ++i)
             {
-                str_stream >> str;
-                bool b=true;
-                buffer.ibuffer[iindex] = parseObjIndex(str, b, nbSlash);
-                if(!b || buffer.ibuffer[iindex].x()>buffer.nbVertex || (buffer.ibuffer[iindex].x()==0 && buffer.nbVertex)
-                      || buffer.ibuffer[iindex].z()>buffer.nbNormal || (buffer.ibuffer[iindex].z()==0 && buffer.nbNormal)
-                      || buffer.ibuffer[iindex].y()>buffer.nbTexCoord || (buffer.ibuffer[iindex].y()==0 && buffer.nbTexCoord))
+//                bool b=true;
+//                buffer.ibuffer[iindex] = parseObjIndex(str, b, nbSlash);
+//                if(!b || buffer.ibuffer[iindex].x()>buffer.nbVertex || (buffer.ibuffer[iindex].x()==0 && buffer.nbVertex)
+//                      || buffer.ibuffer[iindex].z()>buffer.nbNormal || (buffer.ibuffer[iindex].z()==0 && buffer.nbNormal)
+//                      || buffer.ibuffer[iindex].y()>buffer.nbTexCoord || (buffer.ibuffer[iindex].y()==0 && buffer.nbTexCoord))
+//                {
+//                    buffer.free();
+//                    return false;
+//                }
+
+                buffer.ibuffer[iindex] = {0,0,0};
+                if(buffer.nbNormal == 0 && buffer.nbTexCoord == 0)
                 {
-                    buffer.free();
-                    return false;
+                    sscanf(v[i], "%u", &buffer.ibuffer[iindex][0]);
                 }
-                ++iindex;
-            }
-        }
-        else if(str=="l")
-        {
-            for(size_t i=0 ; i<2 ; ++i)
-            {
-                str_stream >> str;
-                bool b=true;
-                buffer.ibuffer[iindex] = parseObjIndex(str, b, nbSlash);
-                if(!b || buffer.ibuffer[iindex].x()>buffer.nbVertex || (buffer.ibuffer[iindex].x()==0 && buffer.nbVertex)
-                      || buffer.ibuffer[iindex].z()>buffer.nbNormal || (buffer.ibuffer[iindex].z()==0 && buffer.nbNormal)
-                      || buffer.ibuffer[iindex].y()>buffer.nbTexCoord || (buffer.ibuffer[iindex].y()==0 && buffer.nbTexCoord))
+                else
                 {
-                    buffer.free();
-                    return false;
+                    switch(sscanf(v[i], "%u/%u/%u", &(buffer.ibuffer[iindex][0]), &(buffer.ibuffer[iindex][1]), &(buffer.ibuffer[iindex][2])))
+                    {
+                    case 0:
+                    default:
+                        buffer.free();
+                        return false;
+
+                    case 1:
+                        buffer.ibuffer[iindex] = {0,0,0};
+                        sscanf(v[i], "%u//%u", &(buffer.ibuffer[iindex][0]), &(buffer.ibuffer[iindex][2]));
+
+                    case 2:
+                    case 3:
+                        break;
+                    }
                 }
+
                 ++iindex;
             }
         }
     }
 
-    if(iindex != buffer.nbIndex || nindex != buffer.nbNormal ||
-       vindex != buffer.nbVertex || tindex != buffer.nbTexCoord)
-       {
-           buffer.free();
-           return false;
-       }
-
+//    for(int i=0 ; i<buffer.nbIndex ; ++i)
+//    {
+//        if(buffer.ibuffer[i].z() >  buffer.nbVertex)
+//        {
+//            std::cout << "Bug at " << i << ":" << buffer.ibuffer[i]  << " ; nbV:" << buffer.nbVertex <<std::endl;
+//        }
+//    }
 
     return true;
 }
 
 size_t MeshLoader::computeObjVertexMap(ObjBuffer& buf, renderer::MeshData& meshData,
-                                       boost::container::map<renderer::VNC_Vertex, size_t>& mapIndex)
+                                       VNC_Map& mapIndex)
 {
     size_t curIndex=0;
     meshData.nbIndex = buf.nbIndex;
     meshData.indexData = new uint[buf.nbIndex];
 
-    renderer::VNC_Vertex vnc;
+    //renderer::VNC_Vertex vnc;
     for(size_t i=0 ; i<buf.nbIndex ; ++i)
     {
-        vnc.v = buf.vbuffer[buf.ibuffer[i].x()-1];
-        vnc.n=vec3(); vnc.c=vec2();
-        if(buf.nbNormal)
-            vnc.n = buf.nbuffer[buf.ibuffer[i].z()-1];
-        if(buf.nbTexCoord)
-            vnc.c = buf.tbuffer[buf.ibuffer[i].y()-1];
+        //vnc.v = buf.vbuffer[buf.ibuffer[i].x()-1];
+        //vnc.n=vec3(); vnc.c=vec2();
 
-        auto it = mapIndex.find(vnc);
+//        if(buf.nbNormal && buf.ibuffer[i].z() > 0)
+//            vnc.n = buf.nbuffer[buf.ibuffer[i].z()-1];
+//        if(buf.nbTexCoord && buf.ibuffer[i].y() > 0)
+//            vnc.c = buf.tbuffer[buf.ibuffer[i].y()-1];
+
+        auto it = mapIndex.find(buf.ibuffer[i]);
         if(it == mapIndex.end())
         {
-            mapIndex[vnc] = curIndex;
+            mapIndex[buf.ibuffer[i]] = curIndex;
             meshData.indexData[i] = curIndex;
             ++curIndex;
         }

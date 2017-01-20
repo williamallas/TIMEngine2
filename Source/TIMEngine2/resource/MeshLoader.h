@@ -5,6 +5,7 @@
 #include "renderer/VertexFormat.h"
 #include "renderer/MeshBuffers.h"
 #include "renderer/renderer.h"
+#include <boost/unordered_map.hpp>
 
 #include "MemoryLoggerOn.h"
 namespace tim
@@ -12,7 +13,6 @@ namespace tim
     using namespace core;
 namespace resource
 {
-
     class MeshLoader
     {
     public:
@@ -53,14 +53,23 @@ namespace resource
             }
         };
 
+        struct hash_uivec3
+        {
+        public:
+            std::size_t operator()(const uivec3& v) const
+            {
+                boost::hash<uint> hasher;
+
+                return hasher(v[0]) + hasher(v[1]) + hasher(v[2]);
+            }
+        };
+
+        using VNC_Map = boost::unordered_map<uivec3, size_t, hash_uivec3>;
+        //using VNC_Map = boost::container::map<uivec3, size_t>;
+
         static bool loadObjData(const std::string&, ObjBuffer&);
-        static size_t computeObjVertexMap(ObjBuffer&, renderer::MeshData&, boost::container::map<renderer::VNC_Vertex, size_t>&);
+        static size_t computeObjVertexMap(ObjBuffer&, renderer::MeshData&, VNC_Map&);
         static uivec3 parseObjIndex(const std::string&, bool&, int);
-
-////        static SkeletonAnimation* readSkeletonAnimation(std::istream&);
-
-//        static void writeTim(std::ostream&, renderer::MeshBuffers*);
-//        static renderer::MeshBuffers* readMeshTim(std::istream&);
 
         template<class T> static void write(std::ostream&, const T&);
         template<class T> static void read(std::istream&, T&);
