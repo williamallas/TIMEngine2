@@ -36,6 +36,7 @@ public:
 
     bool update(interface::Scene*&, mat4* offset);
     void rebuild(interface::Scene&);
+    void extendPipeline(int);
 
     std::pair<interface::Scene*, interface::MeshInstance*> closestPortal(const Sphere&, mat4&);
     int hasCrossedPortal(vec3, vec3, interface::MeshInstance*, float radius);
@@ -53,6 +54,7 @@ private:
         Box portalBox;
         bool enabled = true;
         bool crossable = true;
+        bool finalDrawDecision;
     };
 
     uivec2 _resolution;
@@ -78,7 +80,10 @@ private:
 
     void freeCamera();
     void constructEdge(const InternalEdge&);
-    bool optimizeExtraSceneRendering(InternalEdge&, int i);
+    bool optimizeExtraSceneRendering(InternalEdge&);
+    void optimizeFrustum(InternalEdge&, int i);
+
+    void setupDecidedPortals(vector<InternalEdge>&);
 
     bool getScreenBoundingBox(const Box&, const mat4& boxMat, const mat4& projView, vec2& minV, vec2& maxV);
 
