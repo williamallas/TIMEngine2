@@ -90,6 +90,7 @@ interface::Mesh XmlMeshAssetLoader::constructMesh(const vector<MeshElementModel>
             }
         }
         elem.setCastShadow(model[i].castShadow);
+        elem.setCubemapAffected(model[i].cmAffected);
         mesh.addElement(elem);
     }
 
@@ -140,6 +141,8 @@ vector<XmlMeshAssetLoader::MeshElementModel> XmlMeshAssetLoader::parseMeshAssetE
                         elementModel.textures[2] = StringUtils::str(elem->GetText());
                     else if(StringUtils(elem->ValueStr()).toLower().str() == "castshadow")
                         elementModel.castShadow = StringUtils(elem->GetText()).toBool();
+                    else if(StringUtils(elem->ValueStr()).toLower().str() == "cmaffected")
+                        elementModel.cmAffected = StringUtils(elem->GetText()).toBool();
                     else if(StringUtils(elem->ValueStr()).toLower().str() == "advanced")
                     {
                         TiXmlElement* e=elem->FirstChildElement();

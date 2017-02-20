@@ -63,6 +63,9 @@ namespace interface
             bool castShadow() const { return _castShadow; }
             void setCastShadow(bool b) { _castShadow = b; }
 
+            bool cubemapAffected() const { return _mat.bitFlags > 0; }
+            void setCubemapAffected(bool b){ _mat.bitFlags = b?1:0; }
+
             void setTexture(const Texture& t, uint index);
             Texture texture(uint index) const { index = std::min(index,2u); return _textures[index]; }
 

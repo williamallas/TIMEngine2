@@ -19,6 +19,7 @@ struct MeshElement
     QString textures[NB_TEXTURES];
     QIcon texturesIcon[NB_TEXTURES];
     bool castShadow = true;
+    bool cmAffected = true;
 
     bool useAdvanced = false;
     QString advancedShader;
@@ -40,6 +41,9 @@ struct MeshElement
 
         if(useAdvanced < elem.useAdvanced) return true;
         else if(useAdvanced > elem.useAdvanced) return false;
+
+        if(cmAffected < elem.cmAffected) return true;
+        else if(cmAffected > elem.cmAffected) return false;
 
         if(castShadow < elem.castShadow) return true;
         else if(castShadow > elem.castShadow) return false;
@@ -70,6 +74,8 @@ struct MeshElement
 
         return geometry == elem.geometry &&
                color == elem.color &&
+               castShadow == elem.castShadow &&
+               cmAffected == elem.cmAffected &&
                textureScale == elem.textureScale &&
                material == elem.material && ct &&
                useAdvanced == elem.useAdvanced &&

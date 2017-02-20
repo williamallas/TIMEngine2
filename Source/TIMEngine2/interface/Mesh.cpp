@@ -16,6 +16,7 @@ Mesh::Element::Element(const Geometry& g, float roughness, float metallic, const
     setEmissive(0);
     setColor(color);
     setTextureScale(1);
+    setCubemapAffected(true);
 }
 
 Mesh::Element::Element()
@@ -69,6 +70,7 @@ void Mesh::Element::setDefault()
     setEmissive(0);
     setColor(vec4::construct(0.7));
     setTextureScale(1);
+    setCubemapAffected(true);
 }
 
 void Mesh::Element::flushMat()

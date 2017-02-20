@@ -23,7 +23,7 @@ using namespace tim;
 using namespace tim::core;
 using namespace tim::interface;
 
-SceneEditorWidget::SceneEditorWidget(QWidget* parent) : QWidget(parent), ui(new Ui::SceneEditor), _flushState{}, _instancingDialog(parent)
+SceneEditorWidget::SceneEditorWidget(QWidget* parent) : QWidget(parent), ui(new Ui::SceneEditor), _instancingDialog(parent), _flushState{}
 {
     ui->setupUi(this);
     setMinimumWidth(320);
@@ -1120,23 +1120,25 @@ void SceneEditorWidget::exportScene(QString filePath, int sceneIndex)
         }
 
         stream << "\n";
-        for(int i=0 ; i<_objects[sceneIndex].size() ; ++i)
+        auto cpyObj = _objects[sceneIndex];
+        std::sort(cpyObj.begin(), cpyObj.end(), [](const SceneObject& o1, const SceneObject& o2) { return o1.name < o2.name; });
+        for(int i=0 ; i<cpyObj.size() ; ++i)
         {
-            stream << "<Object name=\"" << _objects[sceneIndex][i].name << "\" model=" <<  _objects[sceneIndex][i].exportHelper <<
-                      " isStatic=" << _objects[sceneIndex][i].isStatic <<
-                      " isPhysic=" << _objects[sceneIndex][i].isPhysic <<
-                      " isVisible=" << _objects[sceneIndex][i].isVisible << " >\n";
+            stream << "<Object name=\"" << cpyObj[i].name << "\" model=" <<  cpyObj[i].exportHelper <<
+                      " isStatic=" << cpyObj[i].isStatic <<
+                      " isPhysic=" << cpyObj[i].isPhysic <<
+                      " isVisible=" << cpyObj[i].isVisible << " >\n";
 
-            stream << "   <translate>" << _objects[sceneIndex][i].translate[0] << "," << _objects[sceneIndex][i].translate[1] << "," << _objects[sceneIndex][i].translate[2] << "</translate>\n";
-            stream << "   <scale>" << _objects[sceneIndex][i].scale[0] << "," << _objects[sceneIndex][i].scale[1] << "," << _objects[sceneIndex][i].scale[2] << "</scale>\n";
+            stream << "   <translate>" << cpyObj[i].translate[0] << "," << cpyObj[i].translate[1] << "," << cpyObj[i].translate[2] << "</translate>\n";
+            stream << "   <scale>" << cpyObj[i].scale[0] << "," << cpyObj[i].scale[1] << "," << cpyObj[i].scale[2] << "</scale>\n";
 
             stream << "   <rotate>";
             for(int j=0 ; j<9 ; ++j)
-                stream << _objects[sceneIndex][i].rotate.get(j) << ((j!=8)?",":"");
+                stream << cpyObj[i].rotate.get(j) << ((j!=8)?",":"");
             stream << "</rotate>\n";
-            stream << "   <collider type=" << _objects[sceneIndex][i].collider.type << " mass=" << _objects[sceneIndex][i].collider.mass <<
-                      " restitution=" << _objects[sceneIndex][i].collider.restitution << " friction=" << _objects[sceneIndex][i].collider.friction <<
-                      " rollingFriction=" << _objects[sceneIndex][i].collider.rollingFriction << "/>\n";
+            stream << "   <collider type=" << cpyObj[i].collider.type << " mass=" << cpyObj[i].collider.mass <<
+                      " restitution=" << cpyObj[i].collider.restitution << " friction=" << cpyObj[i].collider.friction <<
+                      " rollingFriction=" << cpyObj[i].collider.rollingFriction << "/>\n";
             stream << "</Object>\n";
         }
 

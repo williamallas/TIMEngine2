@@ -207,6 +207,7 @@ Mesh::Element MeshEditorWidget::constructMeshElement(const MeshElement& elem)
     }
 
     melem.setCastShadow(elem.castShadow);
+    melem.setCubemapAffected(elem.cmAffected);
 
     return melem;
 }
@@ -336,6 +337,7 @@ QList<MeshElement> MeshEditorWidget::convertFromEngine(const vector<interface::X
         mat.advancedShader = QString::fromStdString(model[i].advancedShader);
         mat.useAdvanced = model[i].useAdvanced;
         mat.castShadow = model[i].castShadow;
+        mat.cmAffected = model[i].cmAffected;
 
         for(int j=0 ; j<MeshElement::NB_TEXTURES ; ++j)
         {
@@ -445,6 +447,7 @@ void MeshEditorWidget::updateMaterial()
     (*_editedMaterials)[_curElementIndex].material = material;
     (*_editedMaterials)[_curElementIndex].color = QColor(ui->dm_colorR->value(), ui->dm_colorG->value(), ui->dm_colorB->value());
     (*_editedMaterials)[_curElementIndex].castShadow = ui->castShadow->isChecked();
+    (*_editedMaterials)[_curElementIndex].cmAffected = ui->cmAffected->isChecked();
 
     (*_editedMaterials)[_curElementIndex].useAdvanced = ui->advancedMaterial->isChecked();
     if((*_editedMaterials)[_curElementIndex].useAdvanced)
@@ -469,6 +472,7 @@ void MeshEditorWidget::updateMaterial()
     renderer::DrawState adv = (*_editedMaterials)[_curElementIndex].advanced;
     std::string advShader = (*_editedMaterials)[_curElementIndex].advancedShader.toStdString();
     bool castShadow = (*_editedMaterials)[_curElementIndex].castShadow;
+    bool cmAffected = (*_editedMaterials)[_curElementIndex].cmAffected;
 
     _renderer->addEvent([=](){
         Mesh mesh = editedMesh->mesh();
@@ -482,6 +486,7 @@ void MeshEditorWidget::updateMaterial()
         mesh.element(index).setColor(color);
         mesh.element(index).setTextureScale(texScale);
         mesh.element(index).setCastShadow(castShadow);
+        mesh.element(index).setCubemapAffected(cmAffected);
 
         if(useAdvanced)
         {
@@ -537,6 +542,7 @@ void MeshEditorWidget::setUi(const MeshElement& mat)
     ui->dm_textureScaleSlider->blockSignals(true);
     ui->advancedMaterial->blockSignals(true);
     ui->castShadow->blockSignals(true);
+    ui->cmAffected->blockSignals(true);
     ui->cullBackFace->blockSignals(true);
     ui->cullFace->blockSignals(true);
     ui->shaderList->blockSignals(true);
@@ -562,7 +568,7 @@ void MeshEditorWidget::setUi(const MeshElement& mat)
     ui->materialTex->setIcon(mat.texturesIcon[2]);
 
     ui->advancedMaterial->setChecked(mat.useAdvanced);
-    ui->castShadow->setChecked(mat.castShadow);
+    ui->cmAffected->setChecked(mat.cmAffected);
     ui->cullBackFace->setChecked(mat.advanced.cullBackFace());
     ui->cullFace->setChecked(mat.advanced.cullFace());
     if(mat.advancedShader.isEmpty())
@@ -584,6 +590,7 @@ void MeshEditorWidget::setUi(const MeshElement& mat)
     ui->dm_emissiveSlider->blockSignals(false);
     ui->dm_textureScaleSlider->blockSignals(false);
     ui->advancedMaterial->blockSignals(false);
+    ui->cmAffected->blockSignals(false);
     ui->castShadow->blockSignals(false);
     ui->cullBackFace->blockSignals(false);
     ui->cullFace->blockSignals(false);

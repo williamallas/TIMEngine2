@@ -56,7 +56,8 @@ namespace renderer
         vec4 parameter;
         uint color;
         uint scale;
-        uint unused[2];
+        uint bitFlags;
+        uint unused;
     };
     static_assert(sizeof(DummyMaterial) == sizeof(mat4), "DummyMaterial struct is too big or to small.");
     static_assert(sizeof(Material) == sizeof(DummyMaterial), "Material struct is too big or to small.");

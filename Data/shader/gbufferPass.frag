@@ -8,7 +8,7 @@ struct Material
 	uvec2 tex1;
 	uvec2 tex2;
 	vec4 parameter;
-	uvec4 color_scale_unused;
+	uvec4 color_scale_ca_unsused; // ca == cubeMapAffected
 };
 
 #ifdef WATER_SHADER
@@ -53,12 +53,12 @@ layout(location=2) out vec4 outMaterial;
 void main()  
 {  	
 	vec4 texColor = vec4(1);
-	vec3 n = normalize(v_normal);
+	vec3 n = v_normal;
 	vec4 material_tex = vec4(1,1,1,1);
 	
 	if(materials[v_drawId].header.y > 0)
 	{
-		float texScale = materials[v_drawId].color_scale_unused.y / 1000.f;
+		float texScale = materials[v_drawId].color_scale_ca_unsused.y / 1000.f;
 		texColor = texture(sampler2D(materials[v_drawId].tex0), tCoord * texScale);
 		
 	#ifdef ALPHA_TEST
@@ -76,6 +76,7 @@ void main()
 			vec3 n1 = texture(sampler2D(materials[v_drawId].tex1), (tCoord * texScale * 20 + dirtex*time.x*scaleTime)).xyz*2-1;
 			vec3 n2 = texture(sampler2D(materials[v_drawId].tex1), (tCoord * texScale * 20 + dirtex2*time.x*scaleTime)).xyz*2-1;
 			n = (n1+n2) * 0.5;
+			n.z *= materials[v_drawId].parameter.w * 10;
 		#else
 			vec3 t = normalize(v_tangent);
 			mat3 tbn = mat3(t, cross(t,n), n);
@@ -87,16 +88,21 @@ void main()
 		#endif
 		}
 	}
+	n = normalize(n);
 	
-	outColor = texColor * unpackColor(materials[v_drawId].color_scale_unused.x);
-	outNormal = vec4(n*0.5+0.5,1);
+	outColor = texColor * unpackColor(materials[v_drawId].color_scale_ca_unsused.x);
+	outNormal = vec4(n*0.5+0.5, 1);
 	#ifdef PORTAL_SHADER
-	outMaterial = vec4(1, 1, materials[v_drawId].color_scale_unused.y / 1000.f,0);
+	outMaterial = vec4(1, 1, materials[v_drawId].color_scale_ca_unsused.y / 1000.f,0);
 	#else
 	#ifdef WATER_SHADER
 	outMaterial = vec4(0, 1, 1,0);
 	#else
 	outMaterial = vec4(materials[v_drawId].parameter) * material_tex;
+	int spec = int(outMaterial.z * 255.f + 0.5);
+	spec = (spec >> 1) << 1;
+	spec += materials[v_drawId].color_scale_ca_unsused.z>0 ? 1:0;
+	outMaterial.z = spec / 255.f;
 	#endif
 	#endif
 }

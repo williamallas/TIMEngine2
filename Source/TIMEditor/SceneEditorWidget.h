@@ -149,6 +149,7 @@ public slots:
     void on_copyTransButton_clicked();
     void on_pastTransButton_clicked();
     void on_instancing_clicked();
+    void on_apply_clicked();
 
     void on_meshc_isStatic_clicked(bool);
     void on_meshc_isPhysic_clicked(bool);

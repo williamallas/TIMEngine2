@@ -94,7 +94,8 @@ public slots:
 //    void on_advancedMaterial_clicked(bool);
 //    void on_cullFace_clicked(bool);
 //    void on_cullBackFace_clicked(bool);
-//    void on_castShadow_clicked(bool);
+    void on_castShadow_clicked(bool) { updateMaterial(); }
+//    void on_cmAffected_clicked(bool);
 //    void on_shaderList_currentIndexChanged(QString);
 
     void on_saveMeshButton_pressed();

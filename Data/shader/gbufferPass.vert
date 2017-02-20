@@ -29,7 +29,7 @@ struct Material
 	uvec2 tex1;
 	uvec2 tex2;
 	vec4 parameter;
-	uvec4 color_scale_unused;
+	uvec4 color_scale_ca_unsused;
 };
 
 layout(std140, binding = 2) uniform Materials

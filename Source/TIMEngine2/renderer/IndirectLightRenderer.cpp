@@ -49,6 +49,12 @@ IndirectLightRenderer::IndirectLightRenderer(LightContextRenderer& context) : _c
     param.size = uivec3(256,256,1);
     float* dat = new float[256*256*3];
     std::ifstream inDat("shader/brdf_256.dat", std::ios_base::binary);
+    if(!inDat)
+    {
+        LOG("shader/brdf_256.dat does not exist.");
+        exit(-1);
+    }
+
     inDat.read((char*)dat, sizeof(float)*256*256*3);
     _processedBrdf = Texture::genTexture2D(param, dat, 3);
     delete[] dat;
@@ -78,6 +84,7 @@ void IndirectLightRenderer::draw(const vector<Light>& lights) const
         _context.deferred().buffer(i)->bind(i);
         openGL.bindTextureSampler(textureSampler[TextureMode::NoFilter], i);
     }
+
     if(_skybox)
     {
         _skybox->bind(4);

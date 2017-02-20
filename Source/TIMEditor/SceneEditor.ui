@@ -216,6 +216,31 @@
        </layout>
       </item>
       <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_10">
+        <item>
+         <widget class="QPushButton" name="apply">
+          <property name="text">
+           <string>Apply template</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="model">
+          <property name="text">
+           <string>same model</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="name_2">
+          <property name="text">
+           <string>same name</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
        <layout class="QHBoxLayout" name="horizontalLayout_6">
         <item>
          <widget class="QPushButton" name="copyButton">
@@ -648,8 +673,8 @@
    <slot>resetRotation()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>247</x>
-     <y>162</y>
+     <x>259</x>
+     <y>193</y>
     </hint>
     <hint type="destinationlabel">
      <x>464</x>
@@ -664,8 +689,8 @@
    <slot>copyObject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>60</x>
-     <y>117</y>
+     <x>72</x>
+     <y>162</y>
     </hint>
     <hint type="destinationlabel">
      <x>566</x>
@@ -680,8 +705,8 @@
    <slot>deleteCurrentObjects()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>153</x>
-     <y>119</y>
+     <x>174</x>
+     <y>162</y>
     </hint>
     <hint type="destinationlabel">
      <x>391</x>

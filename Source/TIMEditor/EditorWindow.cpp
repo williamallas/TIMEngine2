@@ -200,6 +200,7 @@ interface::XmlMeshAssetLoader::MeshElementModel convertEditorModel(MeshElement m
     out.advancedShader = model.advancedShader.toStdString();
     out.useAdvanced = model.useAdvanced;
     out.castShadow = model.castShadow;
+    out.cmAffected = model.cmAffected;
 
     for(int i=0 ; i<MeshElement::NB_TEXTURES ; ++i)
     {

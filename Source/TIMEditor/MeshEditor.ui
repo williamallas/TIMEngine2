@@ -379,14 +379,28 @@
        </layout>
       </item>
       <item>
-       <widget class="QCheckBox" name="castShadow">
-        <property name="text">
-         <string>castShadow</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
+       <layout class="QHBoxLayout" name="horizontalLayout_8">
+        <item>
+         <widget class="QCheckBox" name="castShadow">
+          <property name="text">
+           <string>cast shadow</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="cmAffected">
+          <property name="text">
+           <string>cubemap affected</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item>
        <widget class="Line" name="line">
@@ -686,7 +700,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>148</x>
-     <y>244</y>
+     <y>219</y>
     </hint>
     <hint type="destinationlabel">
      <x>252</x>
@@ -702,7 +716,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>224</x>
-     <y>244</y>
+     <y>219</y>
     </hint>
     <hint type="destinationlabel">
      <x>252</x>
@@ -718,7 +732,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>300</x>
-     <y>244</y>
+     <y>219</y>
     </hint>
     <hint type="destinationlabel">
      <x>252</x>
@@ -734,7 +748,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>260</x>
-     <y>178</y>
+     <y>153</y>
     </hint>
     <hint type="destinationlabel">
      <x>369</x>
@@ -750,7 +764,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>301</x>
-     <y>178</y>
+     <y>153</y>
     </hint>
     <hint type="destinationlabel">
      <x>349</x>
@@ -791,30 +805,14 @@
    </hints>
   </connection>
   <connection>
-   <sender>castShadow</sender>
-   <signal>clicked()</signal>
-   <receiver>MeshEditor</receiver>
-   <slot>updateMaterial()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>62</x>
-     <y>590</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>70</x>
-     <y>670</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>cullFace</sender>
    <signal>clicked()</signal>
    <receiver>MeshEditor</receiver>
    <slot>updateMaterial()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>150</x>
-     <y>590</y>
+     <x>148</x>
+     <y>602</y>
     </hint>
     <hint type="destinationlabel">
      <x>153</x>
@@ -835,6 +833,38 @@
     <hint type="destinationlabel">
      <x>259</x>
      <y>657</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cmAffected</sender>
+   <signal>clicked()</signal>
+   <receiver>MeshEditor</receiver>
+   <slot>updateMaterial()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>188</x>
+     <y>338</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>375</x>
+     <y>340</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>castShadow</sender>
+   <signal>clicked()</signal>
+   <receiver>MeshEditor</receiver>
+   <slot>updateMaterial()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>34</x>
+     <y>345</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>443</x>
+     <y>351</y>
     </hint>
    </hints>
   </connection>

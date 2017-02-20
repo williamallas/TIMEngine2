@@ -13,7 +13,7 @@ INCLUDEPATH += TIMEngine2\
 INCLUDEPATH += TIM_SDL\
 INCLUDEPATH += TIMEngine2\core\
 INCLUDEPATH += ../Lib/boost
-INCLUDEPATH += ../Lib/glew-1.10.0/include/
+INCLUDEPATH += ../Lib/glew-2.0.0/include/
 INCLUDEPATH += ../Lib/assimp-3.1.1/include/
 INCLUDEPATH += ../Lib/SDL2-2.0.3/include/
 INCLUDEPATH += ../Lib/bullet/include/
@@ -42,15 +42,17 @@ QMAKE_CXXFLAGS_RELEASE += -O3
 QMAKE_CXXFLAGS_RELEASE += -fomit-frame-pointer
 QMAKE_CXXFLAGS_RELEASE += -fexpensive-optimizations
 QMAKE_CXXFLAGS_RELEASE += -flto
+Debug: QMAKE_LFLAGS -= -flto -O3 -fomit-frame-pointer -fexpensive-optimizations
 
 QMAKE_LFLAGS += -O3
 QMAKE_LFLAGS += -flto
+Debug: QMAKE_LFLAGS -= -flto -O3
 
 DEFINES += GLEW_STATIC GLEW_NO_GLU TIXML_USE_STL USE_SDL NO_OPEN_AL
-debug: DEFINES += TIM_DEBUG
+Debug: DEFINES += TIM_DEBUG
 
 # Input
-HEADERS += TIM_SDL/*.h TIMEngine2/core/*.h TIMEngine2/renderer/*.h TIMEngine2/resource/*.h TIMEngine2/interface/*.h TIMEngine2/interface/pipeline/*.h TIMEngine2/scene/*.h \
+HEADERS += TIM_SDL\*.h TIMEngine2\core\*.h TIMEngine2/renderer/*.h TIMEngine2/resource/*.h TIMEngine2/interface/*.h TIMEngine2/interface/pipeline/*.h TIMEngine2/scene/*.h \
     TIMEditor/*.h \
     DebugCamera.h \
     AssimpLoader.h\
@@ -82,7 +84,7 @@ SOURCES += mainEditor.cpp \
            ../Lib/tinyxml/tinystr.cpp \
            ../Lib/tinyxml/tinyxmlerror.cpp \
            ../Lib/tinyxml/tinyxmlparser.cpp \
-           ../Lib/glew-1.10.0/src/glew.c \
+           ../Lib/glew-2.0.0/src/glew.c \
             AssimpLoader.cpp\
     TIMEngine2/renderer/GLState.cpp \
     TIMEngine2/renderer/IndexBuffer.cpp \
