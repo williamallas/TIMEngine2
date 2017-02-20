@@ -58,7 +58,7 @@ void Level1::init()
     }
 }
 
-void Level1::update(float time)
+void Level1::update(float)
 {
 //    vector<int> redObj = indexObjects("red");
 //    bool allOk = true;
