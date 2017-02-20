@@ -49,6 +49,7 @@ namespace renderer
         UniformBuffer<mat4> _modelBuffer;
 
         UniformBuffer<DummyMaterial> _materialBuffer;
+        GpuBuffer<IndirectDrawParmeter, GpuBufferPolicy::MultiDrawBuffer> _drawIndirectBuffer;
 #endif
     };
 

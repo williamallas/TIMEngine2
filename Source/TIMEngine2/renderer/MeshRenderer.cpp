@@ -27,6 +27,7 @@ MeshRenderer::MeshRenderer()
 
    _modelBuffer.create(_maxUboMat4, nullptr, DrawMode::STREAM);
    _materialBuffer.create(_maxUboMat4, nullptr, DrawMode::STREAM);
+   _drawIndirectBuffer.create(_maxUboMat4, nullptr, DrawMode::STREAM);
 }
 
 MeshRenderer::~MeshRenderer()
@@ -104,7 +105,9 @@ int MeshRenderer::draw(const vector<MeshBuffers*>& meshs, const vector<mat4>& mo
         if(!materials.empty())
             openGL.bindUniformBuffer(_materialBuffer.id(), 2);
 
-        glMultiDrawElementsIndirect(DrawState::toGLPrimitive(_states.primitive()), GL_UNSIGNED_INT, drawParam, innerLoop, 0);
+        _drawIndirectBuffer.flush(drawParam, 0, innerLoop);
+        openGL.bindDrawIndirectBuffer(_drawIndirectBuffer.id());
+        glMultiDrawElementsIndirect(DrawState::toGLPrimitive(_states.primitive()), GL_UNSIGNED_INT, nullptr, innerLoop, 0);
     }
 #else
     openGL.bindUniformBuffer(_uboParameter.id(), 0);
