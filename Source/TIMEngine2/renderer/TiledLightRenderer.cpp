@@ -9,7 +9,7 @@ namespace tim
 namespace renderer
 {
 
-TiledLightRenderer::TiledLightRenderer(DeferredRenderer& deferred, bool hdr) : LightContextRenderer(deferred)
+TiledLightRenderer::TiledLightRenderer(DeferredRenderer& deferred, bool) : LightContextRenderer(deferred)
 {
     _tileCount = deferred.resolution() / TILE_SIZE;
     if(deferred.resolution().x() % TILE_SIZE.x() != 0)
