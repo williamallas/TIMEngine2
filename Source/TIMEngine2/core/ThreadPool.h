@@ -4,6 +4,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/threadpool.hpp>
 #include "Singleton.h"
+#include <future>
 
 #include "MemoryLoggerOn.h"
 namespace tim
@@ -26,10 +27,10 @@ namespace core
         }
 
         template <class TaskType>
-        boost::unique_future<decltype((*((TaskType*)nullptr))())> schedule_trace(const TaskType& task)
+        std::future<decltype((*((TaskType*)nullptr))())> schedule_trace(const TaskType& task)
         {
             boost::mutex::scoped_lock(_mutex);
-            boost::shared_ptr<boost::promise<decltype((*((TaskType*)nullptr))())>> prom(new boost::promise<decltype((*((TaskType*)nullptr))())>());
+            boost::shared_ptr<std::promise<decltype((*((TaskType*)nullptr))())>> prom(new std::promise<decltype((*((TaskType*)nullptr))())>());
             _pool->schedule([=](){prom->set_value(task());});
             return prom->get_future();
 
