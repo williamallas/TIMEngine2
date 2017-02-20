@@ -7,6 +7,15 @@
 
 #define RENDERABLE_OBJECT_NB_LOD 4
 
+#define TIM_DEBUG_PROFILE
+
+#ifdef TIM_DEBUG_PROFILE
+#define PROFILE(a) boost::timer::auto_cpu_timer(a + std::string(" : %w s\n")),
+#else
+void noneFun() {}
+#define PROFILE(a) noneFun(),
+#endif
+
 #include "MemoryLoggerOn.h"
 namespace tim
 {
