@@ -18,11 +18,11 @@ uint textureSampler[static_cast<uint>(TextureMode::Last)];
 ThreadPool globalThreadPool(4);
 TextureBufferPool* texBufferPool = nullptr;
 
-void __stdcall debugOut(GLenum , GLenum , GLuint , GLenum severity , GLsizei , const GLchar* msg, GLvoid*)
+static void WINAPI debugOut(unsigned int, unsigned int, unsigned int, unsigned int severity, int, const char* msg, const void*)
 {
     if(severity == GL_DEBUG_SEVERITY_HIGH)
     {
-        LOG("OpenGL debug: ", msg);
+        LOG("PROBLEM!!, OpenGL debug: ", msg);
     }
 }
 
@@ -31,6 +31,7 @@ bool hasBeenInit = false;
 bool init()
 {
     GLenum glewerr;
+    glewExperimental = true;
     if((glewerr=glewInit()) != GLEW_OK)
     {
         LOG("glewinit() failed : ",glewGetErrorString(glewerr),"\n");
@@ -41,8 +42,13 @@ bool init()
     std::cout << "Initializing on "<<glGetString(GL_VENDOR)<<" "<<glGetString(GL_RENDERER)<<" using OpenGL "<<glGetString(GL_VERSION)<<"\n";
     LOG("Initializing on ",glGetString(GL_VENDOR)," ",glGetString(GL_RENDERER)," using OpenGL ",glGetString(GL_VERSION),"\n");
 
+#ifdef TIM_DEBUG
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback( debugOut, NULL );
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+#else
+    glDisable(GL_DEBUG_OUTPUT);
+#endif
 
     glClearDepth(1);
     openGL.clearDepth();
@@ -51,6 +57,7 @@ bool init()
 
     LOG("\nSupport of bindless_texture: ",glewGetExtension("GL_ARB_bindless_texture")==GL_TRUE);
     LOG("Support of sparse_texture: ",glewGetExtension("GL_ARB_sparse_texture")==GL_TRUE);
+    LOG("Support of gl_spirv:", glewGetExtension("GL_ARB_gl_spirv") == GL_TRUE);
 
     texBufferPool = new TextureBufferPool;
 
@@ -119,7 +126,6 @@ bool init()
         LOG("You don't have a sufficient openGL version.");
         return false;
     }
-
 }
 
 bool close()
