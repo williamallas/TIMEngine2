@@ -148,7 +148,7 @@ btVector3 QuaternionToEulerXYZ(const btQuaternion &quat)
    return euler;
 }
 
-void Controller::update(const mat4& offset, const mat4& l, const mat4& r, float time)
+void Controller::update(const mat4& offset, const mat4& l, const mat4& r, float)
 {
     _curScene.absoluteOffset = offset;
 
@@ -211,7 +211,7 @@ void Controller::updateBody(btRigidBody* body, const mat4& o, int hand)
     }
 }
 
-void Controller::innerPhysicUpdate(float time, BulletEngine* engine)
+void Controller::innerPhysicUpdate(float, BulletEngine*)
 {
     _strengthApplied[0] = 0;
     _strengthApplied[1] = 1;
