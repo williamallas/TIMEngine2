@@ -48,6 +48,11 @@ namespace renderer
 
             return false;
         }
+
+        bool operator==(const VN_Vertex& in) const
+        {
+            return v==in.v && n==in.n;
+        }
     };
 
     struct VNC_Vertex
@@ -71,6 +76,11 @@ namespace renderer
                 return false;
 
             return false;
+        }
+
+        bool operator==(const VNC_Vertex& in) const
+        {
+            return v==in.v && n==in.n && c==in.c;
         }
     };
 
@@ -104,6 +114,11 @@ namespace renderer
 
             return false;
         }
+
+        bool operator==(const VNCT_Vertex& in) const
+        {
+            return v==in.v && n==in.n && c==in.c && t==in.t;
+        }
     };
 
     struct VC_Vertex
@@ -123,6 +138,11 @@ namespace renderer
                 return false;
 
             return false;
+        }
+
+        bool operator==(const VNCT_Vertex& in) const
+        {
+            return v==in.v && c==in.c;
         }
     };
 
