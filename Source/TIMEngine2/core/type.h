@@ -6,7 +6,6 @@
 #include <boost/container/vector.hpp>
 #include <boost/container/list.hpp>
 #include <boost/lockfree/queue.hpp>
-#include <boost/thread.hpp>
 #include <boost/timer/timer.hpp>
 #include <queue>
 
