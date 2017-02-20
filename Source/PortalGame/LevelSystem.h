@@ -32,13 +32,14 @@ public:
 
     static renderer::Texture::GenTexParam defaultTexParam;
 
-    LevelSystem(BulletEngine&, Listener&, Controller&, HmdSceneView&);
+    LevelSystem(BulletEngine&, Listener&, Controller&, HmdSceneView&, interface::XmlMeshAssetLoader&);
     ~LevelSystem();
 
     Listener& listener() { return _listener; }
     Controller& controller() { return _controller; }
     vec3 headPosition() const;
     HmdSceneView& hmdView() { return _hmdView; }
+    MultipleSceneHelper& portalManager() { return *_portalsHelper; }
 
     void addLevel(const Level&);
     void setStrategy(LevelInterface* strat, int index);
@@ -51,7 +52,10 @@ public:
     void initAll();
     void changeLevel(int);
     Level& getLevel(int);
-    void setEnablePortal(bool, interface::MeshInstance*);
+    void setEnablePortal(bool, interface::MeshInstance*, int levelIndex);
+    void setPortalDrawDistrance(float, interface::MeshInstance*, int levelIndex);
+
+    interface::Mesh getMeshAsset(std::string) const;
 
     void update(float);
 
@@ -75,8 +79,11 @@ protected:
     Listener& _listener;
     Controller& _controller;
     HmdSceneView& _hmdView;
+    interface::XmlMeshAssetLoader& _gameAssets;
     vector<std::pair<Level, bool>> _levels;
     vector<LevelInterface*> _levelStrategy;
+
+    const renderer::Texture::GenTexParam TEXTURE_CONFIG = interface::Texture::genParam(true,true,true, 4);
 
     std::string _curSoundName;
     Source* _curAmbientSound = nullptr;
@@ -87,7 +94,7 @@ protected:
     const float DIST_OUT = 1.5;
     struct PortalTraversableObject
     {
-        int indexObject = -1;
+        int indexObject = -1, indexOwner = -1;
         interface::MeshInstance* instIn = nullptr;
         interface::MeshInstance* instOut = nullptr;
         interface::Scene* sceneOut = nullptr;
@@ -136,6 +143,7 @@ public:
     vector<LevelSystem::GameObject> getGameObjects(std::string);
 
     void setEnablePortal(bool b, interface::MeshInstance*);
+    void setPortalDrawDistrance(float, interface::MeshInstance*);
     int index() const;
     void registerPortableTraversable(int, interface::MeshInstance*, BulletObject*, const vector<std::string>&);
     void registerGameObject(int index, std::string name);
@@ -145,6 +153,7 @@ public:
     void setAmbientSound(Source* src, std::string name) { _ambientSound = src; _soundName = name; }
 
     static void bindSound(BulletObject*, int);
+    void emitSound(const vec3&, const resource::SoundAsset&);
 
     virtual void callDebug(){}
 

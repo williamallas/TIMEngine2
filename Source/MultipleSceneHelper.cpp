@@ -38,6 +38,18 @@ void MultipleSceneHelper::setCrossableEdge(bool b, interface::Scene& sceneFrom, 
     }
 }
 
+void MultipleSceneHelper::setEdgeDrawDistance(float dist, interface::Scene& sceneFrom, interface::MeshInstance* inst)
+{
+    vector<InternalEdge>& candidat = _graph[&sceneFrom];
+    for(InternalEdge& e : candidat)
+    {
+        if(e.edge.portal == inst)
+        {
+            e.drawDistance = dist;
+        }
+    }
+}
+
 void MultipleSceneHelper::setView(interface::View& view)
 {
     _curCamera = &view;
@@ -150,6 +162,8 @@ void MultipleSceneHelper::extendPipeline(int size)
         _extraStereoCameras[0].push_back(nullptr);
         _extraStereoCameras[1].push_back(nullptr);
     }
+
+    assert(NB_MAX_PIPELINE >= _nbExtraPipeline);
 }
 
 bool MultipleSceneHelper::update(interface::Scene*& sceneCrossed, mat4* offset_in)
@@ -257,6 +271,33 @@ bool MultipleSceneHelper::update(interface::Scene*& sceneCrossed, mat4* offset_i
     }
 
     return enterNewScene;
+}
+
+void MultipleSceneHelper::updateCameras()
+{
+    vector<InternalEdge>& edges = _graph[_currentScene];
+
+    for(size_t i=0 ; i<edges.size() ; ++i)
+    {
+        if(edges[i].finalDrawDecision)
+        {
+            //*_extraCameras[i] = *_curCamera;
+
+            mat4 offset = edges[i].edge.destPortal->matrix() * edges[i].edge.portal->matrix().inverted();
+            mat4 inv_o = offset.inverted();
+            //_extraCameras[i]->offset(offset, inv_o);
+            //_extraCameras[i]->dirLightView.camPos = _extraCameras[i]->camera.pos;
+
+            if(_pipeline.isStereo())
+            {
+                *_extraStereoCameras[0][i] = *_curStereoCamera[0];
+                _extraStereoCameras[0][i]->offset(offset, inv_o);
+
+                *_extraStereoCameras[1][i] = *_curStereoCamera[1];
+                _extraStereoCameras[1][i]->offset(offset, inv_o);
+            }
+        }
+    }
 }
 
 std::pair<interface::Scene*, interface::MeshInstance*> MultipleSceneHelper::closestPortal(const Sphere& sphere, mat4& offset)
@@ -378,7 +419,7 @@ bool MultipleSceneHelper::optimizeExtraSceneRendering(MultipleSceneHelper::Inter
     Sphere s(portalBox.toSphere());
     s.transform(portalMatrix);
 
-    return frust.collide(s) && (s.center() - cam.pos).length() < 50;
+    return frust.collide(s) && (s.center() - cam.pos).length() < edge.drawDistance;
 }
 
 void MultipleSceneHelper::optimizeFrustum(MultipleSceneHelper::InternalEdge& edge, int i)
@@ -437,6 +478,7 @@ void MultipleSceneHelper::optimizeFrustum(MultipleSceneHelper::InternalEdge& edg
 void MultipleSceneHelper::setupDecidedPortals(vector<InternalEdge>& edges)
 {
     int pipIndex=0;
+
     for(size_t i=0 ; i<edges.size() ; ++i)
     {
         _pipeline.combineNode(0)->setEnableInput(i+2, edges[i].finalDrawDecision);

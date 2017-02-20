@@ -5,6 +5,9 @@
 #include "interface/MeshInstance.h"
 using namespace tim;
 
+
+#define NB_MAX_PIPELINE 30
+
 class MultipleSceneHelper
 {
 public:
@@ -37,6 +40,7 @@ public:
     bool update(interface::Scene*&, mat4* offset);
     void rebuild(interface::Scene&);
     void extendPipeline(int);
+    void updateCameras();
 
     std::pair<interface::Scene*, interface::MeshInstance*> closestPortal(const Sphere&, mat4&);
     int hasCrossedPortal(vec3, vec3, interface::MeshInstance*, float radius);
@@ -44,6 +48,8 @@ public:
 
     void setEnableEdge(bool b, interface::Scene&, interface::MeshInstance*);
     void setCrossableEdge(bool b, interface::Scene&, interface::MeshInstance*);
+    void setEdgeDrawDistance(float, interface::Scene&, interface::MeshInstance*);
+    void setPortalLimit(int l) { _portalLimit = l; }
 
 private:
     struct InternalEdge
@@ -54,6 +60,7 @@ private:
         Box portalBox;
         bool enabled = true;
         bool crossable = true;
+        float drawDistance = 20;
         bool finalDrawDecision;
     };
 

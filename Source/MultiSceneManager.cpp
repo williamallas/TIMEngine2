@@ -16,7 +16,7 @@ std::string mapGeometry(std::string str)
     else return it->second;
 }
 
-MultiSceneManager::MultiSceneManager(std::string file, MultipleSceneHelper& multipleScene)
+MultiSceneManager::MultiSceneManager(std::string file, MultipleSceneHelper& multipleScene, int startScene)
 {
     std::ifstream fs(file);
     if(!fs.is_open())
@@ -57,7 +57,7 @@ MultiSceneManager::MultiSceneManager(std::string file, MultipleSceneHelper& mult
             _objects.push_back(objInScene);
             _dirLightView.push_back(new interface::View());
 
-            if(index == 0)
+            if(index == startScene)
             {
                 multipleScene.pipeline().setScene(*scene, 0);
                 multipleScene.pipeline().setDirLightView(*_dirLightView.back(), 0);

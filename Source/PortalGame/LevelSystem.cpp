@@ -8,8 +8,8 @@ using namespace resource;
 
 renderer::Texture::GenTexParam LevelSystem::defaultTexParam;
 
-LevelSystem::LevelSystem(BulletEngine& ph, Listener& listener, Controller& controller, HmdSceneView& hmdView)
-    : _physEngine(ph), _listener(listener), _controller(controller), _hmdView(hmdView)
+LevelSystem::LevelSystem(BulletEngine& ph, Listener& listener, Controller& controller, HmdSceneView& hmdView, interface::XmlMeshAssetLoader& gameAssets)
+    : _physEngine(ph), _listener(listener), _controller(controller), _hmdView(hmdView), _gameAssets(gameAssets)
 {
     defaultTexParam = interface::Texture::genParam(true,true,true, 4);
 }
@@ -76,6 +76,11 @@ vector<LevelSystem::GameObject> LevelSystem::getGameObjects(std::string name)
     return objs;
 }
 
+interface::Mesh LevelSystem::getMeshAsset(std::string asset) const
+{
+    return _gameAssets.getMesh(asset, TEXTURE_CONFIG);
+}
+
 void LevelSystem::initAll()
 {
     for(uint i=0 ; i < _levels.size() ; ++i)
@@ -110,6 +115,7 @@ void LevelSystem::changeLevel(int index)
             _levelStrategy[index]->init();
 
     }
+
     _curLevel = index;
 
     if(_levelStrategy[index])
@@ -222,8 +228,8 @@ void LevelSystem::update(float time)
 
                     if(x.indexObject >= 0)
                     {
-                        getLevel(_curLevel).physObjects[x.indexObject] = x.physObj;
-                        getLevel(_curLevel).objects[x.indexObject].meshInstance = x.instOut;
+                        getLevel(x.indexOwner).physObjects[x.indexObject] = x.physObj;
+                        getLevel(x.indexOwner).objects[x.indexObject].meshInstance = x.instOut;
                     }
                 }
             }
@@ -279,8 +285,8 @@ void LevelSystem::update(float time)
 
                     if(x.indexObject >= 0)
                     {
-                        getLevel(_curLevel).physObjects[x.indexObject] = x.physObj;
-                        getLevel(_curLevel).objects[x.indexObject].meshInstance = x.instIn;
+                        getLevel(x.indexOwner).physObjects[x.indexObject] = x.physObj;
+                        getLevel(x.indexOwner).objects[x.indexObject].meshInstance = x.instIn;
                     }
                 }
 
@@ -325,10 +331,16 @@ void LevelSystem::update(float time)
     }
 }
 
-void LevelSystem::setEnablePortal(bool b, interface::MeshInstance* inst)
+void LevelSystem::setEnablePortal(bool b, interface::MeshInstance* inst, int levelIndex)
 {
     if(_portalsHelper)
-        _portalsHelper->setEnableEdge(b, *_levels[_curLevel].first.levelScene, inst);
+        _portalsHelper->setEnableEdge(b, *_levels[levelIndex].first.levelScene, inst);
+}
+
+void LevelSystem::setPortalDrawDistrance(float distance, interface::MeshInstance* inst, int levelIndex)
+{
+    if(_portalsHelper)
+        _portalsHelper->setEdgeDrawDistance(distance, *_levels[levelIndex].first.levelScene, inst);
 }
 
 void LevelSystem::registerPortalTraversableObject(int indexObject, interface::MeshInstance* inst, BulletObject* phys, int index,
@@ -342,6 +354,7 @@ void LevelSystem::registerPortalTraversableObject(int indexObject, interface::Me
         obj.instOut = inst;
         obj.physObj = phys;
         obj.sceneOut = getLevel(index).levelScene;
+        obj.indexOwner = index;
         _inacessiblePortalTaversableObj.push_back(obj);
     }
     else
@@ -351,6 +364,7 @@ void LevelSystem::registerPortalTraversableObject(int indexObject, interface::Me
         obj.indexObject = indexObject;
         obj.instIn = inst;
         obj.physObj = phys;
+        obj.indexOwner = index;
         obj.state = PortalTraversableObject::NEW;
         obj.lastPos = inst->volume().center();
         _allPortalTaversableObj.push_back(obj);
@@ -533,9 +547,22 @@ void LevelInterface::bindSound(BulletObject* bo, int indexSound)
     }
 }
 
+void LevelInterface::emitSound(const vec3& pos, const resource::SoundAsset& sound)
+{
+    Source* src = levelSystem().listener().addSource(sound);
+    src->setPosition(pos);
+    src->play();
+    src->release();
+}
+
 void LevelInterface::setEnablePortal(bool b, interface::MeshInstance* inst)
 {
-    _system->setEnablePortal(b, inst);
+    _system->setEnablePortal(b, inst, index());
+}
+
+void LevelInterface::setPortalDrawDistrance(float dist, interface::MeshInstance* inst)
+{
+    _system->setPortalDrawDistrance(dist, inst, index());
 }
 
 int LevelInterface::indexObject(std::string str)
