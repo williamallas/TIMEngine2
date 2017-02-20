@@ -197,6 +197,9 @@ void main()
 	
 	float metalic = clamp(material.y,0,1);
 	float roughness = clamp(material.x,0,1);
+	float specular = material.z;
+	int cmAffected = int(specular * 255.f + 0.5);
+	cmAffected %= 2;
 	
 	float accAmbient = 0;
 	vec3 accAmbientColor = vec3(0);
@@ -209,6 +212,9 @@ void main()
 			
 		if(lights[lightsTile[i]].head.x > 0)
 		{
+			if(cmAffected == 0)
+				continue;
+			
 			float radiusLight = lights[lightsTile[i]].head.y * 0.8;
 			float distAtt = lights[lightsTile[i]].head.y * 0.2;
 			int indexCubemap = int(lights[lightsTile[i]].head.w)+1;
@@ -216,7 +222,7 @@ void main()
 			
 			vec3 diffuseTerm = color * (1-material.y) * textureLod(textures[indexCubemap], parallaxCorrection(vec3(0,0,0), normal, L, lights[lightsTile[i]].head.y), NB_MIPMAP-1).xyz;
 		
-			vec3 specularColor = mix(vec3(material.z), vec3(color), metalic);
+			vec3 specularColor = mix(vec3(specular), vec3(color), metalic);
 			vec3 specTerm = approximateSpecular(specularColor, roughness, parallaxCorrection(vec3(0,0,0), reflect(-V, normal), L, lights[lightsTile[i]].head.y), dotNV, indexCubemap);
 			
 			float att = dist < radiusLight ? 1 : 1 - (min(dist - radiusLight, distAtt) / distAtt);
@@ -253,7 +259,7 @@ void main()
 			float specular = D_CT*G_CT*F_CT / (4*dotNV*dotNL);
 			
 			vec3 diffuseColor = color - color * metalic;
-			vec3 specularColor = mix(vec3(material.z), color, metalic);
+			vec3 specularColor = mix(vec3(specular), color, metalic);
 			
 			accLight += att * dotNL * lights[lightsTile[i]].color.xyz * (diffuseColor + specularColor*specular);
 		}
@@ -265,7 +271,7 @@ void main()
 	{
 		vec3 diffuseTerm = color * (1-material.y) * textureLod(textures[0], normal, NB_MIPMAP-1).xyz;
 		
-		vec3 specularColor = mix(vec3(material.z), vec3(color), metalic);
+		vec3 specularColor = mix(vec3(specular), vec3(color), metalic);
 		vec3 specTerm = approximateSpecular(specularColor, roughness, reflect(-V, normal), dotNV, 0);
 		accAmbientColor += (specTerm + diffuseTerm) * (1-accAmbient);
 	}
