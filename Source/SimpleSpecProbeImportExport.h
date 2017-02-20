@@ -59,11 +59,18 @@ struct LightProbeUtils
         }
     }
 
-    static renderer::LightContextRenderer::Light genLightProbe(const LightProbeUtils& l)
+    static tim::renderer::LightContextRenderer::Light genLightProbe(const LightProbeUtils& l)
     {
         tim::renderer::LightContextRenderer::Light liparam;
+        liparam.tex = nullptr;
 
         std::ifstream input(l.filename, std::ios::binary|std::ios::ate );
+        if(!input)
+        {
+            LOG("Unuable to load ", l.filename);
+            return liparam;
+        }
+
         std::streamsize size = input.tellg();
         ubyte* buf = new ubyte[size];
         input.seekg(0, std::ios::beg);
