@@ -20,8 +20,8 @@ BulletObject::BulletObject(mat4 m, btCollisionShape* shape, float mass)
 {
     btTransform worldTrans;
     worldTrans.setBasis(btMatrix3x3(m[0][0],m[0][1],m[0][2],
-                                            m[1][0],m[1][1],m[1][2],
-                                            m[2][0],m[2][1],m[2][2]));
+                                    m[1][0],m[1][1],m[1][2],
+                                    m[2][0],m[2][1],m[2][2]));
 
     worldTrans.setOrigin(btVector3(m[0].w(), m[1].w(), m[2].w()));
     _motionState = new btDefaultMotionState(worldTrans);
@@ -41,7 +41,8 @@ BulletObject::BulletObject(mat4 m, btCollisionShape* shape, float mass)
 BulletObject::~BulletObject()
 {
     delete _motionState;
-    _world->removeCollisionObject(_body);
+    if(_world)
+        _world->removeCollisionObject(_body);
     delete _body;
 }
 
@@ -60,6 +61,18 @@ void BulletObject::setMotionState(btMotionState* mt)
     _motionState = mt;
     if(_body)
         _body->setMotionState(mt);
+}
+
+void BulletObject::setMask(int colMask, int colWithMask)
+{
+    if(!_world)
+        return;
+
+    _world->removeRigidBody(_body);
+    _world->addRigidBody(_body, colMask, colWithMask);
+
+    _collisionMask = colMask;
+    _collisionWithMask = colWithMask;
 }
 
 vector<BulletObject::CollisionPoint> BulletObject::collideWorld() const
@@ -119,6 +132,9 @@ vector<BulletObject::CollisionPoint> BulletObject::collideWorld() const
 
 vector<BulletObject::CollisionPoint> BulletObject::collideWith(btCollisionObject* obj) const
 {
+    if(!_world)
+        return {};
+
     struct CollideCallback : public btCollisionWorld::ContactResultCallback
     {
 
