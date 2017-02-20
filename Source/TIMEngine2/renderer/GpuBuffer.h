@@ -115,6 +115,13 @@ namespace renderer
             static void unbind(uint id) { openGL.unbindUniformBuffer(id); }
             static const GLenum BUFFER_TYPE = GL_UNIFORM_BUFFER;
         };
+
+        struct MultiDrawBuffer
+        {
+            static void bind(uint id) { openGL.bindDrawIndirectBuffer(id); }
+            static void unbind(uint id) { openGL.unbindDrawIndirectBuffer(id); }
+            static const GLenum BUFFER_TYPE = GL_DRAW_INDIRECT_BUFFER;
+        };
     }
 
     template <class T, class Policy>
