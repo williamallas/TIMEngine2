@@ -7,7 +7,7 @@ namespace tim
 namespace interface
 {
 
-void Particle::createPointRandVel(Particle& p, float time, Rand& random)
+void Particle::createPointRandVel(Particle& p, float, Rand& random)
 {
     p.position = vec3(0,0,0);
     p.lifeTime = 3;
@@ -21,17 +21,17 @@ void Particle::createPointRandVel(Particle& p, float time, Rand& random)
     p.vel = vec3(a*cosf(b), a*sinf(b), cosf(x))*random.next_f();
 }
 
-void Particle::simpleGravity(Particle& p, float time, Rand& random)
+void Particle::simpleGravity(Particle& p, float time, Rand&)
 {
     p.vel += vec3(0,0,-2)*time;
     p.position += p.vel*time;
 }
 
-void Particle::simpleVel(Particle& p, float time, Rand& random)
+void Particle::simpleVel(Particle& p, float time, Rand&)
 {
     p.position += p.vel*time;
 }
-void Particle::createConeVel(Particle& p, float time, Rand& random, const ParticleBornParameter& param)
+void Particle::createConeVel(Particle& p, float, Rand& random, const ParticleBornParameter& param)
 {
     p.position=vec3(0,0,0);
     float longitude = 2*PI*random.next_f();

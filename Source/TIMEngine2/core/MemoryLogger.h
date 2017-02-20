@@ -3,6 +3,7 @@
 
 #include <cstdlib>
 #include "type.h"
+#include <boost/thread.hpp>
 
 #include "Exception.h"
 

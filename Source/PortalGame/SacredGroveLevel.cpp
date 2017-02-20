@@ -51,7 +51,7 @@ SacredGroveAux::SacredGroveAux(int index, LevelSystem* system, BulletEngine& phy
 
     if(_indexArtifact >= 0)
     {
-        _physEngine.reinstance(level().physObjects[_indexArtifact], CollisionTypes::COL_IOBJ, IOBJECT_COLLISION);
+        level().physObjects[_indexArtifact]->setMask(CollisionTypes::COL_IOBJ, IOBJECT_COLLISION);
         registerGameObject(_indexArtifact, std::string("sg_artifact_") + _color);
     }
 }

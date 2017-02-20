@@ -81,8 +81,11 @@ namespace tim
             if(_drawOnScreen >= 2)
             {
                 renderer::openGL.bindTextureSampler(renderer::textureSampler[renderer::TextureMode::FilteredNoRepeat], 1);
-                renderer::openGL.bindTexture(_input[0]->buffer()->id(), GL_TEXTURE_2D, 0);
-                renderer::openGL.bindTexture(_input[1]->buffer()->id(), GL_TEXTURE_2D, 1);
+                //renderer::openGL.bindTexture(_input[0]->buffer()->id(), GL_TEXTURE_2D, 0);
+                //renderer::openGL.bindTexture(_input[1]->buffer()->id(), GL_TEXTURE_2D, 1);
+
+                renderer::openGL.bindTexture(_textureBuffer[VR_Device::LEFT]->id(), GL_TEXTURE_2D, 0);
+                renderer::openGL.bindTexture(_textureBuffer[VR_Device::RIGHT]->id(), GL_TEXTURE_2D, 1);
             }
             else
                 renderer::openGL.bindTexture(_input[std::min(_drawOnScreen, 1)]->buffer()->id(), GL_TEXTURE_2D, 0);
@@ -117,7 +120,7 @@ namespace tim
                 vr::VRCompositor()->Submit(vr::Eye_Right, &rightEyeTexture);
             }
 
-            _device->sync();
+            // PROFILE("Sync device:") _device->sync();
             //std::cout << "time submit : " << timeru.elapsed() << std::endl;
         }
 

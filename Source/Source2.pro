@@ -15,7 +15,7 @@ INCLUDEPATH += TIM_SDL\
 INCLUDEPATH += TIMEngine2\core\
 INCLUDEPATH += ../Lib/boost
 #INCLUDEPATH += ../Lib/bullet/src
-INCLUDEPATH += ../Lib/glew-1.10.0/include/
+INCLUDEPATH += ../Lib/glew-2.0.0/include/
 INCLUDEPATH += ../Lib/assimp-3.1.1/include/
 INCLUDEPATH += ../Lib/SDL2-2.0.3/include/
 INCLUDEPATH += ../Lib/bullet/include/
@@ -49,14 +49,15 @@ QMAKE_CXXFLAGS_RELEASE += -O3
 QMAKE_CXXFLAGS_RELEASE += -fomit-frame-pointer
 QMAKE_CXXFLAGS_RELEASE += -fexpensive-optimizations
 QMAKE_CXXFLAGS_RELEASE += -flto
-debug: QMAKE_LFLAGS -= -flto -O3 -fomit-frame-pointer -fexpensive-optimizations
+QMAKE_CXXFLAGS_RELEASE += -Wall -Wextra
+Debug: QMAKE_LFLAGS -= -flto -O3 -fomit-frame-pointer -fexpensive-optimizations
 
 QMAKE_LFLAGS += -O3
 QMAKE_LFLAGS += -flto
-debug: QMAKE_LFLAGS -= -flto -O3
+Debug: QMAKE_LFLAGS -= -flto -O3
 
 DEFINES += GLEW_STATIC GLEW_NO_GLU TIXML_USE_STL USE_SDL
-debug: DEFINES += TIM_DEBUG
+Debug: DEFINES += TIM_DEBUG
 
 # Input
 HEADERS += TIM_SDL/*.h TIMEngine2/core/*.h TIMEngine2/renderer/*.h TIMEngine2/resource/*.h TIMEngine2/interface/*.h TIMEngine2/interface/pipeline/*.h TIMEngine2/scene/*.h \
@@ -82,7 +83,9 @@ HEADERS += TIM_SDL/*.h TIMEngine2/core/*.h TIMEngine2/renderer/*.h TIMEngine2/re
     openAL/*.hpp \
     PortalGame/CollisionMask.h \
     SimpleSpecProbeImportExport.h \
-    PortalGame/FlyingIslandLevel.h
+    PortalGame/FlyingIslandLevel.h \
+    PortalGame/ConnectFourIA.h \
+    PortalGame/StartLevel.h
 
 
 SOURCES += main2.cpp \
@@ -93,7 +96,7 @@ SOURCES += main2.cpp \
            ../Lib/tinyxml/tinystr.cpp \
            ../Lib/tinyxml/tinyxmlerror.cpp \
            ../Lib/tinyxml/tinyxmlparser.cpp \
-           ../Lib/glew-1.10.0/src/glew.c \
+           ../Lib/glew-2.0.0/src/glew.c \
     TIMEngine2/renderer/GLState.cpp \
     TIMEngine2/renderer/IndexBuffer.cpp \
     TIMEngine2/renderer/renderer.cpp \
@@ -154,5 +157,8 @@ SOURCES += main2.cpp \
     PortalGame/ForestLevel.cpp \
     PortalGame/PortalGame.cpp PortalGame/SacredGroveLevel.cpp PortalGame/OceanLevel.cpp PortalGame/FlyingIslandLevel.cpp \
     openAL/Listener.cpp openAL/Source.cpp openAL/Sampler.cpp openAL/Sound.cpp \
+    PortalGame/ConnectFourIA.cpp \
+    OpenVR/HmdSceneView.cpp \
+    PortalGame/StartLevel.cpp
 
 

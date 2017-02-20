@@ -1,6 +1,7 @@
 #ifndef MULTIPROMISE_H
 #define MULTIPROMISE_H
 
+#include <future>
 #include "type.h"
 
 #include "MemoryLoggerOn.h"
@@ -12,6 +13,10 @@ namespace core
     class MultiPromise
     {
     public:
+        template<class TT> using future = std::future<TT>;
+        template<class TT> using promise = std::promise<TT>;
+
+        MultiPromise() = default;
 
         MultiPromise(MultiPromise&& p) : _promises(std::move(p._promises)), _isComplete(p._isComplete)
         {}
@@ -27,9 +32,9 @@ namespace core
             _isComplete = p._isComplete;
         }
 
-        boost::unique_future<T> future()
+        future<T> getFuture()
         {
-            _promises.push_back(std::move(boost::promise<T>()));
+            _promises.push_back(std::move(promise<T>()));
             return _promises.back().get_future();
         }
 
@@ -40,11 +45,11 @@ namespace core
 
             _isComplete = true;
             for(size_t i=0 ; i<_promises.size() ; ++i)
-                _promises[i].complete(t);
+                _promises[i].set_value(t);
         }
 
     private:
-        vector<boost::promise<T>> _promises;
+        vector<promise<T>> _promises;
         bool _isComplete=false;
     };
 }
