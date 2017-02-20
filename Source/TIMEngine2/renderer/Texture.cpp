@@ -327,7 +327,6 @@ Texture* Texture::genTextureFromRawData(ubyte* rawData, GenTexParam param)
     Format format = *reinterpret_cast<Format*>(rawData); rawData += sizeof(Format);
     Type type = *reinterpret_cast<Type*>(rawData); rawData += sizeof(Type);
     int mipMap = *reinterpret_cast<int*>(rawData); rawData += sizeof(int);
-    std::cout << size << " " << format << " " << type<< " " << mipMap << std::endl;
 
     int effectiveMipmap = mipMap;
     if(mipMap <= 0)

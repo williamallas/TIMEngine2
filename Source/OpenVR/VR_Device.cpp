@@ -111,8 +111,8 @@ void VR_Device::update(bool useWaitgetPoses)
 	if (!_compositor) return;
 
     if(useWaitgetPoses)
-//        _compositor->WaitGetPoses(_vrTrackedDevicePose, vr::k_unMaxTrackedDeviceCount, NULL, 0);
-//    else
+        _compositor->WaitGetPoses(_vrTrackedDevicePose, vr::k_unMaxTrackedDeviceCount, NULL, 0);
+    else
     {         
         float fSecondsSinceLastVsync;
         _hmd->GetTimeSinceLastVsync( &fSecondsSinceLastVsync, NULL );
@@ -123,7 +123,7 @@ void VR_Device::update(bool useWaitgetPoses)
 
         float fPredictedSecondsFromNow = fFrameDuration - fSecondsSinceLastVsync + fVsyncToPhotons;
 
-        std::cout<< "Predicted ms from photons:" << fPredictedSecondsFromNow*1000 << "ms\n";
+        //std::cout<< "Predicted ms from photons:" << fPredictedSecondsFromNow*1000 << "ms\n";
         _hmd->GetDeviceToAbsoluteTrackingPose(vr::TrackingUniverseStanding, fPredictedSecondsFromNow, _vrTrackedDevicePose, vr::k_unMaxTrackedDeviceCount);
     }
 
