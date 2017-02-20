@@ -9,16 +9,16 @@
 #include "MemoryLoggerOn.h"
 
 
-ForestLevelBase::ForestLevelBase(int index, LevelSystem* system, BulletEngine& phys) : LevelInterface(index, system), _physEngine(phys)
+ForestLevelBase::ForestLevelBase(int index, LevelSystem* system, BulletEngine& phys, const std::string& music) : LevelInterface(index, system), _physEngine(phys)
 {
     _birds = resource::AssetManager<resource::SoundAsset>::instance().load<false>("soundBank/birds1.wav", false, Sampler::NONE).value();
     _warp = resource::AssetManager<resource::SoundAsset>::instance().load<false>("soundBank/warp.wav", false, Sampler::NONE).value();
 
-    resource::SoundAsset ambientSound = resource::AssetManager<resource::SoundAsset>::instance().load<false>("soundBank/addressing_stars.ogg", true, Sampler::NONE).value();
+    resource::SoundAsset ambientSound = resource::AssetManager<resource::SoundAsset>::instance().load<false>("soundBank/" + music + ".ogg", true, Sampler::NONE).value();
     Source* src = system->listener().addSource(ambientSound);
     src->setLooping(true);
     src->setGain(0.12);
-    setAmbientSound(src, "addressing_stars");
+    setAmbientSound(src, music);
 }
 
 void ForestLevelBase::init()
@@ -63,14 +63,12 @@ void ForestLevelBase::update(float time)
 
 void ForestLevelBase::emitSounddPortal(const vec3& p)
 {
-    Source* src = levelSystem().listener().addSource(_warp);
-    src->setPosition(p);
-    src->play();
-    src->release();
+    emitSound(p, _warp);
 }
 
 
-ForestLevel1::ForestLevel1(int index, LevelSystem* system, BulletEngine& phys) : ForestLevelBase(index, system, phys)
+ForestLevel1::ForestLevel1(int index, LevelSystem* system, BulletEngine& phys, std::string namePortal, const std::string& music)
+    : ForestLevelBase(index, system, phys, music), _namePortal(namePortal)
 {
     _sunTexture = resource::AssetManager<interface::Texture>::instance().load<false>("textureBank/sun2.png", LevelSystem::defaultTexParam).value();
 }
@@ -78,9 +76,9 @@ ForestLevel1::ForestLevel1(int index, LevelSystem* system, BulletEngine& phys) :
 void ForestLevel1::init()
 {
     ForestLevelBase::init();
-    _indexPortal = indexObject("portalForest1_Forest2");
+    _indexPortal = indexObject(_namePortal);
     if(_indexPortal < 0)
-        LOG("portalForest1_Forest2 in scene1 not found");
+        LOG(_namePortal, " not found");
     else
         setEnablePortal(false, level().objects[_indexPortal].meshInstance);
 
@@ -130,7 +128,7 @@ void ForestLevel1::update(float time)
 #endif
 }
 
-ForestLevel2::ForestLevel2(int index, LevelSystem* system, BulletEngine& phys) : ForestLevelBase(index, system, phys)
+ForestLevel2::ForestLevel2(int index, LevelSystem* system, BulletEngine& phys) : ForestLevelBase(index, system, phys, "addressing_stars")
 {
     _sunTexture1[0] = resource::AssetManager<interface::Texture>::instance().load<false>("textureBank/sun.png", LevelSystem::defaultTexParam).value();
     _sunTexture1[1] = resource::AssetManager<interface::Texture>::instance().load<false>("textureBank/sun2.png", LevelSystem::defaultTexParam).value();
@@ -206,7 +204,7 @@ void ForestLevel2::update(float time)
 #endif
 }
 
-ForestLevel3::ForestLevel3(int index, LevelSystem* system, BulletEngine& phys) : ForestLevelBase(index, system, phys)
+ForestLevel3::ForestLevel3(int index, LevelSystem* system, BulletEngine& phys) : ForestLevelBase(index, system, phys, "addressing_stars")
 {
 
 }
@@ -223,11 +221,14 @@ void ForestLevel3::init()
     if(_indexArtifact >= 0)
     {
         registerPortableTraversable(_indexArtifact, level().objects[_indexArtifact].meshInstance, level().physObjects[_indexArtifact], {});
-        _physEngine.reinstance(level().physObjects[_indexArtifact], CollisionTypes::COL_IOBJ, IOBJECT_COLLISION);
+        level().physObjects[_indexArtifact]->setMask(CollisionTypes::COL_IOBJ, IOBJECT_COLLISION);
         _nonActivatedArtifactMesh = level().objects[_indexArtifact].meshInstance->mesh();
 
         bindSound(level().physObjects[_indexArtifact], PortalGame::SoundEffects::METAL1);
     }
+
+    if(_indexPortal >= 0)
+        setEnablePortal(false, level().objects[_indexPortal].meshInstance);
 }
 
 void ForestLevel3::update(float time)
@@ -270,8 +271,8 @@ void ForestLevel3::update(float time)
             justInPlace = false;
             level().objects[_indexArtifact].meshInstance->setMesh(_nonActivatedArtifactMesh);
 
-            if(_indexPortal >= 0)
-                setEnablePortal(false, level().objects[_indexPortal].meshInstance);
+            //if(_indexPortal >= 0)
+            //    setEnablePortal(false, level().objects[_indexPortal].meshInstance);
 
         #ifdef AUTO_SOLVE
             if(_indexPortal >= 0)

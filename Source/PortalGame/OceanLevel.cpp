@@ -71,7 +71,7 @@ void OceanLevel::init()
     if(slot4.inst)
         _slots.push_back(slot4);
 
-    SlotArtifact slot5 = createSlotArtifact("slotArtifact5", "reset5", "");
+    SlotArtifact slot5 = createSlotArtifact("slotArtifact5", "reset5", "portalOcean16_Ocean17");
     if(slot5.inst)
         _slots.push_back(slot5);
 
@@ -98,6 +98,7 @@ void OceanLevel::init()
             bindSound(level().physObjects[i], PortalGame::SoundEffects::METAL2);
         }
     }
+
 #include "MemoryLoggerOff.h"
     vector<int> physToy = indexObjects("physToy1");
     for(int i : physToy)
@@ -116,8 +117,14 @@ void OceanLevel::init()
     auto lpVec = LightProbeUtils::importProbe("ocean_specprobe.xml");
     for(auto lp : lpVec)
     {
-        level().levelScene->scene.add<interface::LightInstance>(LightProbeUtils::genLightProbe(lp));
+        auto l = LightProbeUtils::genLightProbe(lp);
+        if(l.tex)
+            level().levelScene->scene.add<interface::LightInstance>(l);
     }
+
+    int indexOut = indexObject("portalOutOcean_InSkyIsl");
+    if(indexOut >= 0)
+        setPortalDrawDistrance(40, level().objects[indexOut].meshInstance);
 }
 
 void OceanLevel::prepareEnter()
@@ -196,13 +203,14 @@ void OceanLevel::update(float time)
         if(slot.name == "slotArtifact6" && slot.timeOn > TIME_ON_SLOT && _levelState == 0)
         {
             int indexBoat = indexObject("boat");
-            if((level().objects[indexBoat].meshInstance->matrix().translation() - levelSystem().headPosition()).length() < 1)
+            if((level().objects[indexBoat].meshInstance->matrix().translation() - levelSystem().headPosition()).length() < DIST_BOAT)
             {
                 _timeOnBoat += time;
                 if(_timeOnBoat > 2)
                 {
                     _levelState = 1;
                     _distanceBoat = 0;
+                    levelSystem().portalManager().setPortalLimit(0);
                 }
             }
         }
@@ -241,7 +249,7 @@ void OceanLevel::manageBoat(float time)
     }
     else if(_levelState == 3) // wait until the player seats in the boat2
     {
-        if((_syncBoat->boatOcean->matrix().translation() - levelSystem().headPosition()).length() < 1)
+        if((_syncBoat->boatOcean->matrix().translation() - levelSystem().headPosition()).length() < DIST_BOAT)
         {
             _timeOnBoat += time;
             if(_timeOnBoat > 2)
@@ -277,13 +285,16 @@ void OceanLevel::moveBoat(float time, int startBoatId, int arrivalBoatId, bool s
         else
            _distanceBoat += time;
 
+        if(!secondBoat && _distanceBoat > l_path - 5)
+            levelSystem().portalManager().setPortalLimit(2);
+
         levelSystem().hmdView().addOffset(mat4::Translation(dir * step));
 
         mat4 m = boat->matrix();
         m.translate(dir * step);
         boat->setMatrix(m);
 
-        if(secondBoat)
+        if(secondBoat && _syncBoat->boatFI)
         {
             _syncBoat->dir = dir;
             _syncBoat->arrival = to;

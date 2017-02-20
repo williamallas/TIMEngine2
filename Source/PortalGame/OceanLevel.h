@@ -48,6 +48,7 @@ protected:
     int _levelState = 0;
     float _timeOnBoat = 0;
     float _distanceBoat = 0;
+    const float DIST_BOAT = 1.6;
 
     Sync_Ocean_FlyingIsland_PTR _syncBoat;
 

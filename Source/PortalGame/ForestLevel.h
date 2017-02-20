@@ -7,7 +7,7 @@
 class ForestLevelBase : public LevelInterface
 {
 public:
-    ForestLevelBase(int index, LevelSystem* system, BulletEngine&);
+    ForestLevelBase(int index, LevelSystem* system, BulletEngine&, const std::string&);
     void init() override;
     void update(float) override;
 
@@ -22,13 +22,14 @@ protected:
 class ForestLevel1 : public ForestLevelBase
 {
 public:
-    ForestLevel1(int index, LevelSystem* system, BulletEngine&);
+    ForestLevel1(int index, LevelSystem* system, BulletEngine&, std::string namePortal, const std::string&);
 
     void init() override;
     void prepareEnter() override {}
     void update(float) override;
 
 private:
+    std::string _namePortal;
     int _indexPortal;
     int _indexPortalOut;
     interface::MeshInstance* _instSunStone;
