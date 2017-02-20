@@ -12,7 +12,11 @@
 
 #define BUFFER_OFFSET(a) ((char*)NULL + (a))
 
+#ifdef TIM_DEBUG
 #define GL_ASSERT() tim::renderer::GLState::assertGLError(__FILE__,__LINE__)
+#else
+#define GL_ASSERT() while(false)
+#endif
 
 #include "core/MemoryLoggerOn.h"
 namespace tim
@@ -48,6 +52,7 @@ namespace renderer
         bool bindElementArrayBuffer(uint);
         bool bindShaderStorageBuffer(uint, uint index=0);
         bool bindUniformBuffer(uint, uint index=0);
+        bool bindDrawIndirectBuffer(uint);
         bool bindShader(uint);
         bool bindFrameBuffer(uint);
         bool bindTexture(uint, GLenum, uint);
@@ -60,6 +65,7 @@ namespace renderer
         void unbindShaderStorageBuffer(uint);
         void unbindElementArrayBuffer(uint);
         void unbindUniformBuffer(uint);
+        void unbindDrawIndirectBuffer(uint);
         void unbindShader(uint);
         void unbindFrameBuffer(uint);
         void unbindTexture(uint, GLenum, uint);
@@ -168,6 +174,7 @@ namespace renderer
             ARRAY_BUFFER=0,
             VAO,
             ELEMENT_ARRAY_BUFFER,
+            DRAW_INDIRECT_BUFFER,
             PIXEL_BUFFER_UNPACK,
             SHADER,
             FRAME_BUFFER,
@@ -318,7 +325,6 @@ namespace renderer
         return false;
     }
 
-
     inline bool GLState::bindShader(uint id)
     {
         if(_glStates[SHADER] != id)
@@ -381,6 +387,17 @@ namespace renderer
         return false;
     }
 
+    inline bool GLState::bindDrawIndirectBuffer(uint id)
+    {
+        if(_glStates[DRAW_INDIRECT_BUFFER] != id)
+        {
+            _glStates[DRAW_INDIRECT_BUFFER]=id;
+            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, id);
+            return true;
+        }
+        return false;
+    }
+
     inline void GLState::unbindVertexBuffer(uint id)
     {
         if(_glStates[ARRAY_BUFFER] == id)
@@ -408,6 +425,15 @@ namespace renderer
                 _uboBinded[index]=0;
                 glBindBufferBase(GL_UNIFORM_BUFFER, index, 0);
             }
+    }
+
+    inline void GLState::unbindDrawIndirectBuffer(uint id)
+    {
+        if(_glStates[DRAW_INDIRECT_BUFFER] == id)
+        {
+            _glStates[DRAW_INDIRECT_BUFFER] = 0;
+            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+        }
     }
 
     inline void GLState::unbindPixelBufferUnpack(uint id)

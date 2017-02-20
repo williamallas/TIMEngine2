@@ -128,6 +128,7 @@ namespace renderer
     {
         glBindBuffer(GL_ARRAY_BUFFER, _glStates[ARRAY_BUFFER]);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _glStates[ELEMENT_ARRAY_BUFFER]);
+        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, _glStates[DRAW_INDIRECT_BUFFER]);
         glUseProgram(_glStates[SHADER]);
 
         for(uint i=0 ; i<MAX_TEXTURE_UNIT ; ++i)
@@ -149,7 +150,7 @@ namespace renderer
 
         glSet(GL_DEPTH_TEST, _glBoolStates[DEPTH_TEST]);
         glSet(GL_BLEND, _glBoolStates[BLEND]);
-        glSet(GL_ALPHA_TEST, _glBoolStates[ALPHA_TEST]);
+        //glSet(GL_ALPHA_TEST, _glBoolStates[ALPHA_TEST]);
         glSet(GL_CULL_FACE, _glBoolStates[CULL_FACE]);
         glSet(GL_SCISSOR_TEST, _glBoolStates[SCISSOR_TEST]);
         glSet(GL_COLOR_LOGIC_OP, _glBoolStates[LOGIC_COLOR]);
@@ -162,7 +163,7 @@ namespace renderer
         glBlendFunc(_blendFunc.x(), _blendFunc.y());
         glBlendEquation(_glStates[BLEND_EQUATION]);
         glCullFace(_glStates[CULL_FACE_MODE]);
-        glAlphaFunc(_glStates[ALPHA_FUNC], _alphaThreshold);
+        //glAlphaFunc(_glStates[ALPHA_FUNC], _alphaThreshold);
         glDepthFunc(_glStates[DEPTH_FUNC]);
         glColorMask(_colorMask[0], _colorMask[1], _colorMask[2], _colorMask[3]);
         glScissor(_scissorCoord.x(), _scissorCoord.y(), _scissorSize.x(), _scissorSize.y());
