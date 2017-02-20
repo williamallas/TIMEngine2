@@ -11,6 +11,7 @@
 #include "PortalGame/Level1.h"
 #include "PortalGame/SacredGroveLevel.h"
 #include "PortalGame/OceanLevel.h"
+#include "PortalGame/StartLevel.h"
 #include "PortalGame/FlyingIslandLevel.h"
 
 #include <utility>
@@ -20,7 +21,7 @@ class PortalGame
 public:
     static bool contactCallBack(btManifoldPoint& cp, void* body0,void* body1);
 
-    PortalGame(BulletEngine&, MultipleSceneHelper&, HmdSceneView&, VR_Device&);
+    PortalGame(BulletEngine&, MultipleSceneHelper&, HmdSceneView&, VR_Device&, int startLevel = 0);
 
     void update(float time);
 
@@ -38,6 +39,8 @@ public:
         WOOD1 = 0, WOOD2, WOOD3,
         PLASTIC1, PLASTIC2,
         METAL1, METAL2, ARTIFACT1,
+        SOUR,
+        ROCK1,
         NB_EFFECTS
     };
 
@@ -61,6 +64,7 @@ protected:
     int _clearSoundPairTimer=0;
 
     vec3 _debugControllerPos;
+    int _frameId=0;
 
     void registerSoundCallBack();
     bool processContactPoint(btManifoldPoint& pt, const btCollisionObject* obj, btVector3 posContact);

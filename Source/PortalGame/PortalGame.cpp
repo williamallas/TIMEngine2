@@ -6,9 +6,9 @@ using namespace resource;
 
 #include "MemoryLoggerOn.h"
 
-PortalGame::PortalGame(BulletEngine& phys, MultipleSceneHelper& multiscene, HmdSceneView& hmdCam, VR_Device& vrdevice)
+PortalGame::PortalGame(BulletEngine& phys, MultipleSceneHelper& multiscene, HmdSceneView& hmdCam, VR_Device& vrdevice, int startLevel)
     : _physEngine(phys), _multiSceneHelper(multiscene), _hmdCamera(hmdCam), _vrDevice(vrdevice),
-      _multiScene("configScene.txt", _multiSceneHelper), _vrControllers(phys), _levels(phys, _listener, _vrControllers, _hmdCamera)
+      _multiScene("configScene.txt", _multiSceneHelper, startLevel), _vrControllers(phys), _levels(phys, _listener, _vrControllers, _hmdCamera, _gameAssets)
 {
     _multiScene.instancePhysic(_physEngine);
 
@@ -22,6 +22,8 @@ PortalGame::PortalGame(BulletEngine& phys, MultipleSceneHelper& multiscene, HmdS
     _soundEffects[SoundEffects::METAL1] = AssetManager<SoundAsset>::instance().load<false>("soundBank/metal1.wav", false, Sampler::NONE).value();
     _soundEffects[SoundEffects::METAL2] = AssetManager<SoundAsset>::instance().load<false>("soundBank/metal2.wav", false, Sampler::NONE).value();
     _soundEffects[SoundEffects::ARTIFACT1] = AssetManager<SoundAsset>::instance().load<false>("soundBank/artifact.wav", false, Sampler::NONE).value();
+    _soundEffects[SoundEffects::SOUR] = AssetManager<SoundAsset>::instance().load<false>("soundBank/sour.wav", false, Sampler::NONE).value();
+    _soundEffects[SoundEffects::ROCK1] = AssetManager<SoundAsset>::instance().load<false>("soundBank/rock1.wav", false, Sampler::NONE).value();
 
     const auto TEXTURE_CONFIG = interface::Texture::genParam(true,true,true, 4);
     _gameAssets.load("gameAssets.xml");
@@ -36,8 +38,12 @@ PortalGame::PortalGame(BulletEngine& phys, MultipleSceneHelper& multiscene, HmdS
 
     for(int i=0 ; i<_levels.nbLevels() ; ++i)
     {
-        if(_levels.getLevel(i).name == "forest1")
-            _levels.setStrategy(new ForestLevel1(i, &_levels, _physEngine), i);
+        if(_levels.getLevel(i).name == "sceneInside")
+            _levels.setStrategy(new Start2Level(i, &_levels), i);
+        else if(_levels.getLevel(i).name == "start")
+            _levels.setStrategy(new StartLevel(i, &_levels), i);
+        else if(_levels.getLevel(i).name == "forest1")
+            _levels.setStrategy(new ForestLevel1(i, &_levels, _physEngine, "portalForest1_Forest2", "addressing_stars"), i);
         else if(_levels.getLevel(i).name == "forest2")
             _levels.setStrategy(new ForestLevel2(i, &_levels, _physEngine), i);
         else if(_levels.getLevel(i).name == "forest3")
@@ -54,11 +60,14 @@ PortalGame::PortalGame(BulletEngine& phys, MultipleSceneHelper& multiscene, HmdS
             _levels.setStrategy(new OceanLevel(i, &_levels, _physEngine, syncOceanFI), i);
         else if(_levels.getLevel(i).name == "flyingIsland")
             _levels.setStrategy(new FlyingIslandLevel(i, &_levels, _physEngine, syncOceanFI), i);
+        else if(_levels.getLevel(i).name == "forest4")
+            _levels.setStrategy(new ForestLevel1(i, &_levels, _physEngine, "portalForest4_FI4", "bensound-betterdays"), i);
         else
             _levels.setStrategy(new Level1(i, &_levels), i);
     }
+
+    _levels.changeLevel(startLevel);
     _levels.initAll();
-    _levels.changeLevel(0);
 
     registerSoundCallBack();
 }
@@ -66,7 +75,6 @@ PortalGame::PortalGame(BulletEngine& phys, MultipleSceneHelper& multiscene, HmdS
 void PortalGame::update(float time)
 {
     /* First check if we have switched between 2 scenes */
-
     interface::Scene* switchScene = nullptr;
     mat4 o;
     if(_multiSceneHelper.update(switchScene, &o))
@@ -77,6 +85,7 @@ void PortalGame::update(float time)
         int index = _multiScene.getSceneIndex(switchScene);
 
          _vrControllers.buildForScene(*switchScene, index);
+
         _levels.changeLevel(index);
     }
 
@@ -85,6 +94,8 @@ void PortalGame::update(float time)
     {
         mat4 l = _vrDevice.isControllerConnected(VR_Device::LEFT) ? _vrDevice.controllerPose(VR_Device::LEFT) : _lastL;
         mat4 r = _vrDevice.isControllerConnected(VR_Device::RIGHT) ? _vrDevice.controllerPose(VR_Device::RIGHT) : _lastR;
+        l = _hmdCamera.scaleTransform(l);
+        r = _hmdCamera.scaleTransform(r);
 
         _vrControllers.update(_hmdCamera.offset(), l,r, time);
         _lastL = _hmdCamera.offset()*l;
@@ -97,6 +108,10 @@ void PortalGame::update(float time)
 
         mat4 r = l;
         r.translate({0,0,0.3});
+
+        l = _hmdCamera.scaleTransform(l);
+        r = _hmdCamera.scaleTransform(r);
+
         _vrControllers.update(_hmdCamera.offset(), l,r, time);
         _lastL = _hmdCamera.offset()*l;
         _lastR = _hmdCamera.offset()*r;
@@ -117,7 +132,6 @@ void PortalGame::update(float time)
     /* then update others stuffs */
 
     _levels.update(time);
-
     _listener.setTransform(_hmdCamera.transform());
     _listener.update();
 
@@ -130,11 +144,13 @@ void PortalGame::update(float time)
     }
     _asyncSoundToPlay.clear();
 
-    if(_clearSoundPairTimer++ % 20 == 0)
+    if(_clearSoundPairTimer++ % 45 == 0)
     {
         _lastSoundPair.clear();
         _nbTotalSound = 0;
     }
+
+    _frameId ++;
 }
 
 int PortalGame::curSceneIndex() const
