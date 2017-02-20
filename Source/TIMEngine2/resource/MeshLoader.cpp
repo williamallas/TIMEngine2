@@ -127,6 +127,9 @@ public:
 bool MeshLoader::loadObjData(const std::string& file, ObjBuffer& buffer)
 {
     std::ifstream f_tmp(file, std::ios_base::binary);
+    if(!f_tmp)
+        return false;
+
     f_tmp.seekg (0, f_tmp.end);
     size_t sizeFile = f_tmp.tellg();
     f_tmp.seekg (0, f_tmp.beg);
