@@ -17,9 +17,6 @@ namespace core
     {
     public:
         Vector() { for(size_t i=0;i<N;++i)_val[i]=T(); }
-        //Vector(const Vector& v) { for(size_t i=0;i<N;++i)_val[i]=v._val[i]; }
-        //Vector(const T& val) { for(size_t i=0;i<N;++i)_val[i]=val; }
-        //template<size_t A> explicit Vector(const Vector<T,A>& v) : Vector() { for(size_t i=0;i<std::min(N,A);++i)_val[i]=v[i]; }
 
         Vector(std::initializer_list<T> l)
         {
@@ -257,17 +254,6 @@ namespace core
         {
             _val[INDEX]=val;
         }
-
-//        template <size_t INDEX, class First>
-//        void construct(First first)
-//        {
-//            static_assert(INDEX!=0 || TypeLength<First>::value > 1 || N==1, "Warning use of constructor");
-////            if(INDEX == 0 && TypeLength<First>::value == 1)
-////                for(size_t i=0 ; i<N ; ++i) _val[i]=first;
-////            else
-//            copy_data_at(INDEX, first);
-//            //construct<INDEX+TypeLength<First>::value, Rest...>(rest...);
-//        }
 
         template <size_t INDEX, class First, class... Rest>
         void construct(First first, Rest... rest)
